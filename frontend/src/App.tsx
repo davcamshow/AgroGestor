@@ -1,24 +1,20 @@
-import React from 'react'
+import { useState } from 'react';
+import { AuthPage } from './views/Authpage';
 
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const handleLogin = () => setIsAuthenticated(true);
+
+  if (!isAuthenticated) {
+    return <AuthPage onLogin={handleLogin} />;
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-2xl shadow-2xl text-center">
-        <h1 className="text-4xl font-bold text-gray-800 mb-4">
-          🚀 React + TypeScript + Tailwind
-        </h1>
-        <p className="text-gray-600 text-lg">
-          Todo funcionando correctamente
-        </p>
-        <button 
-          className="mt-6 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
-          onClick={() => alert('¡Funciona!')}
-        >
-          Haz clic aquí
-        </button>
-      </div>
+    <div className="flex min-h-screen items-center justify-center bg-slate-50">
+      <h1 className="text-3xl font-bold text-emerald-900">Bienvenido al Dashboard</h1>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
