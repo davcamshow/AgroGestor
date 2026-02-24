@@ -1,0 +1,29 @@
+# ===== PYTHON =====
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ===== DJANGO =====
+db.sqlite3
+.env
+media/
+staticfiles/
+
+# ===== VENV =====
+venv/
+backend/venv/
+.venv/
+
+# ===== NODE =====
+node_modules/
+dist/
+build/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== IDE =====
+.vscode/
+.idea/
