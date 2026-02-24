@@ -1,19 +1,29 @@
-import { useState } from 'react';
-import { AuthPage } from './views/Authpage';
+import { useState } from "react";
+import { AuthPage } from "./views/Authpage";
+import Layout from "./Layout";
+import type { User } from "./types";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
-  const handleLogin = () => setIsAuthenticated(true);
+  const handleLogin = () => {
+    // Tu AuthPage solo llama onLogin() sin mandar user,
+    // así que usamos un usuario demo para que el panel muestre nombre.
+    setUser({ name: "Dr. Roberto", email: "demo@agrogestor.com" });
+    setIsAuthenticated(true);
+  };
 
   if (!isAuthenticated) {
     return <AuthPage onLogin={handleLogin} />;
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50">
-      <h1 className="text-3xl font-bold text-emerald-900">Bienvenido al Dashboard</h1>
-    </div>
+    <Layout
+      onLogout={() => setIsAuthenticated(false)}
+      user={user}
+      onUpdateUser={(u) => setUser(u)}
+    />
   );
 }
 
