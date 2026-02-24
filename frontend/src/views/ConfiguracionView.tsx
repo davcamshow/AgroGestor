@@ -10,6 +10,7 @@ interface ConfiguracionViewProps {
 }
 
 const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({ user, onUpdateUser, showToast }) => {
+  // Inicializa el formulario con los datos actuales del usuario
   const [formData, setFormData] = useState<User>({
     name: user?.name || '', 
     email: user?.email || '', 
@@ -20,6 +21,7 @@ const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({ user, onUpdateUse
     ranchAddress: user?.ranchAddress || ''
   });
 
+  // Envía los datos actualizados al App.tsx
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (user) {
@@ -41,6 +43,7 @@ const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({ user, onUpdateUse
       </div>
 
       <form onSubmit={handleSubmit}>
+        {/* Datos Personales */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
           <div className="p-5 border-b border-gray-100 flex items-center gap-3 bg-white">
             <div className="bg-emerald-50 p-2.5 rounded-xl text-emerald-600 border border-emerald-100/50">
@@ -77,6 +80,7 @@ const ConfiguracionView: React.FC<ConfiguracionViewProps> = ({ user, onUpdateUse
           </div>
         </div>
 
+        {/* Datos del Rancho/Empresa */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
           <div className="p-5 border-b border-gray-100 flex items-center gap-3 bg-white">
             <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600 border border-blue-100/50">

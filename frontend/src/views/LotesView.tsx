@@ -13,6 +13,7 @@ interface LotesViewProps {
 }
 
 const LotesView: React.FC<LotesViewProps> = ({ lotes, setLotes, dietas, showToast }) => {
+  // Filtros y Modal
   const [search, setSearch] = useState<string>('');
   const [filterEtapa, setFilterEtapa] = useState<string>('Todas');
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -21,10 +22,12 @@ const LotesView: React.FC<LotesViewProps> = ({ lotes, setLotes, dietas, showToas
     nombre: '', cabezas: 0, peso_promedio: 0, etapa: 'Engorda', id_dieta: '' 
   });
 
+  // Filtrar lotes por nombre y etapa
   const filteredLotes = lotes.filter(l => 
     l.nombre.toLowerCase().includes(search.toLowerCase()) && (filterEtapa === 'Todas' || l.etapa === filterEtapa)
   );
 
+  //  Gestión del modal y guardado
   const handleOpenModal = (lote: Lote | null = null) => {
     if (lote) { 
       setEditingLote(lote); 
@@ -54,6 +57,7 @@ const LotesView: React.FC<LotesViewProps> = ({ lotes, setLotes, dietas, showToas
     }
   };
 
+  // Estima costo diario (Peso * 3% consumo * Costo Dieta * Cabezas)
   const getCostoDiario = (lote: Lote) => {
     if (!lote.id_dieta) return '0.00';
     const dieta = dietas.find(d => d.id === parseInt(lote.id_dieta as string));
@@ -75,6 +79,7 @@ const LotesView: React.FC<LotesViewProps> = ({ lotes, setLotes, dietas, showToas
         </button>
       </div>
 
+      {/*  Búsqueda y Filtro */}
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6">
         <div className="relative w-full sm:w-96">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -102,6 +107,7 @@ const LotesView: React.FC<LotesViewProps> = ({ lotes, setLotes, dietas, showToas
         </div>
       </div>
 
+      {/* TABLA DE LOTES */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-600">
@@ -155,6 +161,7 @@ const LotesView: React.FC<LotesViewProps> = ({ lotes, setLotes, dietas, showToas
         </div>
       </div>
 
+      {/* REGISTRO/EDICIÓN */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-900/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">

@@ -9,7 +9,6 @@ interface ReportesViewProps {
   insumos: Insumo[];
 }
 
-// Componente extraído para evitar re-renderizados innecesarios
 interface TabButtonProps {
   id: string;
   label: string;
@@ -32,9 +31,10 @@ const TabButton: React.FC<TabButtonProps> = ({ id, label, icon: Icon, isActive, 
 );
 
 const ReportesView: React.FC<ReportesViewProps> = ({ lotes, dietas, insumos }) => {
+  //  Controla qué pestaña está activa ('general', 'lotes', etc.)
   const [activeTab, setActiveTab] = useState<string>('general');
 
-  // Cálculos Globales
+  //  Totales generales
   const totalAnimales = lotes.reduce((acc, l) => acc + l.cabezas, 0);
   const valorInventario = insumos.reduce((acc, i) => acc + (i.cantidad_actual * i.costo_kg), 0);
   
@@ -46,13 +46,13 @@ const ReportesView: React.FC<ReportesViewProps> = ({ lotes, dietas, insumos }) =
     return total + (consumoLote * dieta.costo_kg);
   }, 0);
 
-  // Cálculos de Lotes
+  // Agrupación de datos para gráficas 
   const cabezasPorEtapa = lotes.reduce((acc: Record<string, number>, lote) => {
     acc[lote.etapa] = (acc[lote.etapa] || 0) + lote.cabezas;
     return acc;
   }, {});
 
-  // Cálculos de Fórmulas
+  // Estadísticas de fórmulas e inventario
   const costoPromedioDietas = dietas.length > 0 ? (dietas.reduce((acc, d) => acc + d.costo_kg, 0) / dietas.length).toFixed(2) : '0.00';
   const insumosOrdenadosPorValor = [...insumos].sort((a, b) => (b.cantidad_actual * b.costo_kg) - (a.cantidad_actual * a.costo_kg));
 
@@ -85,7 +85,7 @@ const ReportesView: React.FC<ReportesViewProps> = ({ lotes, dietas, insumos }) =
       {/* CONTENEDOR DE PESTAÑAS */}
       <div className="space-y-6">
         
-        {/* 1. RESUMEN GENERAL */}
+        {/* RESUMEN GENERAL */}
         {activeTab === 'general' && (
           <div className="animate-in slide-in-from-bottom-2 duration-300">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -129,7 +129,7 @@ const ReportesView: React.FC<ReportesViewProps> = ({ lotes, dietas, insumos }) =
           </div>
         )}
 
-        {/* 2. REPORTE DE LOTES */}
+        {/* REPORTE DE LOTES */}
         {activeTab === 'lotes' && (
           <div className="animate-in slide-in-from-right-2 duration-300 grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1">
@@ -188,7 +188,7 @@ const ReportesView: React.FC<ReportesViewProps> = ({ lotes, dietas, insumos }) =
           </div>
         )}
 
-        {/* 3. ANÁLISIS DE DIETAS */}
+        {/* ANÁLISIS DE DIETAS */}
         {activeTab === 'formulas' && (
           <div className="animate-in slide-in-from-right-2 duration-300">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -234,7 +234,7 @@ const ReportesView: React.FC<ReportesViewProps> = ({ lotes, dietas, insumos }) =
           </div>
         )}
 
-        {/* 4. VALOR DE INVENTARIO */}
+        {/* VALOR DE INVENTARIO */}
         {activeTab === 'insumos' && (
           <div className="animate-in slide-in-from-right-2 duration-300 grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">

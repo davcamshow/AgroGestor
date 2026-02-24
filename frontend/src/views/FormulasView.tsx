@@ -14,11 +14,13 @@ interface FormulasViewProps {
 }
 
 const FormulasView: React.FC<FormulasViewProps> = ({ dietas, setDietas, insumos, showToast, user }) => {
+  // Control de vista (tarjetas/tabla)
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
   const [selectedDieta, setSelectedDieta] = useState<Dieta | null>(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState<boolean>(false);
   const [formData, setFormData] = useState<Partial<Dieta>>({ id: undefined, nombre: '', objetivo: 'Engorda', estado: 'Activa', ingredientes: [] });
 
+  // Abre el modal para crear (vacío) o editar (con datos)
   const handleOpenForm = (dieta: Dieta | null = null) => {
     setSelectedDieta(null); 
     if (dieta) setFormData(JSON.parse(JSON.stringify(dieta)));
@@ -26,12 +28,14 @@ const FormulasView: React.FC<FormulasViewProps> = ({ dietas, setDietas, insumos,
     setIsFormModalOpen(true);
   };
 
+  // Suma de porcentajes y costo total basado en insumos
   const getPorcentajeTotal = () => (formData.ingredientes || []).reduce((total, ing) => total + (parseFloat(ing.porcentaje as string) || 0), 0);
   const getCostoTotal = () => (formData.ingredientes || []).reduce((total, ing) => {
     const insumo = insumos.find(i => i.id === parseInt(ing.id_insumo as string));
     return total + (insumo ? insumo.costo_kg * ((parseFloat(ing.porcentaje as string)||0)/100) : 0);
   }, 0).toFixed(2);
 
+  // Guardar fórmula (Crear o Actualizar)
   const handleSaveFormula = (e: FormEvent) => {
     e.preventDefault();
     if (getPorcentajeTotal() !== 100) { showToast('El porcentaje total debe ser exactamente 100%', 'error'); return; }
@@ -69,6 +73,7 @@ const FormulasView: React.FC<FormulasViewProps> = ({ dietas, setDietas, insumos,
         </div>
       </div>
 
+      {/* Vista de Tarjetas */}
       {viewMode === 'cards' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {dietas.map(dieta => (
@@ -100,6 +105,7 @@ const FormulasView: React.FC<FormulasViewProps> = ({ dietas, setDietas, insumos,
             </div>
           )}
         </div>
+      //  Vista de Tabla 
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
@@ -134,6 +140,7 @@ const FormulasView: React.FC<FormulasViewProps> = ({ dietas, setDietas, insumos,
         </div>
       )}
 
+      {/* Detalles de visualización */}
       {selectedDieta && (
         <div className="fixed inset-0 bg-gray-900/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200">
@@ -197,6 +204,7 @@ const FormulasView: React.FC<FormulasViewProps> = ({ dietas, setDietas, insumos,
         </div>
       )}
 
+      {/*Formulario de Creación/Edición */}
       {isFormModalOpen && (
         <div className="fixed inset-0 bg-gray-900/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm overflow-y-auto">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col my-auto max-h-[95vh]">

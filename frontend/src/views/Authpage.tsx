@@ -3,6 +3,7 @@ import { Leaf, ArrowRight } from 'lucide-react';
 import { Input } from '../components/Input';
 
 export const AuthPage = ({ onLogin }: { onLogin: () => void }) => {
+  // ESTADO: 'true' muestra Login, 'false' muestra Registro
   const [isLogin, setIsLogin] = useState(true);
 
   return (
@@ -10,7 +11,7 @@ export const AuthPage = ({ onLogin }: { onLogin: () => void }) => {
       {/* Contenedor Principal con Sombra Premium */}
       <div className="relative flex h-full lg:h-[700px] w-full max-w-[1200px] overflow-hidden rounded-[40px] bg-white shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)]">
         
-        {/* PANEL DINÁMICO (VERDE) - Se desliza suavemente */}
+        {/* La clase 'translate-x' mueve este panel de izquierda a derecha según el estado isLogin */}
         <div 
           className={`absolute top-0 left-0 z-40 h-full w-1/2 bg-[#064e3b] p-16 text-white transition-transform duration-700 ease-[cubic-bezier(0.4,0,0.2,1)] flex flex-col justify-between ${
             isLogin ? 'translate-x-0' : 'translate-x-full'
@@ -42,7 +43,6 @@ export const AuthPage = ({ onLogin }: { onLogin: () => void }) => {
           </p>
         </div>
 
-        {/* SECCIÓN IZQUIERDA: REGISTRO (Se revela al deslizar el panel) */}
         <div className="flex w-full lg:w-1/2 flex-col justify-center bg-white px-8 lg:px-20 text-left">
           <div className="w-full max-w-md mx-auto lg:mx-0">
             <h2 className="text-3xl font-bold text-slate-900">Registro de Profesional</h2>
@@ -71,7 +71,7 @@ export const AuthPage = ({ onLogin }: { onLogin: () => void }) => {
           </div>
         </div>
 
-        {/* SECCIÓN DERECHA: LOGIN (Se ve por defecto) */}
+
         <div className="flex w-full lg:w-1/2 flex-col justify-center bg-white px-8 lg:px-20 text-left">
           <div className="w-full max-w-md mx-auto lg:mx-0">
             <h2 className="text-4xl font-extrabold text-slate-900 leading-tight">Bienvenido de nuevo</h2>

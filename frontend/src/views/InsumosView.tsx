@@ -16,20 +16,25 @@ interface InsumosViewProps {
 }
 
 const InsumosView: React.FC<InsumosViewProps> = ({ insumos, setInsumos, showToast }) => {
+  // Búsqueda y Filtros
   const [search, setSearch] = useState<string>('');
   const [filterStatus, setFilterStatus] = useState<string>('Todos los Estados');
   
+  // Modal de Crear/Editar Insumo
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingInsumo, setEditingInsumo] = useState<Insumo | null>(null);
   const [formData, setFormData] = useState<Omit<Insumo, 'id'> & { id?: number }>({ nombre: '', cantidad_actual: 0, stock_minimo: 0, costo_kg: 0 });
 
+  //  Modal de Ajuste Rápido (Entrada/Salida)
   const [isAdjustOpen, setAdjustOpen] = useState<boolean>(false);
   const [currInsumo, setCurrInsumo] = useState<Insumo | null>(null);
   const [adjData, setAdjustData] = useState<{tipo: string, cant: string}>({tipo: 'entrada', cant: ''});
 
+  // CÁLCULOS: KPIs del encabezado
   const valorTotalInventario = insumos.reduce((total, item) => total + (item.cantidad_actual * item.costo_kg), 0);
   const insumosCriticos = insumos.filter(i => i.cantidad_actual < i.stock_minimo).length;
 
+  // LÓGICA: Filtrado de la lista según búsqueda y estado
   const filteredInsumos = insumos.filter(insumo => {
     const matchesSearch = insumo.nombre.toLowerCase().includes(search.toLowerCase());
     const isCritico = insumo.cantidad_actual < insumo.stock_minimo;
@@ -39,6 +44,7 @@ const InsumosView: React.FC<InsumosViewProps> = ({ insumos, setInsumos, showToas
     return matchesSearch && matchesFilter;
   });
 
+  // Funciones para abrir modales y guardar datos
   const handleOpenModal = (insumo: Insumo | null = null) => {
     if (insumo) {
       setEditingInsumo(insumo);
@@ -75,6 +81,7 @@ const InsumosView: React.FC<InsumosViewProps> = ({ insumos, setInsumos, showToas
     setAdjustOpen(true);
   };
 
+  // Ajuste de inventario (Suma o Resta)
   const handleAdjust = (e: FormEvent) => {
     e.preventDefault();
     if (!currInsumo) return;
@@ -111,6 +118,7 @@ const InsumosView: React.FC<InsumosViewProps> = ({ insumos, setInsumos, showToas
         </button>
       </div>
 
+      {/* Tarjetas de Resumen  */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-5">
           <div className="w-14 h-14 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-600 border border-emerald-100/50">
@@ -141,6 +149,7 @@ const InsumosView: React.FC<InsumosViewProps> = ({ insumos, setInsumos, showToas
         </div>
       </div>
 
+      {/* Barra de Búsqueda y Filtros */}
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6">
         <div className="relative w-full sm:w-96">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -166,6 +175,7 @@ const InsumosView: React.FC<InsumosViewProps> = ({ insumos, setInsumos, showToas
         </div>
       </div>
 
+      {/* Tabla de Insumos */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-600">
@@ -218,6 +228,7 @@ const InsumosView: React.FC<InsumosViewProps> = ({ insumos, setInsumos, showToas
         </div>
       </div>
 
+      {/* Formulario Principal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-gray-900/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
@@ -253,6 +264,7 @@ const InsumosView: React.FC<InsumosViewProps> = ({ insumos, setInsumos, showToas
         </div>
       )}
 
+      {/* Ajuste de Stock (Entrada/Salida) */}
       {isAdjustOpen && currInsumo && (
         <div className="fixed inset-0 bg-gray-900/40 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">

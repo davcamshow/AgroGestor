@@ -11,10 +11,11 @@ interface DashboardViewProps {
 }
 
 const DashboardView: React.FC<DashboardViewProps> = ({ user, lotes, dietas, insumos }) => {
+  // calculos generales 
   const totalAnimales = lotes.reduce((acc, lote) => acc + lote.cabezas, 0);
   const dietasActivas = dietas.filter(d => d.estado === 'Activa').length;
   
-  // Costo diario total para el dashboard
+  // calculo costo operativo diario total (Suma del consumo de todos los lotes)
   const costoDiarioTotal = lotes.reduce((total, lote) => {
     if (!lote.id_dieta) return total;
     const dieta = dietas.find(d => d.id === parseInt(lote.id_dieta as string));
@@ -23,6 +24,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ user, lotes, dietas, insu
     return total + (consumoLote * dieta.costo_kg);
   }, 0);
 
+  // promedios y detección de insumos bajos
   const costoPromedio = totalAnimales > 0 ? (costoDiarioTotal / totalAnimales).toFixed(2) : '0.00';
   const insumosCriticosY_bajos = insumos.filter(i => i.cantidad_actual <= i.stock_minimo * 1.2).sort((a, b) => a.cantidad_actual - b.cantidad_actual);
 
@@ -38,6 +40,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ user, lotes, dietas, insu
         </button>
       </div>
 
+      {/* tarjetas de Métricas  */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
           <h3 className="text-gray-500 text-sm font-medium mb-3">Total de Animales</h3>
@@ -77,6 +80,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ user, lotes, dietas, insu
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Lista de Dietas Recientes */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
           <div className="flex justify-between items-center p-6 pb-2">
             <h2 className="text-lg font-bold text-gray-900">Dietas y Formulaciones Recientes</h2>
@@ -102,6 +106,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ user, lotes, dietas, insu
           </div>
         </div>
 
+        {/* Alertas de Inventario */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm flex flex-col">
           <div className="flex items-center gap-2 p-6 pb-2">
             <AlertTriangle className="w-5 h-5 text-amber-500" />
