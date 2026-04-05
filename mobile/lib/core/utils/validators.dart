@@ -17,7 +17,7 @@ class PasswordValidator {
       return 'Debe contener número';
     }
     if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) {
-      return 'Debe contener carácter especial (!@#$%^&*)';
+      return 'Debe contener carácter especial (!@#\$%^&*)';
     }
     return null;
   }
