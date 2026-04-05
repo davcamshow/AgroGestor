@@ -1,0 +1,47 @@
+name: agrogestor
+description: "AgroGestor - Gestión agrícola para ganadería (Android + iOS)"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.2.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # HTTP client with interceptors for JWT
+  dio: ^5.4.3
+
+  # Secure token storage
+  flutter_secure_storage: ^9.0.0
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Navigation
+  go_router: ^13.2.3
+
+  # Charts
+  fl_chart: ^0.68.0
+
+  # JSON serialization
+  json_annotation: ^4.9.0
+
+  # Misc
+  intl: ^0.19.0
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.9
+  json_serializable: ^6.8.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/

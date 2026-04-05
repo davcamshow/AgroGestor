@@ -1,55 +1,130 @@
-﻿from rest_framework.decorators import api_view
+﻿from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework import viewsets, generics
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.contrib.auth.models import User as AuthUser
 
 #Importaciones para los viewsets en /api/
-from rest_framework import viewsets
-from .serializer import UsuarioSerializer, ProveedorSerializer, CategoriaInsumoSerializer, InsumoSerializer, MovimientoInventarioSerializer, DietaSerializer, DietaInsumoSerializer, LoteSerializer, PesajeLoteSerializer, AlimentacionDiariaSerializer
+from .serializer import UsuarioSerializer, ProveedorSerializer, CategoriaInsumoSerializer, InsumoSerializer, MovimientoInventarioSerializer, DietaSerializer, DietaInsumoSerializer, LoteSerializer, PesajeLoteSerializer, AlimentacionDiariaSerializer, RegisterSerializer, UserProfileSerializer
 from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria
 
 @api_view(['GET'])
 def health_check(request):
     return Response({
-        'status': 'ok', 
+        'status': 'ok',
         'message': '¡AgroGestor backend funcionando!'
     })
 
-# ViewSets para cada modelo
-class UsuarioViewSet(viewsets.ModelViewSet):
-    queryset = Usuario.objects.all()
-    serializer_class = UsuarioSerializer
+# Auth views
+class RegisterView(generics.CreateAPIView):
+    queryset = AuthUser.objects.all()
+    permission_classes = (AllowAny,)
+    serializer_class = RegisterSerializer
 
+
+@api_view(['GET', 'PUT', 'PATCH'])
+@permission_classes([IsAuthenticated])
+def me_view(request):
+    """Returns and updates the current user's profile."""
+    try:
+        perfil = request.user.perfil
+    except Usuario.DoesNotExist:
+        return Response({'error': 'Profile not found'}, status=404)
+
+    if request.method == 'GET':
+        serializer = UserProfileSerializer(perfil)
+        return Response(serializer.data)
+    elif request.method in ['PUT', 'PATCH']:
+        partial = request.method == 'PATCH'
+        serializer = UserProfileSerializer(perfil, data=request.data, partial=partial)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+# ViewSets para cada modelo
 class ProveedorViewSet(viewsets.ModelViewSet):
-    queryset = Proveedor.objects.all()
     serializer_class = ProveedorSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Proveedor.objects.filter(usuario=self.request.user.perfil)
+
+    def perform_create(self, serializer):
+        serializer.save(usuario=self.request.user.perfil)
+
 
 class CategoriaInsumoViewSet(viewsets.ModelViewSet):
-    queryset = CategoriaInsumo.objects.all()
     serializer_class = CategoriaInsumoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return CategoriaInsumo.objects.filter(usuario=self.request.user.perfil)
+
+    def perform_create(self, serializer):
+        serializer.save(usuario=self.request.user.perfil)
+
 
 class InsumoViewSet(viewsets.ModelViewSet):
-    queryset = Insumo.objects.all()
     serializer_class = InsumoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Insumo.objects.filter(usuario=self.request.user.perfil)
+
+    def perform_create(self, serializer):
+        serializer.save(usuario=self.request.user.perfil)
+
 
 class MovimientoInventarioViewSet(viewsets.ModelViewSet):
-    queryset = MovimientoInventario.objects.all()
     serializer_class = MovimientoInventarioSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return MovimientoInventario.objects.filter(insumo__usuario=self.request.user.perfil)
+
 
 class DietaViewSet(viewsets.ModelViewSet):
-    queryset = Dieta.objects.all()
     serializer_class = DietaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Dieta.objects.filter(usuario=self.request.user.perfil)
+
+    def perform_create(self, serializer):
+        serializer.save(usuario=self.request.user.perfil)
+
 
 class DietaInsumoViewSet(viewsets.ModelViewSet):
-    queryset = DietaInsumo.objects.all()
     serializer_class = DietaInsumoSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return DietaInsumo.objects.filter(dieta__usuario=self.request.user.perfil)
+
 
 class LoteViewSet(viewsets.ModelViewSet):
-    queryset = Lote.objects.all()
     serializer_class = LoteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Lote.objects.filter(usuario=self.request.user.perfil)
+
+    def perform_create(self, serializer):
+        serializer.save(usuario=self.request.user.perfil)
+
 
 class PesajeLoteViewSet(viewsets.ModelViewSet):
-    queryset = PesajeLote.objects.all()
     serializer_class = PesajeLoteSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return PesajeLote.objects.filter(lote__usuario=self.request.user.perfil)
+
 
 class AlimentacionDiariaViewSet(viewsets.ModelViewSet):
-    queryset = AlimentacionDiaria.objects.all()
     serializer_class = AlimentacionDiariaSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return AlimentacionDiaria.objects.filter(lote__usuario=self.request.user.perfil)

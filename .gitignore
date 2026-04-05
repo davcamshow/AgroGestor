@@ -27,3 +27,6 @@ Thumbs.db
 # ===== IDE =====
 .vscode/
 .idea/
+
+# ===== CLAUDE CODE =====
+.claude/

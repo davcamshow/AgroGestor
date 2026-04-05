@@ -1,8 +1,16 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.contrib.auth.models import User as AuthUser
 
 # 1. Modelo para Usarios
 class Usuario(models.Model):
+    auth_user = models.OneToOneField(
+        AuthUser,
+        on_delete=models.CASCADE,
+        related_name='perfil',
+        null=True,
+        blank=True
+    )
 
     MONEDAS = [
         ('MXN', 'Peso Mexicano'),
