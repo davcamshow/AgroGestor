@@ -61,9 +61,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             _emailController.text,
             _passwordController.text,
           );
-      print('[LOGIN] Login exitoso, navegando a dashboard');
-      if (mounted) {
-        context.go('/dashboard');
+
+      // Verificar si el login fue exitoso
+      final authState = ref.read(authProvider);
+      if (authState.status == AuthStatus.authenticated) {
+        print('[LOGIN] Login exitoso, navegando a dashboard');
+        if (mounted) {
+          context.go('/dashboard');
+        }
+      } else {
+        // Login falló
+        print('[LOGIN] Login falló - credenciales incorrectas');
+        if (mounted) {
+          _showErrorDialog('Usuario o contraseña incorrectos');
+        }
       }
     } catch (e) {
       print('[LOGIN] Error: $e');
