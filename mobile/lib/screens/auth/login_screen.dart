@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/auth/auth_state.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/validators.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -16,7 +17,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
   bool _isLoading = false;
-  String? _errorMessage;
+  bool _obscurePassword = true;
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -32,11 +34,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('❌ Error'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Aceptar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _handleLogin() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
 
     try {
       print('[LOGIN] Iniciando login...');
@@ -50,18 +67,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     } catch (e) {
       print('[LOGIN] Error: $e');
-      setState(() {
-        _errorMessage = e.toString();
-      });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        _showErrorDialog('Usuario o contraseña incorrectos');
       }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -108,78 +120,80 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         boxShadow: [AppTheme.mediumShadow],
                       ),
                       padding: const EdgeInsets.all(28),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          // Email field
-                          Text(
-                            'Email',
-                            style: Theme.of(context)
-                                .textTheme.labelLarge
-                                ?.copyWith(color: AppTheme.primary),
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: _emailController,
-                            decoration: InputDecoration(
-                              hintText: 'tu@email.com',
-                              prefixIcon: const Icon(Icons.email_outlined),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            // Email field
+                            Text(
+                              'Email',
+                              style: Theme.of(context)
+                                  .textTheme.labelLarge
+                                  ?.copyWith(color: AppTheme.primary),
                             ),
-                            keyboardType: TextInputType.emailAddress,
-                          ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.5),
-                          const SizedBox(height: 20),
-                          // Password field
-                          Text(
-                            'Contraseña',
-                            style: Theme.of(context)
-                                .textTheme.labelLarge
-                                ?.copyWith(color: AppTheme.primary),
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: _passwordController,
-                            decoration: InputDecoration(
-                              hintText: '••••••••',
-                              prefixIcon: const Icon(Icons.lock_outlined),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _emailController,
+                              decoration: InputDecoration(
+                                hintText: 'tu@email.com',
+                                prefixIcon: const Icon(Icons.email_outlined),
+                              ),
+                              keyboardType: TextInputType.emailAddress,
+                              validator: EmailValidator.validateEmail,
+                            ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.5),
+                            const SizedBox(height: 20),
+                            // Password field
+                            Text(
+                              'Contraseña',
+                              style: Theme.of(context)
+                                  .textTheme.labelLarge
+                                  ?.copyWith(color: AppTheme.primary),
                             ),
-                            obscureText: true,
-                          ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.5),
-                          const SizedBox(height: 24),
-                          // Error message
-                          if (_errorMessage != null)
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppTheme.error.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                                border:
-                                    Border.all(color: AppTheme.error, width: 1),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _passwordController,
+                              decoration: InputDecoration(
+                                hintText: '••••••••',
+                                prefixIcon: const Icon(Icons.lock_outlined),
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscurePassword
+                                        ? Icons.visibility_outlined
+                                        : Icons.visibility_off_outlined,
+                                  ),
+                                  onPressed: () {
+                                    setState(() =>
+                                        _obscurePassword = !_obscurePassword);
+                                  },
+                                ),
                               ),
-                              child: Text(
-                                _errorMessage!,
-                                style: TextStyle(color: AppTheme.error),
-                              ),
-                            ).animate().fadeIn(),
-                          const SizedBox(height: 24),
-                          // Login button
-                          ElevatedButton(
-                            onPressed: _isLoading ? null : _handleLogin,
-                            child: _isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                          Colors.white),
-                                    ),
-                                  )
-                                : const Text('Iniciar sesión'),
-                          )
-                              .animate()
-                              .fadeIn(delay: 500.ms)
-                              .slideY(begin: 0.5),
-                        ],
+                              obscureText: _obscurePassword,
+                              validator: (value) => value?.isEmpty ?? true
+                                  ? 'La contraseña es requerida'
+                                  : null,
+                            ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.5),
+                            const SizedBox(height: 24),
+                            // Login button
+                            ElevatedButton(
+                              onPressed: _isLoading ? null : _handleLogin,
+                              child: _isLoading
+                                  ? const SizedBox(
+                                      height: 20,
+                                      width: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                            Colors.white),
+                                      ),
+                                    )
+                                  : const Text('Iniciar sesión'),
+                            )
+                                .animate()
+                                .fadeIn(delay: 500.ms)
+                                .slideY(begin: 0.5),
+                          ],
+                        ),
                       ),
                     ).animate().fadeIn(duration: 800.ms).slideY(begin: 0.3),
                     const SizedBox(height: 24),
