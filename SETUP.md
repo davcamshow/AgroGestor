@@ -19,6 +19,7 @@ python manage.py runserver 0.0.0.0:8000
 
 **Notas:**
 - Las credenciales de Supabase están en `.env` (no commitar)
+- El '.env' debe de ir en la carpeta AGROGESTOR/backend
 - Si es primera vez, ejecutar: `python manage.py createsuperuser`
 - El servidor debe estar en `http://0.0.0.0:8000`
 
