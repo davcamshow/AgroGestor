@@ -9,6 +9,7 @@ from .serializer import UsuarioSerializer, ProveedorSerializer, CategoriaInsumoS
 from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def health_check(request):
     return Response({
         'status': 'ok',
