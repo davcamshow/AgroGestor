@@ -85,7 +85,7 @@ class DashboardScreen extends ConsumerWidget {
                                         value: totalAnimales.toString(),
                                         icon: Icons.pets,
                                         color: AppTheme.secondary,
-                                      ),
+                                      ).animate().fadeIn(delay: 100.ms).slideX(begin: 0.3),
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
@@ -94,18 +94,9 @@ class DashboardScreen extends ConsumerWidget {
                                         value: gestantes.toString(),
                                         icon: Icons.favorite,
                                         color: AppTheme.accent,
-                                      ),
+                                      ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.3),
                                     ),
                                   ],
-                                ).animate().staggered(
-                                  (index) => Animate(
-                                    effects: [
-                                      FadeEffect(delay: (index * 100).ms),
-                                      SlideEffect(
-                                          begin: const Offset(0.3, 0),
-                                          delay: (index * 100).ms),
-                                    ],
-                                  ),
                                 ),
                                 const SizedBox(height: 16),
                                 KpiCard(

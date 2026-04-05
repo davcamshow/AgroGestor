@@ -39,17 +39,25 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     try {
+      print('[LOGIN] Iniciando login...');
       await ref.read(authProvider.notifier).login(
             _emailController.text,
             _passwordController.text,
           );
+      print('[LOGIN] Login exitoso, navegando a dashboard');
       if (mounted) {
         context.go('/dashboard');
       }
     } catch (e) {
+      print('[LOGIN] Error: $e');
       setState(() {
         _errorMessage = e.toString();
       });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
     } finally {
       setState(() {
         _isLoading = false;

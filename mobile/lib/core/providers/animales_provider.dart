@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/animal.dart';
 import '../api/api_client.dart';
 
-class AnimalesNotifier extends AsyncNotifier<List<Animal>> {
+class AnimalesNotifier extends AutoDisposeAsyncNotifier<List<Animal>> {
   @override
   Future<List<Animal>> build() async {
     final client = ref.read(apiClientProvider);

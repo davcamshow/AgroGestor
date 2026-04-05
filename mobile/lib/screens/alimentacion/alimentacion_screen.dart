@@ -157,9 +157,9 @@ class AlimentacionScreen extends ConsumerWidget {
                           final minimo =
                               double.tryParse(insumo.stockMinimoKg) ?? 0;
                           final alerta = actual < minimo;
-                          final progreso = minimo > 0
-                              ? (actual / minimo).clamp(0, 1)
-                              : 1;
+                          final progreso = (minimo > 0
+                              ? (actual / minimo).clamp(0.0, 1.0)
+                              : 1.0);
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),

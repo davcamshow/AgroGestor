@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/registro_peso.dart';
 import '../api/api_client.dart';
 
-class RegistrosPesoNotifier extends AsyncNotifier<List<RegistroPeso>> {
+class RegistrosPesoNotifier extends AutoDisposeAsyncNotifier<List<RegistroPeso>> {
   @override
   Future<List<RegistroPeso>> build() async {
     final client = ref.read(apiClientProvider);

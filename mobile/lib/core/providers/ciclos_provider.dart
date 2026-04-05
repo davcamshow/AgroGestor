@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/ciclo_reproductivo.dart';
 import '../api/api_client.dart';
 
-class CiclosNotifier extends AsyncNotifier<List<CicloReproductivo>> {
+class CiclosNotifier extends AutoDisposeAsyncNotifier<List<CicloReproductivo>> {
   @override
   Future<List<CicloReproductivo>> build() async {
     final client = ref.read(apiClientProvider);

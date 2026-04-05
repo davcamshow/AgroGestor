@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_state.dart';
+import '../../core/auth/auth_repository.dart';
 import '../../core/theme/app_theme.dart';
 
 class ConfiguracionScreen extends ConsumerStatefulWidget {

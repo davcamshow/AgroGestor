@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/providers/animales_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/loading_shimmer.dart';
+import 'animal_form_sheet.dart';
 
 class AnimalesScreen extends ConsumerWidget {
   const AnimalesScreen({super.key});
@@ -100,7 +101,12 @@ class AnimalesScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Abrir modal de crear animal
+          showModalBottomSheet(
+            context: context,
+            isScrollControlled: true,
+            backgroundColor: Colors.transparent,
+            builder: (_) => const AnimalFormSheet(),
+          );
         },
         child: const Icon(Icons.add),
       ),

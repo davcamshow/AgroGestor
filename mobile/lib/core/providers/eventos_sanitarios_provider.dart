@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/evento_sanitario.dart';
 import '../api/api_client.dart';
 
-class EventosSanitariosNotifier extends AsyncNotifier<List<EventoSanitario>> {
+class EventosSanitariosNotifier extends AutoDisposeAsyncNotifier<List<EventoSanitario>> {
   @override
   Future<List<EventoSanitario>> build() async {
     final client = ref.read(apiClientProvider);
