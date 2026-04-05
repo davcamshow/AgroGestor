@@ -52,6 +52,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       state = AuthState.authenticated(user);
     } catch (e) {
       state = AuthState.unauthenticated(e.toString());
+      rethrow;
     }
   }
 
@@ -70,9 +71,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
         telefono: telefono,
         rolProfesional: rolProfesional,
       );
-      await login(email, password);
+      // No hacer login automático - dejar que el usuario vaya al login
+      // state sigue siendo unauthenticated
     } catch (e) {
       state = AuthState.unauthenticated(e.toString());
+      rethrow;
     }
   }
 
