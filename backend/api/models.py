@@ -239,3 +239,166 @@ class AlimentacionDiaria(models.Model):
         indexes = [
             models.Index(fields=['fecha']),
         ]
+
+
+# 5. Modelos Bovion - Gestión de animales individuales
+class Animal(models.Model):
+    SEXOS = [('M', 'Macho'), ('H', 'Hembra')]
+    ESTADOS = [
+        ('activo', 'Activo'),
+        ('vendido', 'Vendido'),
+        ('muerto', 'Muerto'),
+    ]
+
+    usuario = models.ForeignKey(
+        Usuario,
+        on_delete=models.CASCADE,
+        related_name='animales'
+    )
+    lote = models.ForeignKey(
+        Lote,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='animales'
+    )
+    madre = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='crias_madre'
+    )
+    padre = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='crias_padre'
+    )
+
+    numero_arete = models.CharField(max_length=100)
+    nombre = models.CharField(max_length=100, blank=True, null=True)
+    raza = models.CharField(max_length=100, blank=True, null=True)
+    sexo = models.CharField(max_length=1, choices=SEXOS)
+    fecha_nacimiento = models.DateField(null=True, blank=True)
+    color = models.CharField(max_length=50, blank=True, null=True)
+    peso_nacimiento_kg = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='activo')
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('usuario', 'numero_arete')
+        indexes = [
+            models.Index(fields=['usuario']),
+            models.Index(fields=['lote']),
+        ]
+
+    def __str__(self):
+        return f"{self.numero_arete} - {self.nombre or 'Sin nombre'}"
+
+
+class CicloReproductivo(models.Model):
+    TIPOS_SERVICIO = [
+        ('natural', 'Monta Natural'),
+        ('inseminacion_artificial', 'Inseminación Artificial'),
+    ]
+    ESTADOS = [
+        ('en_servicio', 'En Servicio'),
+        ('gestante', 'Gestante'),
+        ('pario', 'Parió'),
+        ('fallida', 'Fallida'),
+        ('descartada', 'Descartada'),
+    ]
+
+    animal = models.ForeignKey(
+        Animal,
+        on_delete=models.CASCADE,
+        related_name='ciclos_reproductivos'
+    )
+    tipo_servicio = models.CharField(max_length=30, choices=TIPOS_SERVICIO)
+    fecha_servicio = models.DateField()
+    dias_gestacion = models.IntegerField(default=283)
+    fecha_estimada_parto = models.DateField(null=True, blank=True)
+    fecha_parto_real = models.DateField(null=True, blank=True)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='en_servicio')
+    notas = models.TextField(blank=True, null=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['animal']),
+            models.Index(fields=['estado']),
+        ]
+
+    def save(self, *args, **kwargs):
+        if self.fecha_servicio and not self.fecha_estimada_parto:
+            from datetime import timedelta
+            self.fecha_estimada_parto = self.fecha_servicio + timedelta(days=self.dias_gestacion)
+        super().save(*args, **kwargs)
+
+
+class RegistroPeso(models.Model):
+    animal = models.ForeignKey(
+        Animal,
+        on_delete=models.CASCADE,
+        related_name='registros_peso'
+    )
+    fecha_pesaje = models.DateField()
+    peso_kg = models.DecimalField(max_digits=8, decimal_places=2)
+    condicion_corporal = models.IntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)],
+        null=True,
+        blank=True
+    )
+    ganancia_diaria_kg = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True)
+    notas = models.TextField(blank=True, null=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['animal']),
+            models.Index(fields=['fecha_pesaje']),
+        ]
+        ordering = ['-fecha_pesaje']
+
+    def save(self, *args, **kwargs):
+        # Calcular GMD respecto al pesaje anterior
+        pesaje_anterior = RegistroPeso.objects.filter(
+            animal=self.animal,
+            fecha_pesaje__lt=self.fecha_pesaje
+        ).order_by('-fecha_pesaje').first()
+        if pesaje_anterior:
+            dias = (self.fecha_pesaje - pesaje_anterior.fecha_pesaje).days
+            if dias > 0:
+                self.ganancia_diaria_kg = (self.peso_kg - pesaje_anterior.peso_kg) / dias
+        super().save(*args, **kwargs)
+
+
+class EventoSanitario(models.Model):
+    TIPOS = [
+        ('vacunacion', 'Vacunación'),
+        ('desparasitacion', 'Desparasitación'),
+        ('tratamiento', 'Tratamiento'),
+        ('cirugia', 'Cirugía'),
+    ]
+
+    animal = models.ForeignKey(
+        Animal,
+        on_delete=models.CASCADE,
+        related_name='eventos_sanitarios'
+    )
+    tipo = models.CharField(max_length=20, choices=TIPOS)
+    producto = models.CharField(max_length=255)
+    dosis = models.CharField(max_length=100, blank=True, null=True)
+    fecha_aplicacion = models.DateField()
+    proxima_aplicacion = models.DateField(null=True, blank=True)
+    veterinario = models.CharField(max_length=255, blank=True, null=True)
+    costo = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    notas = models.TextField(blank=True, null=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['animal']),
+            models.Index(fields=['fecha_aplicacion']),
+            models.Index(fields=['proxima_aplicacion']),
+        ]
+        ordering = ['-fecha_aplicacion']

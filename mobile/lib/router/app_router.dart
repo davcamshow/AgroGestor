@@ -12,6 +12,10 @@ import '../screens/formulas/formula_builder_screen.dart';
 import '../screens/insumos/insumos_screen.dart';
 import '../screens/reportes/reportes_screen.dart';
 import '../screens/configuracion/configuracion_screen.dart';
+import '../screens/animales/animales_screen.dart';
+import '../screens/reproduccion/reproduccion_screen.dart';
+import '../screens/salud/salud_screen.dart';
+import '../screens/alimentacion/alimentacion_screen.dart';
 import '../widgets/app_shell.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -46,57 +50,104 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'register',
         builder: (_, __) => const RegisterScreen(),
       ),
-      ShellRoute(
-        builder: (context, state, child) => AppShell(child: child),
-        routes: [
-          GoRoute(
-            path: '/dashboard',
-            name: 'dashboard',
-            builder: (_, __) => const DashboardScreen(),
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) =>
+            AppShell(navigationShell: navigationShell),
+        branches: [
+          // Tab 0: Dashboard/Home
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/dashboard',
+                name: 'dashboard',
+                builder: (_, __) => const DashboardScreen(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/lotes',
-            name: 'lotes',
-            builder: (_, __) => const LotesScreen(),
+          // Tab 1: Animales
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/animales',
+                name: 'animales',
+                builder: (_, __) => const AnimalesScreen(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/lotes/new',
-            name: 'lote-new',
-            builder: (_, __) => const LoteFormScreen(),
+          // Tab 2: Reproducción
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/reproduccion',
+                name: 'reproduccion',
+                builder: (_, __) => const ReproduccionScreen(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/lotes/:id/edit',
-            name: 'lote-edit',
-            builder: (context, state) => LoteFormScreen(
-              loteId: state.pathParameters['id'],
-            ),
+          // Tab 3: Alimentación
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/alimentacion',
+                name: 'alimentacion',
+                builder: (_, __) => const AlimentacionScreen(),
+              ),
+            ],
           ),
-          GoRoute(
-            path: '/formulas',
-            name: 'formulas',
-            builder: (_, __) => const FormulasScreen(),
-          ),
-          GoRoute(
-            path: '/formulas/builder',
-            name: 'formula-builder',
-            builder: (_, __) => const FormulaBuilderScreen(),
-          ),
-          GoRoute(
-            path: '/insumos',
-            name: 'insumos',
-            builder: (_, __) => const InsumosScreen(),
-          ),
-          GoRoute(
-            path: '/reportes',
-            name: 'reportes',
-            builder: (_, __) => const ReportesScreen(),
-          ),
-          GoRoute(
-            path: '/configuracion',
-            name: 'configuracion',
-            builder: (_, __) => const ConfiguracionScreen(),
+          // Tab 4: Salud
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/salud',
+                name: 'salud',
+                builder: (_, __) => const SaludScreen(),
+              ),
+            ],
           ),
         ],
+      ),
+      // Rutas secundarias (fuera del shell)
+      GoRoute(
+        path: '/lotes',
+        name: 'lotes',
+        builder: (_, __) => const LotesScreen(),
+      ),
+      GoRoute(
+        path: '/lotes/new',
+        name: 'lote-new',
+        builder: (_, __) => const LoteFormScreen(),
+      ),
+      GoRoute(
+        path: '/lotes/:id/edit',
+        name: 'lote-edit',
+        builder: (context, state) => LoteFormScreen(
+          loteId: state.pathParameters['id'],
+        ),
+      ),
+      GoRoute(
+        path: '/formulas',
+        name: 'formulas',
+        builder: (_, __) => const FormulasScreen(),
+      ),
+      GoRoute(
+        path: '/formulas/builder',
+        name: 'formula-builder',
+        builder: (_, __) => const FormulaBuilderScreen(),
+      ),
+      GoRoute(
+        path: '/insumos',
+        name: 'insumos',
+        builder: (_, __) => const InsumosScreen(),
+      ),
+      GoRoute(
+        path: '/reportes',
+        name: 'reportes',
+        builder: (_, __) => const ReportesScreen(),
+      ),
+      GoRoute(
+        path: '/configuracion',
+        name: 'configuracion',
+        builder: (_, __) => const ConfiguracionScreen(),
       ),
     ],
   );

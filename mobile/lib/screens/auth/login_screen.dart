@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/auth/auth_state.dart';
+import '../../core/theme/app_theme.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -58,124 +60,153 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const SizedBox(height: 60),
-                Text(
-                  'AgroGestor',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: const Color(0xFF064e3b),
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Gestión Agrícola',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.grey[600],
-                      ),
-                ),
-                const SizedBox(height: 60),
-                if (_errorMessage != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red[50],
-                      border: Border.all(color: Colors.red),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _errorMessage!,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ),
-                if (_errorMessage != null) const SizedBox(height: 16),
-                TextField(
-                  controller: _emailController,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _passwordController,
-                  decoration: InputDecoration(
-                    labelText: 'Contraseña',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  obscureText: true,
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _handleLogin,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF064e3b),
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation(Colors.white),
-                          ),
-                        )
-                      : const Text(
-                          'Iniciar Sesión',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(child: Container(height: 1, color: Colors.grey[300])),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: Text(
-                        'o',
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                    ),
-                    Expanded(child: Container(height: 1, color: Colors.grey[300])),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () => context.go('/register'),
-                  child: Text(
-                    '¿No tienes cuenta? Regístrate',
-                    style: TextStyle(
-                      color: const Color(0xFF064e3b),
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              ],
+      body: Stack(
+        children: [
+          // Fondo con gradiente
+          Container(
+            decoration: const BoxDecoration(
+              gradient: AppTheme.headerGradient,
             ),
           ),
-        ),
+          SafeArea(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Logo/Título
+                    Text(
+                      'Bovion',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context)
+                          .textTheme.displayLarge
+                          ?.copyWith(color: Colors.white),
+                    ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.3),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Gestor Ganadero Bovina',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context)
+                          .textTheme.titleMedium
+                          ?.copyWith(color: Colors.white70),
+                    ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.3),
+                    const SizedBox(height: 60),
+                    // Card blanca con formulario
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [AppTheme.mediumShadow],
+                      ),
+                      padding: const EdgeInsets.all(28),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Email field
+                          Text(
+                            'Email',
+                            style: Theme.of(context)
+                                .textTheme.labelLarge
+                                ?.copyWith(color: AppTheme.primary),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _emailController,
+                            decoration: InputDecoration(
+                              hintText: 'tu@email.com',
+                              prefixIcon: const Icon(Icons.email_outlined),
+                            ),
+                            keyboardType: TextInputType.emailAddress,
+                          ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.5),
+                          const SizedBox(height: 20),
+                          // Password field
+                          Text(
+                            'Contraseña',
+                            style: Theme.of(context)
+                                .textTheme.labelLarge
+                                ?.copyWith(color: AppTheme.primary),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _passwordController,
+                            decoration: InputDecoration(
+                              hintText: '••••••••',
+                              prefixIcon: const Icon(Icons.lock_outlined),
+                            ),
+                            obscureText: true,
+                          ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.5),
+                          const SizedBox(height: 24),
+                          // Error message
+                          if (_errorMessage != null)
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: AppTheme.error.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                                border:
+                                    Border.all(color: AppTheme.error, width: 1),
+                              ),
+                              child: Text(
+                                _errorMessage!,
+                                style: TextStyle(color: AppTheme.error),
+                              ),
+                            ).animate().fadeIn(),
+                          const SizedBox(height: 24),
+                          // Login button
+                          ElevatedButton(
+                            onPressed: _isLoading ? null : _handleLogin,
+                            child: _isLoading
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                          Colors.white),
+                                    ),
+                                  )
+                                : const Text('Iniciar sesión'),
+                          )
+                              .animate()
+                              .fadeIn(delay: 500.ms)
+                              .slideY(begin: 0.5),
+                        ],
+                      ),
+                    ).animate().fadeIn(duration: 800.ms).slideY(begin: 0.3),
+                    const SizedBox(height: 24),
+                    // Register link
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '¿No tienes cuenta? ',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.white,
+                              ),
+                        ),
+                        GestureDetector(
+                          onTap: () => context.go('/register'),
+                          child: Text(
+                            'Registrate',
+                            style:
+                                Theme.of(context).textTheme.labelLarge?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                          ),
+                        ),
+                      ],
+                    )
+                        .animate()
+                        .fadeIn(delay: 700.ms)
+                        .slideY(begin: 0.5),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

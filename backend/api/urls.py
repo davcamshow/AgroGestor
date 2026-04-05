@@ -14,6 +14,11 @@ router.register(r'dieta-insumos', views.DietaInsumoViewSet, basename='dieta-insu
 router.register(r'lotes', views.LoteViewSet, basename='lote')
 router.register(r'pesajes-lotes', views.PesajeLoteViewSet, basename='pesaje-lote')
 router.register(r'alimentacion-diaria', views.AlimentacionDiariaViewSet, basename='alimentacion-diaria')
+# Bovion routes
+router.register(r'animales', views.AnimalViewSet, basename='animal')
+router.register(r'ciclos-reproductivos', views.CicloReproductivoViewSet, basename='ciclo-reproductivo')
+router.register(r'registros-peso', views.RegistroPesoViewSet, basename='registro-peso')
+router.register(r'eventos-sanitarios', views.EventoSanitarioViewSet, basename='evento-sanitario')
 
 urlpatterns = [
     path('', include(router.urls)),

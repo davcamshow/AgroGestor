@@ -1,29 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'router/app_router.dart';
+import 'core/theme/app_theme.dart';
 
 void main() {
-  runApp(const ProviderScope(child: AgroGestorApp()));
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: AppTheme.primary,
+      statusBarIconBrightness: Brightness.light,
+    ),
+  );
+  runApp(const ProviderScope(child: BovionApp()));
 }
 
-class AgroGestorApp extends ConsumerWidget {
-  const AgroGestorApp({super.key});
+class BovionApp extends ConsumerWidget {
+  const BovionApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(
-      title: 'AgroGestor',
+      title: 'Bovion',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF064e3b),
-          primary: const Color(0xFF064e3b),
-          secondary: const Color(0xFF10b981),
-        ),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.theme,
       routerConfig: router,
     );
   }

@@ -2,7 +2,8 @@ from rest_framework import serializers
 from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.validators import UniqueValidator
-from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria
+from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario
+from django.utils import timezone
 
 # Auth Serializers
 class RegisterSerializer(serializers.Serializer):
@@ -99,4 +100,51 @@ class PesajeLoteSerializer(serializers.ModelSerializer):
 class AlimentacionDiariaSerializer(serializers.ModelSerializer):
     class Meta:
         model = AlimentacionDiaria
+        fields = '__all__'
+
+
+# Serializers Bovion
+class AnimalSerializer(serializers.ModelSerializer):
+    edad_dias = serializers.SerializerMethodField()
+    ultimo_peso_kg = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Animal
+        fields = '__all__'
+        read_only_fields = ('usuario', 'fecha_registro')
+
+    def get_edad_dias(self, obj):
+        if obj.fecha_nacimiento:
+            return (timezone.now().date() - obj.fecha_nacimiento).days
+        return None
+
+    def get_ultimo_peso_kg(self, obj):
+        ultimo = obj.registros_peso.first()
+        return str(ultimo.peso_kg) if ultimo else None
+
+
+class CicloReproductivoSerializer(serializers.ModelSerializer):
+    dias_restantes_parto = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CicloReproductivo
+        fields = '__all__'
+
+    def get_dias_restantes_parto(self, obj):
+        if obj.fecha_estimada_parto and obj.estado == 'gestante':
+            delta = obj.fecha_estimada_parto - timezone.now().date()
+            return delta.days
+        return None
+
+
+class RegistroPesoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RegistroPeso
+        fields = '__all__'
+        read_only_fields = ('ganancia_diaria_kg',)
+
+
+class EventoSanitarioSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EventoSanitario
         fields = '__all__'

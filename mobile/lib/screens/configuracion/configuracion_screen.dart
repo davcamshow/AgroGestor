@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_state.dart';
-import '../../core/auth/auth_repository.dart';
+import '../../core/theme/app_theme.dart';
 
 class ConfiguracionScreen extends ConsumerStatefulWidget {
   const ConfiguracionScreen({super.key});
@@ -12,44 +14,31 @@ class ConfiguracionScreen extends ConsumerStatefulWidget {
 
 class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
   late TextEditingController _nameController;
-  late TextEditingController _emailController;
   late TextEditingController _phoneController;
   late TextEditingController _ranchNameController;
-  late TextEditingController _ranchAddressController;
-  String _selectedRole = 'Médico Veterinario';
-  String _selectedCurrency = 'MXN';
-  String _selectedUnit = 'kg';
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController();
-    _emailController = TextEditingController();
     _phoneController = TextEditingController();
     _ranchNameController = TextEditingController();
-    _ranchAddressController = TextEditingController();
 
-    final user = ref.read(authProvider).user;
-    if (user != null) {
-      _nameController.text = user.nombre_completo;
-      _emailController.text = user.email;
-      _phoneController.text = user.telefono ?? '';
-      _ranchNameController.text = user.nombre_rancho ?? '';
-      _ranchAddressController.text = user.direccion_rancho ?? '';
-      _selectedRole = user.rol_profesional ?? 'Médico Veterinario';
-      _selectedCurrency = user.moneda;
-      _selectedUnit = user.unidad_peso;
+    final authState = ref.read(authProvider);
+    if (authState.user != null) {
+      _nameController.text = authState.user!.nombre_completo;
+      _phoneController.text = authState.user!.telefono ?? '';
+      _ranchNameController.text =
+          authState.user!.nombre_rancho ?? '';
     }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
     _phoneController.dispose();
     _ranchNameController.dispose();
-    _ranchAddressController.dispose();
     super.dispose();
   }
 
@@ -57,21 +46,21 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
     setState(() => _isLoading = true);
     try {
       await ref.read(authRepositoryProvider).updateProfile(
-            nombreCompleto: _nameController.text,
-            telefono: _phoneController.text,
-            rolProfesional: _selectedRole,
-            nombreRancho: _ranchNameController.text,
-            direccionRancho: _ranchAddressController.text,
-            moneda: _selectedCurrency,
-            unidadPeso: _selectedUnit,
-          );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Perfil actualizado')),
+        nombreCompleto: _nameController.text,
+        telefono: _phoneController.text,
+        nombreRancho: _ranchNameController.text,
       );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Perfil actualizado')),
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -79,168 +68,198 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final user = authState.user;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Configuración'),
-        backgroundColor: const Color(0xFF064e3b),
+        elevation: 0,
       ),
       body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'Información Personal',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: 'Nombre Completo',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _emailController,
-                enabled: false,
-                decoration: InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _phoneController,
-                decoration: InputDecoration(
-                  labelText: 'Teléfono',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                keyboardType: TextInputType.phone,
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: _selectedRole,
-                decoration: InputDecoration(
-                  labelText: 'Rol Profesional',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                items: [
-                  'Médico Veterinario',
-                  'Ing. Zootecnista',
-                  'Productor Ganadero',
-                  'Estudiante',
-                ]
-                    .map((role) => DropdownMenuItem(
-                          value: role,
-                          child: Text(role),
-                        ))
-                    .toList(),
-                onChanged: (value) =>
-                    setState(() => _selectedRole = value ?? 'Médico Veterinario'),
-              ),
-              const SizedBox(height: 32),
-              Text(
-                'Información del Rancho',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _ranchNameController,
-                decoration: InputDecoration(
-                  labelText: 'Nombre del Rancho',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _ranchAddressController,
-                decoration: InputDecoration(
-                  labelText: 'Dirección',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 32),
-              Text(
-                'Preferencias',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _selectedCurrency,
-                decoration: InputDecoration(
-                  labelText: 'Moneda',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                items: ['MXN', 'USD']
-                    .map((curr) => DropdownMenuItem(
-                          value: curr,
-                          child: Text(curr),
-                        ))
-                    .toList(),
-                onChanged: (value) =>
-                    setState(() => _selectedCurrency = value ?? 'MXN'),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: _selectedUnit,
-                decoration: InputDecoration(
-                  labelText: 'Unidad de Peso',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                items: ['kg', 'lb']
-                    .map((unit) => DropdownMenuItem(
-                          value: unit,
-                          child: Text(unit),
-                        ))
-                    .toList(),
-                onChanged: (value) =>
-                    setState(() => _selectedUnit = value ?? 'kg'),
-              ),
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: _isLoading ? null : _handleSave,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF064e3b),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: _isLoading
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Avatar y nombre
+            Center(
+              child: Column(
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      gradient: AppTheme.primaryGradient,
+                      borderRadius: BorderRadius.circular(40),
+                    ),
+                    child: Center(
+                      child: Text(
+                        user?.nombre_completo[0].toUpperCase() ?? 'B',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
                         ),
-                      )
-                    : const Text(
-                        'Guardar',
-                        style: TextStyle(color: Colors.white),
                       ),
+                    ),
+                  )
+                      .animate()
+                      .fadeIn(duration: 600.ms)
+                      .scale(),
+                  const SizedBox(height: 12),
+                  Text(
+                    user?.nombre_completo ?? 'Usuario',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  )
+                      .animate()
+                      .fadeIn(delay: 200.ms)
+                      .slideY(begin: 0.2),
+                  const SizedBox(height: 4),
+                  Text(
+                    user?.email ?? 'email@example.com',
+                    style: Theme.of(context)
+                        .textTheme.bodySmall
+                        ?.copyWith(color: Colors.grey),
+                  )
+                      .animate()
+                      .fadeIn(delay: 300.ms)
+                      .slideY(begin: 0.2),
+                ],
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 32),
+            // Sección Perfil
+            _buildSectionTitle(context, 'Perfil', Icons.person),
+            const SizedBox(height: 12),
+            _buildTextField(
+              controller: _nameController,
+              label: 'Nombre Completo',
+              icon: Icons.person_outline,
+            ).animate().fadeIn(delay: 400.ms).slideX(begin: 0.3),
+            const SizedBox(height: 12),
+            _buildTextField(
+              controller: _phoneController,
+              label: 'Teléfono',
+              icon: Icons.phone_outlined,
+            ).animate().fadeIn(delay: 500.ms).slideX(begin: 0.3),
+            const SizedBox(height: 24),
+            // Sección Rancho
+            _buildSectionTitle(context, 'Mi Rancho', Icons.agriculture),
+            const SizedBox(height: 12),
+            _buildTextField(
+              controller: _ranchNameController,
+              label: 'Nombre del Rancho',
+              icon: Icons.business_outlined,
+            ).animate().fadeIn(delay: 600.ms).slideX(begin: 0.3),
+            const SizedBox(height: 24),
+            // Botón guardar
+            ElevatedButton(
+              onPressed: _isLoading ? null : _handleSave,
+              child: _isLoading
+                  ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text('Guardar cambios'),
+            )
+                .animate()
+                .fadeIn(delay: 700.ms)
+                .slideY(begin: 0.3),
+            const SizedBox(height: 24),
+            // Divider
+            Container(height: 1, color: Colors.grey[300]),
+            const SizedBox(height: 24),
+            // Sección Información
+            _buildSectionTitle(context, 'Información', Icons.info),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildInfoRow('Versión', 'Bovion 1.0.0'),
+                  const SizedBox(height: 12),
+                  _buildInfoRow('Backend', '192.168.0.104:8000'),
+                  const SizedBox(height: 12),
+                  _buildInfoRow('ID Usuario', (user?.id ?? 'N/A').toString()),
+                ],
+              ),
+            )
+                .animate()
+                .fadeIn(delay: 800.ms)
+                .slideY(begin: 0.3),
+            const SizedBox(height: 24),
+            // Botón logout
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: AppTheme.error, width: 2),
+                  foregroundColor: AppTheme.error,
+                ),
+                onPressed: () {
+                  ref.read(authProvider.notifier).logout();
+                  context.go('/login');
+                },
+                child: const Text('Cerrar sesión'),
+              ),
+            )
+                .animate()
+                .fadeIn(delay: 900.ms)
+                .slideY(begin: 0.3),
+          ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSectionTitle(
+    BuildContext context,
+    String title,
+    IconData icon,
+  ) {
+    return Row(
+      children: [
+        Icon(icon, color: AppTheme.primary, size: 20),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+  }) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: const TextStyle(color: Colors.grey)),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+      ],
     );
   }
 }
