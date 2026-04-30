@@ -2,6 +2,7 @@
 from rest_framework import routers
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from . import views
+from .views_google import GoogleAuthView
 
 router = routers.DefaultRouter()
 
@@ -28,4 +29,5 @@ urlpatterns = [
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/register/', views.RegisterView.as_view(), name='register'),
     path('auth/me/', views.me_view, name='me'),
+    path('auth/google/', GoogleAuthView.as_view(), name='google-auth'),
 ]

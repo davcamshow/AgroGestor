@@ -9,36 +9,36 @@ class AppShell extends ConsumerWidget {
 
   const AppShell({required this.navigationShell, super.key});
 
+  String _getTitle(int index) {
+    switch (index) {
+      case 0:
+        return 'Inicio';
+      case 1:
+        return 'Animales';
+      case 2:
+        return 'Reproducción';
+      case 3:
+        return 'Alimentación';
+      case 4:
+        return 'Salud';
+      default:
+        return '';
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final user = authState.user;
-    final nombreRancho = user?.nombre_rancho ?? 'Bovion';
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(nombreRancho),
-        backgroundColor: AppTheme.primary,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.go('/configuracion'),
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              ref.read(authProvider.notifier).logout();
-              context.go('/login');
-            },
-          ),
-        ],
-      ),
       body: navigationShell,
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: navigationShell.currentIndex,
         onTap: navigationShell.goBranch,
+        selectedItemColor: AppTheme.primary,
+        unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_rounded),

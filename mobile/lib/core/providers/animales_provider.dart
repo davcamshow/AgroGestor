@@ -10,10 +10,11 @@ class AnimalesNotifier extends AutoDisposeAsyncNotifier<List<Animal>> {
     return (response.data as List).map((j) => Animal.fromJson(j)).toList();
   }
 
-  Future<void> createAnimal(Map<String, dynamic> data) async {
+  Future<int> createAnimal(Map<String, dynamic> data) async {
     final client = ref.read(apiClientProvider);
-    await client.dio.post('animales/', data: data);
+    final response = await client.dio.post('animales/', data: data);
     ref.invalidateSelf();
+    return response.data['id'] as int;
   }
 
   Future<void> updateAnimal(int id, Map<String, dynamic> data) async {

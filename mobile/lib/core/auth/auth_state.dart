@@ -83,6 +83,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
     await _repo.logout();
     state = AuthState.unauthenticated();
   }
+
+  Future<void> loginWithToken(String token) async {
+    try {
+      final user = await _repo.loginWithToken(token);
+      state = AuthState.authenticated(user);
+    } catch (e) {
+      state = AuthState.unauthenticated(e.toString());
+      rethrow;
+    }
+  }
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/providers/animales_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/loading_shimmer.dart';
@@ -16,8 +17,20 @@ class AnimalesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Animales'),
+        title: const Text('Animales', style: TextStyle(color: Colors.white)),
+        backgroundColor: AppTheme.primary,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.white.withOpacity(0.2),
+              child: const Icon(Icons.person, color: Colors.white, size: 18),
+            ),
+            onPressed: () => context.go('/configuracion'),
+          ),
+        ],
       ),
       body: animalesAsync.when(
         loading: () => ListView.builder(
@@ -72,6 +85,7 @@ class AnimalesScreen extends ConsumerWidget {
                         boxShadow: [AppTheme.softShadow],
                       ),
                       child: ListTile(
+                        onTap: () => context.push('/animales/${animal.id}'),
                         leading: CircleAvatar(
                           backgroundColor: AppTheme.secondary.withOpacity(0.2),
                           child: Text(

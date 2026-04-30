@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/providers/ciclos_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/loading_shimmer.dart';
@@ -17,9 +18,24 @@ class ReproduccionScreen extends ConsumerWidget {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Reproducción'),
+          title: const Text('Reproducción', style: TextStyle(color: Colors.white)),
+          backgroundColor: AppTheme.primary,
           elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
+          actions: [
+            IconButton(
+              icon: CircleAvatar(
+                radius: 16,
+                backgroundColor: Colors.white.withOpacity(0.2),
+                child: const Icon(Icons.person, color: Colors.white, size: 18),
+              ),
+              onPressed: () => context.go('/configuracion'),
+            ),
+          ],
           bottom: const TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
             tabs: [
               Tab(text: 'Activos'),
               Tab(text: 'Historial'),

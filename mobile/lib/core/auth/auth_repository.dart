@@ -113,4 +113,15 @@ class AuthRepository {
   Future<void> logout() async {
     await _tokenStorage.clearTokens();
   }
+
+  Future<Usuario> loginWithToken(String token) async {
+    try {
+      print('[AUTH] Guardando token de Google...');
+      await _tokenStorage.saveTokens(token, token);
+      return await getProfile();
+    } catch (e) {
+      print('[AUTH] Error con token: $e');
+      throw Exception('Token login failed: $e');
+    }
+  }
 }

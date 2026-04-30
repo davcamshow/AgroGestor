@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/auth/auth_state.dart';
+import '../../core/auth/google_auth.dart';
+import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/validators.dart';
 
@@ -80,6 +82,35 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       print('[LOGIN] Error: $e');
       if (mounted) {
         _showErrorDialog('Usuario o contraseña incorrectos');
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isLoading = true);
+    try {
+      final apiClient = ref.read(apiClientProvider);
+      final googleAuth = ref.read(googleAuthProvider);
+      final token = await googleAuth.signInWithGoogle(apiClient);
+      if (token == null) {
+        if (mounted) {
+          _showErrorDialog('No se pudo iniciar sesión con Google');
+        }
+        return;
+      }
+      
+      // Guardar token y navegar al dashboard
+      await ref.read(authProvider.notifier).loginWithToken(token);
+      if (mounted) {
+        context.go('/dashboard');
+      }
+    } catch (e) {
+      if (mounted) {
+        _showErrorDialog('Error con Google: $e');
       }
     } finally {
       if (mounted) {
@@ -203,6 +234,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 .animate()
                                 .fadeIn(delay: 500.ms)
                                 .slideY(begin: 0.5),
+                            const SizedBox(height: 16),
+                            // Divider
+                            Row(
+                              children: [
+                                const Expanded(child: Divider()),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  child: Text('o', style: TextStyle(color: Colors.grey[600])),
+                                ),
+                                const Expanded(child: Divider()),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            // Google Sign-In button
+                            OutlinedButton.icon(
+                              onPressed: _isLoading ? null : _handleGoogleSignIn,
+                              icon: const Icon(Icons.login, size: 24),
+                              label: const Text('Continuar con Google'),
+                              style: OutlinedButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                              ),
+                            ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.5),
                           ],
                         ),
                       ),

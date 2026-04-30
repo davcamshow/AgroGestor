@@ -29,6 +29,10 @@ class Animal {
   final int? edadDias;
   @JsonKey(name: 'ultimo_peso_kg')
   final String? ultimoPesoKg;
+  @JsonKey(name: 'ultimo_peso')
+  final double? ultimoPeso;
+  @JsonKey(name: 'fecha_ultimo_peso')
+  final DateTime? fechaUltimoPeso;
 
   const Animal({
     required this.id,
@@ -47,6 +51,8 @@ class Animal {
     required this.fechaRegistro,
     this.edadDias,
     this.ultimoPesoKg,
+    this.ultimoPeso,
+    this.fechaUltimoPeso,
   });
 
   factory Animal.fromJson(Map<String, dynamic> json) => _$AnimalFromJson(json);

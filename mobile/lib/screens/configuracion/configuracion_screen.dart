@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_state.dart';
 import '../../core/auth/auth_repository.dart';
 import '../../core/theme/app_theme.dart';
@@ -74,6 +75,10 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.go('/dashboard'),
+        ),
         title: const Text('Configuración'),
         elevation: 0,
       ),

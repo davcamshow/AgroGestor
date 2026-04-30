@@ -13,6 +13,7 @@ import '../screens/insumos/insumos_screen.dart';
 import '../screens/reportes/reportes_screen.dart';
 import '../screens/configuracion/configuracion_screen.dart';
 import '../screens/animales/animales_screen.dart';
+import '../screens/animales/animal_detail_screen.dart';
 import '../screens/reproduccion/reproduccion_screen.dart';
 import '../screens/salud/salud_screen.dart';
 import '../screens/alimentacion/alimentacion_screen.dart';
@@ -71,6 +72,13 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/animales',
                 name: 'animales',
                 builder: (_, __) => const AnimalesScreen(),
+              ),
+              GoRoute(
+                path: '/animales/:id',
+                name: 'animal-detail',
+                builder: (context, state) => AnimalDetailScreen(
+                  animalId: state.pathParameters['id']!,
+                ),
               ),
             ],
           ),

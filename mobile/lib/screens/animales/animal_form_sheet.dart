@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:go_router/go_router.dart';
 import 'dart:io';
+import '../../core/models/animal.dart';
 import '../../core/providers/animales_provider.dart';
+import '../../core/services/bovino_recognition_service.dart';
 import '../../core/theme/app_theme.dart';
 
 class AnimalFormSheet extends ConsumerStatefulWidget {
-  const AnimalFormSheet({super.key});
+  final Animal? animalToEdit;
+
+  const AnimalFormSheet({super.key, this.animalToEdit});
 
   @override
   ConsumerState<AnimalFormSheet> createState() => _AnimalFormSheetState();
@@ -19,12 +24,14 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
   late TextEditingController _nombreController;
   late TextEditingController _razaController;
   late TextEditingController _pesoController;
+  late TextEditingController _colorController;
 
   String _sexoSeleccionado = 'M';
   DateTime? _fechaNacimiento;
   File? _imagenSeleccionada;
   bool _isLoading = false;
   final ImagePicker _imagePicker = ImagePicker();
+  bool get _isEditing => widget.animalToEdit != null;
 
   @override
   void initState() {
@@ -33,6 +40,18 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
     _nombreController = TextEditingController();
     _razaController = TextEditingController();
     _pesoController = TextEditingController();
+    _colorController = TextEditingController();
+
+    if (_isEditing) {
+      final a = widget.animalToEdit!;
+      _areteController.text = a.numeroArete;
+      _nombreController.text = a.nombre ?? '';
+      _razaController.text = a.raza ?? '';
+      _colorController.text = a.color ?? '';
+      _pesoController.text = a.pesoNacimientoKg?.toString() ?? '';
+      _sexoSeleccionado = a.sexo;
+      _fechaNacimiento = a.fechaNacimiento;
+    }
   }
 
   @override
@@ -41,6 +60,7 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
     _nombreController.dispose();
     _razaController.dispose();
     _pesoController.dispose();
+    _colorController.dispose();
     super.dispose();
   }
 
@@ -50,9 +70,41 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
           await _imagePicker.pickImage(source: ImageSource.camera);
       if (foto != null) {
         setState(() => _imagenSeleccionada = File(foto.path));
+        _analizarImagen(File(foto.path));
       }
     } catch (e) {
       print('Error al tomar foto: $e');
+    }
+  }
+
+  Future<void> _analizarImagen(File imageFile) async {
+    try {
+      final recognitionService = BovinoRecognitionService();
+      final result = await recognitionService.recognizeBovino(imageFile);
+      
+      setState(() {
+        if (result['color_detectado'] != null && result['color_detectado'] != 'No determinado') {
+          _colorController.text = result['color_detectado']!;
+        }
+        if (result['raza_sugerida'] != null) {
+          _razaController.text = result['raza_sugerida']!;
+        }
+      });
+      
+      if (mounted && result.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${result['mensaje']}'),
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'Aceptar',
+              onPressed: () {},
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error en análisis: $e');
     }
   }
 
@@ -76,27 +128,63 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
     try {
       final data = {
         'numero_arete': _areteController.text,
-        'nombre': _nombreController.text.isNotEmpty
-            ? _nombreController.text
-            : null,
+        'nombre': _nombreController.text.isNotEmpty ? _nombreController.text : null,
         'raza': _razaController.text.isNotEmpty ? _razaController.text : null,
+        'color': _colorController.text.isNotEmpty ? _colorController.text : null,
         'sexo': _sexoSeleccionado,
-        'peso_nacimiento_kg':
-            _pesoController.text.isNotEmpty ? _pesoController.text : null,
+        'peso_nacimiento_kg': _pesoController.text.isNotEmpty ? _pesoController.text : null,
         'fecha_nacimiento': _fechaNacimiento?.toIso8601String().split('T')[0],
         'estado': 'activo',
       };
 
-      await ref.read(animalesNotifierProvider.notifier).createAnimal(data);
+      late final int animalId;
+      if (_isEditing) {
+        animalId = widget.animalToEdit!.id;
+        await ref.read(animalesNotifierProvider.notifier).updateAnimal(animalId, data);
+      } else {
+        animalId = await ref.read(animalesNotifierProvider.notifier).createAnimal(data);
+      }
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Animal agregado correctamente'),
-            duration: Duration(seconds: 2),
-          ),
-        );
+        
+        if (!_isEditing) {
+          final shouldNavigate = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (ctx) => AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.check_circle, color: AppTheme.success),
+                  SizedBox(width: 8),
+                  Text('¡Animal guardado!'),
+                ],
+              ),
+              content: const Text('¿Deseas ver los detalles del animal o seguir agregando más?'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  child: const Text('Agregar otro'),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  child: const Text('Ver detalles'),
+                ),
+              ],
+            ),
+          );
+          
+          if (shouldNavigate == true && mounted) {
+            context.push('/animales/$animalId');
+          }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('✅ Animal actualizado'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
       }
     } catch (e) {
       setState(() => _isLoading = false);
@@ -194,6 +282,17 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                           )
                               .animate()
                               .fadeIn(delay: 300.ms)
+                              .slideX(begin: 0.3),
+                          const SizedBox(height: 16),
+                          // Color
+                          _buildTextField(
+                            controller: _colorController,
+                            label: 'Color',
+                            icon: Icons.palette,
+                            hint: 'Ej: Negro, Blanco, Cafe, etc.',
+                          )
+                              .animate()
+                              .fadeIn(delay: 320.ms)
                               .slideX(begin: 0.3),
                           const SizedBox(height: 16),
                           // Sexo
