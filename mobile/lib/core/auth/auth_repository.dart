@@ -22,9 +22,6 @@ class AuthRepository {
 
   Future<Usuario> login(String email, String password) async {
     try {
-      print('[AUTH] Intentando login con email: $email');
-      print('[AUTH] URL: ${_apiClient.dio.options.baseUrl}auth/login/');
-
       final response = await _apiClient.dio.post(
         'auth/login/',
         data: {
@@ -33,8 +30,6 @@ class AuthRepository {
         },
       );
 
-      print('[AUTH] Login exitoso. Response: ${response.data}');
-
       final accessToken = response.data['access'];
       final refreshToken = response.data['refresh'];
 
@@ -42,10 +37,8 @@ class AuthRepository {
 
       return await getProfile();
     } catch (e) {
-      print('[AUTH] Error en login: $e');
       if (e is DioException) {
         print('[AUTH] Error response: ${e.response?.data}');
-        print('[AUTH] Error statusCode: ${e.response?.statusCode}');
       }
       throw Exception('Login failed: $e');
     }
@@ -112,16 +105,5 @@ class AuthRepository {
 
   Future<void> logout() async {
     await _tokenStorage.clearTokens();
-  }
-
-  Future<Usuario> loginWithToken(String token) async {
-    try {
-      print('[AUTH] Guardando token de Google...');
-      await _tokenStorage.saveTokens(token, token);
-      return await getProfile();
-    } catch (e) {
-      print('[AUTH] Error con token: $e');
-      throw Exception('Token login failed: $e');
-    }
   }
 }

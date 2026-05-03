@@ -141,16 +141,15 @@ class DashboardScreen extends ConsumerWidget {
             ).animate().fadeIn(delay: 700.ms),
             const SizedBox(height: 12),
             animalesAsync.when(
-              loading: () => ListView.builder(
-                itemCount: 3,
-                itemBuilder: (_, __) => Container(
+              loading: () => Column(
+                children: List.generate(3, (_) => Container(
                   height: 70,
                   margin: const EdgeInsets.only(bottom: 12),
                   decoration: BoxDecoration(
                     color: Colors.grey[200],
                     borderRadius: BorderRadius.circular(12),
                   ),
-                ),
+                )),
               ),
               error: (err, _) => Center(child: Text('Error: $err')),
               data: (animales) {

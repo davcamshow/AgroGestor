@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/usuario.dart';
+import '../api/api_client.dart';
 import 'auth_repository.dart';
+import 'google_auth.dart';
+import 'token_storage.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
@@ -27,8 +30,11 @@ class AuthState {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthRepository _repo;
+  final GoogleAuthService _googleAuth;
+  final ApiClient _apiClient;
+  final TokenStorage _tokenStorage;
 
-  AuthNotifier(this._repo) : super(AuthState.unknown()) {
+  AuthNotifier(this._repo, this._googleAuth, this._apiClient, this._tokenStorage) : super(AuthState.unknown()) {
     _checkInitialAuth();
   }
 
@@ -84,10 +90,50 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = AuthState.unauthenticated();
   }
 
-  Future<void> loginWithToken(String token) async {
+  Future<void> loginWithGoogle() async {
     try {
-      final user = await _repo.loginWithToken(token);
-      state = AuthState.authenticated(user);
+      final result = await _googleAuth.signInWithGoogle();
+      
+      if (result.user != null && result.user!.email != null && result.googleIdToken != null) {
+        String? djangoAccessToken;
+        
+        try {
+          final response = await _apiClient.dio.post(
+            'auth/google/',
+            data: {'id_token': result.googleIdToken},
+          );
+          final accessToken = response.data['access'] as String?;
+          final refreshToken = response.data['refresh'] as String?;
+          
+          if (accessToken != null && refreshToken != null) {
+            djangoAccessToken = accessToken;
+            await _tokenStorage.saveTokens(accessToken, refreshToken);
+          }
+        } catch (e) {
+          print('Error sincronizando con Django: $e');
+        }
+        
+        // Intentar obtener perfil si tenemos token de Django
+        if (djangoAccessToken != null) {
+          try {
+            final profile = await _repo.getProfile();
+            state = AuthState.authenticated(profile);
+            return;
+          } catch (e) {
+            print('Error obteniendo perfil: $e');
+          }
+        }
+        
+        // Si no tenemos token de Django, crear estado con usuario de Supabase
+        // El usuario podrá usar la app pero necesitará configurar perfil después
+        state = AuthState.authenticated(
+          Usuario(
+            id: 0,
+            email: result.user!.email ?? '',
+            nombre_completo: result.user!.userMetadata?['full_name'] ?? result.user!.email?.split('@')[0] ?? '',
+          ),
+        );
+      }
     } catch (e) {
       state = AuthState.unauthenticated(e.toString());
       rethrow;
@@ -96,5 +142,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier(ref.read(authRepositoryProvider));
+  return AuthNotifier(
+    ref.read(authRepositoryProvider),
+    ref.read(googleAuthProvider),
+    ref.read(apiClientProvider),
+    ref.read(tokenStorageProvider),
+  );
 });
