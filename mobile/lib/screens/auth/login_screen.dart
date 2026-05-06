@@ -27,7 +27,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _passwordController = TextEditingController();
   }
 
-  @override
+@override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -38,7 +38,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('❌ Error'),
+        title: Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.red[700]),
+            const SizedBox(width: 8),
+            const Text('Error'),
+          ],
+        ),
         content: Text(message),
         actions: [
           TextButton(

@@ -20,6 +20,8 @@ router.register(r'animales', views.AnimalViewSet, basename='animal')
 router.register(r'ciclos-reproductivos', views.CicloReproductivoViewSet, basename='ciclo-reproductivo')
 router.register(r'registros-peso', views.RegistroPesoViewSet, basename='registro-peso')
 router.register(r'eventos-sanitarios', views.EventoSanitarioViewSet, basename='evento-sanitario')
+router.register(r'auditoria-login', views.AuditoriaLoginViewSet, basename='auditoria-login')
+router.register(r'nacimientos', views.RegistroNacimientoViewSet, basename='nacimiento')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -30,4 +32,8 @@ urlpatterns = [
     path('auth/register/', views.RegisterView.as_view(), name='register'),
     path('auth/me/', views.me_view, name='me'),
     path('auth/google/', GoogleAuthView.as_view(), name='google-auth'),
+    # KPIs y Reports
+    path('kpis/reproductivos/', views.kpis_reproductivos, name='kpis-reproductivos'),
+    path('arbol-genealogico/<int:animal_id>/', views.arbol_genealogico, name='arbol-genealogico'),
+    path('reporte/consumo/', views.reporte_consumo, name='reporte-consumo'),
 ]

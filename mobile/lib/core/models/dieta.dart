@@ -18,6 +18,11 @@ class Dieta {
 
   @JsonKey(name: 'ultima_modificacion')
   final DateTime ultimaModificacion;
+  @JsonKey(name: 'tipo_formulacion')
+  final String? tipoFormulacion;
+  @JsonKey(name: 'cantidad_kg_cabeza')
+  final String? cantidadKgCabeza;
+  final String? periodicidad;
 
   const Dieta({
     required this.id,
@@ -28,6 +33,9 @@ class Dieta {
     required this.costoEstimadoKg,
     required this.fechaCreacion,
     required this.ultimaModificacion,
+    this.tipoFormulacion,
+    this.cantidadKgCabeza,
+    this.periodicidad,
   });
 
   factory Dieta.fromJson(Map<String, dynamic> json) => _$DietaFromJson(json);

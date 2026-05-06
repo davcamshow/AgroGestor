@@ -33,6 +33,11 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
   final ImagePicker _imagePicker = ImagePicker();
   bool get _isEditing => widget.animalToEdit != null;
 
+  // Campos de reproducción
+  DateTime? _fechaUltimoParto;
+  int _partosCount = 0;
+  int? _diasLactancia;
+
   @override
   void initState() {
     super.initState();
@@ -51,6 +56,9 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
       _pesoController.text = a.pesoNacimientoKg?.toString() ?? '';
       _sexoSeleccionado = a.sexo;
       _fechaNacimiento = a.fechaNacimiento;
+      _fechaUltimoParto = a.fechaUltimoParto;
+      _partosCount = a.partosCount ?? 0;
+      _diasLactancia = a.diasLactancia;
     }
   }
 
@@ -135,6 +143,9 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
         'peso_nacimiento_kg': _pesoController.text.isNotEmpty ? _pesoController.text : null,
         'fecha_nacimiento': _fechaNacimiento?.toIso8601String().split('T')[0],
         'estado': 'activo',
+        'fecha_ultimo_parto': _fechaUltimoParto?.toIso8601String().split('T')[0],
+        'partos_count': _partosCount > 0 ? _partosCount : null,
+        'dias_lactancia': (_diasLactancia ?? 0) > 0 ? _diasLactancia : null,
       };
 
       late final int animalId;
@@ -391,6 +402,103 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                               .fadeIn(delay: 450.ms)
                               .slideX(begin: 0.3),
                           const SizedBox(height: 28),
+                          // Sección Reproducción
+                          if (_sexoSeleccionado == 'M') ...[
+                            const Text(
+                              'Datos de Reproducción',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            // Fecha último parto
+                            const Text('Fecha Último Parto'),
+                            const SizedBox(height: 8),
+                            InkWell(
+                              onTap: () async {
+                                final picked = await showDatePicker(
+                                  context: context,
+                                  initialDate: _fechaUltimoParto ?? DateTime.now(),
+                                  firstDate: DateTime(2020),
+                                  lastDate: DateTime.now(),
+                                );
+                                if (picked != null) {
+                                  setState(() => _fechaUltimoParto = picked);
+                                }
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey[300]!),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 12),
+                                      child: Text(
+                                        _fechaUltimoParto != null
+                                            ? _fechaUltimoParto.toString().split(' ')[0]
+                                            : 'Seleccionar fecha',
+                                        style: TextStyle(
+                                          color: _fechaUltimoParto != null
+                                              ? Colors.black
+                                              : Colors.grey[600],
+                                        ),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 12),
+                                      child: Icon(Icons.calendar_today, color: Colors.grey[600]),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            // Contador de partos
+                            Row(
+                              children: [
+                                const Expanded(
+                                  child: Text('Número de Partos'),
+                                ),
+                                IconButton(
+                                  onPressed: () {
+                                    if (_partosCount > 0) {
+                                      setState(() => _partosCount--);
+                                    }
+                                  },
+                                  icon: const Icon(Icons.remove_circle_outline),
+                                ),
+                                Text(
+                                  '$_partosCount',
+                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                ),
+                                IconButton(
+                                  onPressed: () {
+                                    setState(() => _partosCount++);
+                                  },
+                                  icon: const Icon(Icons.add_circle_outline),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            // Días de lactancia
+                            TextFormField(
+                              initialValue: _diasLactancia?.toString() ?? '',
+                              decoration: const InputDecoration(
+                                labelText: 'Días de Lactancia',
+                                hintText: 'Ej: 70',
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (value) {
+                                _diasLactancia = int.tryParse(value);
+                              },
+                            ),
+                            const SizedBox(height: 20),
+                          ],
                           // Botón guardar
                           SizedBox(
                             width: double.infinity,
