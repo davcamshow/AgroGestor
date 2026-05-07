@@ -17,7 +17,18 @@ import '../screens/animales/animal_detail_screen.dart';
 import '../screens/reproduccion/reproduccion_screen.dart';
 import '../screens/salud/salud_screen.dart';
 import '../screens/alimentacion/alimentacion_screen.dart';
+import '../screens/alimentacion/calculadora_screen.dart';
+import '../screens/reproduccion/reproduccion_screen.dart';
+import '../screens/reproduccion/registro_nacimiento_screen.dart';
+import '../screens/reproduccion/kpis_reproduccion_screen.dart';
+import '../screens/reproduccion/arbol_genealogico_screen.dart';
+import '../screens/reproduccion/calculadora_ia_screen.dart';
+import '../screens/reproduccion/temporadas_screen.dart';
+import '../screens/alimentacion/calculadora_screen.dart';
+import '../screens/alimentacion/reporte_consumo_screen.dart';
+import '../screens/alimentacion/alertas_stock_screen.dart';
 import '../widgets/app_shell.dart';
+
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
@@ -85,21 +96,65 @@ final routerProvider = Provider<GoRouter>((ref) {
           // Tab 2: Reproducción
           StatefulShellBranch(
             routes: [
-              GoRoute(
-                path: '/reproduccion',
-                name: 'reproduccion',
-                builder: (_, __) => const ReproduccionScreen(),
-              ),
+GoRoute(
+        path: '/reproduccion',
+        name: 'reproduccion',
+        builder: (_, __) => const ReproduccionScreen(),
+      ),
+      GoRoute(
+        path: '/reproduccion/nacimiento',
+        name: 'registro-nacimiento',
+        builder: (context, state) => RegistroNacimientoScreen(
+          cicloId: state.uri.queryParameters['ciclo'],
+        ),
+      ),
+      GoRoute(
+        path: '/reproduccion/kpis',
+        name: 'kpis-reproduccion',
+        builder: (_, __) => const KPIsReproduccionScreen(),
+      ),
+      GoRoute(
+        path: '/reproduccion/arbol/:animalId',
+        name: 'arbol-genealogico',
+        builder: (context, state) => ArbolGenealogicoScreen(
+          animalId: int.parse(state.pathParameters['animalId']!),
+        ),
+      ),
+      GoRoute(
+        path: '/reproduccion/calculadora-ia',
+        name: 'calculadora-ia',
+        builder: (_, __) => const CalculadoraIAScreen(),
+      ),
+      GoRoute(
+        path: '/reproduccion/temporadas',
+        name: 'temporadas',
+        builder: (_, __) => const TemporadasScreen(),
+      ),
             ],
           ),
           // Tab 3: Alimentación
           StatefulShellBranch(
             routes: [
-              GoRoute(
-                path: '/alimentacion',
-                name: 'alimentacion',
-                builder: (_, __) => const AlimentacionScreen(),
-              ),
+GoRoute(
+        path: '/alimentacion',
+        name: 'alimentacion',
+        builder: (_, __) => const AlimentacionScreen(),
+      ),
+      GoRoute(
+        path: '/alimentacion/calculadora',
+        name: 'calculadora',
+        builder: (_, __) => const CalculadoraScreen(),
+      ),
+      GoRoute(
+        path: '/alimentacion/reporte',
+        name: 'reporte-consumo',
+        builder: (_, __) => const ReporteConsumoScreen(),
+      ),
+      GoRoute(
+        path: '/alimentacion/alertas',
+        name: 'alertas-stock',
+        builder: (_, __) => const AlertasStockScreen(),
+      ),
             ],
           ),
           // Tab 4: Salud

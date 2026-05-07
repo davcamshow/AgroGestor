@@ -24,6 +24,21 @@ class ReproduccionScreen extends ConsumerWidget {
           iconTheme: const IconThemeData(color: Colors.white),
           actions: [
             IconButton(
+              icon: const Icon(Icons.calculate, color: Colors.white),
+              onPressed: () => context.push('/reproduccion/calculadora-ia'),
+              tooltip: 'Calculadora de IA',
+            ),
+            IconButton(
+              icon: const Icon(Icons.calendar_month, color: Colors.white),
+              onPressed: () => context.push('/reproduccion/temporadas'),
+              tooltip: 'Panel de Temporadas',
+            ),
+            IconButton(
+              icon: const Icon(Icons.analytics, color: Colors.white),
+              onPressed: () => context.push('/reproduccion/kpis'),
+              tooltip: 'KPIs Reproductivos',
+            ),
+            IconButton(
               icon: CircleAvatar(
                 radius: 16,
                 backgroundColor: Colors.white.withOpacity(0.2),

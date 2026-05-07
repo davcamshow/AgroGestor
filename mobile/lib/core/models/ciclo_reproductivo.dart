@@ -20,6 +20,10 @@ class CicloReproductivo {
   final String? notas;
   @JsonKey(name: 'dias_restantes_parto')
   final int? diasRestantesParto;
+  final String? formato;
+  final String? temporada;
+  @JsonKey(name: 'fecha_destete')
+  final DateTime? fechaDestete;
 
   const CicloReproductivo({
     required this.id,
@@ -32,6 +36,9 @@ class CicloReproductivo {
     required this.estado,
     this.notas,
     this.diasRestantesParto,
+    this.formato,
+    this.temporada,
+    this.fechaDestete,
   });
 
   factory CicloReproductivo.fromJson(Map<String, dynamic> json) =>

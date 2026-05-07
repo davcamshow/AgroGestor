@@ -20,6 +20,15 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
   String _selectedStage = 'Engorda';
   int? _selectedDiet;
   bool _isLoading = false;
+  String? _validationError;
+
+  static const Map<String, int> CAPACIDADES_MAX = {
+    'Destete': 50,
+    'Crecimiento': 100,
+    'Engorda': 200,
+    'Produccion': 150,
+    'Vigilancia': 30,
+  };
 
   @override
   void initState() {
@@ -37,21 +46,58 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
     super.dispose();
   }
 
+  void _validateCapacity(String value) {
+    if (value.isEmpty) {
+      setState(() => _validationError = null);
+      return;
+    }
+    final count = int.tryParse(value);
+    if (count == null) {
+      setState(() => _validationError = 'Ingrese un número válido');
+      return;
+    }
+    final capacidadMax = CAPACIDADES_MAX[_selectedStage] ?? 100;
+    if (count > capacidadMax) {
+      setState(() => _validationError = 'La capacidad máxima para $_selectedStage es de $capacidadMax cabezas');
+    } else if (count < 1) {
+      setState(() => _validationError = 'Debe tener al menos 1 cabeza');
+    } else {
+      setState(() => _validationError = null);
+    }
+  }
+
   Future<void> _handleSave() async {
+    if (_validationError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_validationError!),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
-      await ref.read(lotesNotifierProvider.notifier).createLote({
+      final data = {
         'nombre': _nameController.text,
         'cantidad_cabezas': int.parse(_headCountController.text),
         'peso_promedio_actual_kg': _avgWeightController.text,
         'etapa_productiva': _selectedStage,
         'dieta': _selectedDiet,
         'estado': 'activo',
-      });
+      };
+      
+      if (widget.loteId != null) {
+        final loteId = int.parse(widget.loteId!);
+        await ref.read(lotesNotifierProvider.notifier).updateLote(loteId, data);
+      } else {
+        await ref.read(lotesNotifierProvider.notifier).createLote(data);
+      }
       if (mounted) context.pop();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -90,8 +136,11 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
+                  errorText: _validationError,
+                  helperText: 'Capacidad máxima: ${CAPACIDADES_MAX[_selectedStage] ?? 100} cabezas',
                 ),
                 keyboardType: TextInputType.number,
+                onChanged: _validateCapacity,
               ),
               const SizedBox(height: 16),
               TextField(
@@ -113,13 +162,18 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                items: ['Engorda', 'Destete', 'Mantenimiento', 'Lactancia']
+                items: CAPACIDADES_MAX.keys
                     .map((stage) => DropdownMenuItem(
                           value: stage,
-                          child: Text(stage),
+                          child: Text('$stage (máx ${CAPACIDADES_MAX[stage]} cab)'),
                         ))
                     .toList(),
-                onChanged: (value) => setState(() => _selectedStage = value ?? 'Engorda'),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedStage = value ?? 'Engorda';
+                    _validateCapacity(_headCountController.text);
+                  });
+                },
               ),
               const SizedBox(height: 16),
               dietasAsync.when(

@@ -34,6 +34,16 @@ class AlimentacionScreen extends ConsumerWidget {
               ),
               onPressed: () => context.go('/configuracion'),
             ),
+            IconButton(
+              icon: const Icon(Icons.bar_chart, color: Colors.white),
+              onPressed: () => context.push('/alimentacion/reporte'),
+              tooltip: 'Reporte de Consumo',
+            ),
+            IconButton(
+              icon: const Icon(Icons.warning_amber, color: Colors.white),
+              onPressed: () => context.push('/alimentacion/alertas'),
+              tooltip: 'Alertas de Stock',
+            ),
           ],
           bottom: const TabBar(
             labelColor: Colors.white,

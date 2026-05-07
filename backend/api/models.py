@@ -130,6 +130,17 @@ class Dieta(models.Model):
         ('archivada', 'Archivada'),
     ]
 
+    TIPOS_FORMULACION = [
+        ('porcentaje', 'Porcentaje'),
+        ('tabla_kg', 'Tabla kg'),
+    ]
+
+    PERIODICIDADES = [
+        ('diaria', 'Diaria'),
+        ('semanal', 'Semanal'),
+        ('quincenal', 'Quincenal'),
+    ]
+
     usuario = models.ForeignKey(
         Usuario,
         on_delete=models.CASCADE,
@@ -138,7 +149,11 @@ class Dieta(models.Model):
     nombre = models.CharField(max_length=255)
     objetivo = models.CharField(max_length=100)
     estado = models.CharField(max_length=50, choices=ESTADOS, default='activa')
+    tipo_formulacion = models.CharField(max_length=20, choices=TIPOS_FORMULACION, default='porcentaje')
+    cantidad_kg_cabeza = models.DecimalField(max_digits=6, decimal_places=2, null=True, blank=True, help_text='Kg por cabeza por período')
+    periodicidad = models.CharField(max_length=20, choices=PERIODICIDADES, default='diaria')
     costo_estimado_kg = models.DecimalField(max_digits=10, decimal_places=2)
+    observaciones = models.TextField(blank=True, null=True)
     fecha_creacion = models.DateTimeField(auto_now_add=True)
     ultima_modificacion = models.DateTimeField(auto_now=True)
 
@@ -158,10 +173,20 @@ class DietaInsumo(models.Model):
     porcentaje_inclusion = models.DecimalField(
         max_digits=5,
         decimal_places=2,
+        null=True,
+        blank=True,
         validators=[
             MinValueValidator(0.01),
             MaxValueValidator(100)
-        ]
+        ],
+        help_text='Porcentaje de inclusión (formato porcentaje)'
+    )
+    cantidad_kg = models.DecimalField(
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='Cantidad en kg por cabeza (formato tabla_kg)'
     )
 
     class Meta:
@@ -285,6 +310,12 @@ class Animal(models.Model):
     color = models.CharField(max_length=50, blank=True, null=True)
     peso_nacimiento_kg = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     estado = models.CharField(max_length=20, choices=ESTADOS, default='activo')
+    
+    # Campos adicionales para reproducción
+    fecha_ultimo_parto = models.DateField(null=True, blank=True, help_text='Fecha del último parto')
+    partos_count = models.IntegerField(default=0, help_text='Número de partos registrados')
+    dias_lactancia = models.IntegerField(null=True, blank=True, help_text='Días actuales de lactation')
+    
     fecha_registro = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -310,6 +341,10 @@ class CicloReproductivo(models.Model):
         ('fallida', 'Fallida'),
         ('descartada', 'Descartada'),
     ]
+    FORMATOS = [
+        ('temporada', 'Temporada'),
+        ('continuo', 'Continuo'),
+    ]
 
     animal = models.ForeignKey(
         Animal,
@@ -317,10 +352,13 @@ class CicloReproductivo(models.Model):
         related_name='ciclos_reproductivos'
     )
     tipo_servicio = models.CharField(max_length=30, choices=TIPOS_SERVICIO)
+    formato = models.CharField(max_length=20, choices=FORMATOS, default='continuo', help_text='Cómo se maneja: por temporada o continuo')
+    temporada = models.CharField(max_length=100, blank=True, null=True, help_text='Nombre de temporada ej: "Primavera 2026"')
     fecha_servicio = models.DateField()
     dias_gestacion = models.IntegerField(default=283)
     fecha_estimada_parto = models.DateField(null=True, blank=True)
     fecha_parto_real = models.DateField(null=True, blank=True)
+    fecha_destete = models.DateField(null=True, blank=True, help_text='Fecha estimada de destete')
     estado = models.CharField(max_length=20, choices=ESTADOS, default='en_servicio')
     notas = models.TextField(blank=True, null=True)
 
@@ -335,6 +373,59 @@ class CicloReproductivo(models.Model):
             from datetime import timedelta
             self.fecha_estimada_parto = self.fecha_servicio + timedelta(days=self.dias_gestacion)
         super().save(*args, **kwargs)
+
+
+class RegistroNacimiento(models.Model):
+    SEXOS = [('M', 'Macho'), ('H', 'Hembra')]
+
+    ciclo = models.ForeignKey(
+        CicloReproductivo,
+        on_delete=models.CASCADE,
+        related_name='nacimientos'
+    )
+    madre = models.ForeignKey(
+        Animal,
+        on_delete=models.CASCADE,
+        related_name='nacimientos'
+    )
+    numero_arete = models.CharField(max_length=100, blank=True, null=True, help_text='Número de arete de la cria')
+    nombre = models.CharField(max_length=100, blank=True, null=True)
+    sexo = models.CharField(max_length=1, choices=SEXOS)
+    peso_nacimiento_kg = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    fecha_nacimiento = models.DateField(null=True, blank=True)
+    fecha_destete = models.DateField(null=True, blank=True, help_text='Fecha de destete')
+    anomalies = models.TextField(blank=True, null=True, help_text='Anomalías o complicaciones al nacimiento')
+    observaciones = models.TextField(blank=True, null=True)
+    fecha_registro = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['madre']),
+            models.Index(fields=['fecha_nacimiento']),
+        ]
+
+    def __str__(self):
+        return f"{self.madre.numero_arete} - {self.sexo} ({self.fecha_nacimiento})"
+
+    def save(self, *args, **kwargs):
+        from datetime import timedelta
+        if self.fecha_nacimiento:
+            self.madre.fecha_ultimo_parto = self.fecha_nacimiento
+            self.madre.partos_count = (self.madre.partos_count or 0) + 1
+            self.madre.dias_lactancia = 0
+            self.madre.save(update_fields=['fecha_ultimo_parto', 'partos_count', 'dias_lactancia'])
+            if not self.fecha_destete:
+                self.fecha_destete = self.fecha_nacimiento + timedelta(days=70)
+        super().save(*args, **kwargs)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['madre']),
+            models.Index(fields=['fecha_nacimiento']),
+        ]
+
+    def __str__(self):
+        return f"{self.madre.numero_arete} - {self.sexo} ({self.fecha_nacimiento})"
 
 
 class RegistroPeso(models.Model):
@@ -402,3 +493,36 @@ class EventoSanitario(models.Model):
             models.Index(fields=['proxima_aplicacion']),
         ]
         ordering = ['-fecha_aplicacion']
+
+
+# 6. Modelo de Auditoría de Autenticación
+class AuditoriaLogin(models.Model):
+    TIPOS_RESULTADO = [
+        ('exitoso', 'Exitoso'),
+        ('fallido', 'Fallido'),
+    ]
+
+    usuario = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='auditorias_login'
+    )
+    email = models.EmailField()
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=500, blank=True, null=True)
+    resultado = models.CharField(max_length=20, choices=TIPOS_RESULTADO)
+    mensaje = models.TextField(blank=True, null=True)
+    fecha_intento = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['usuario']),
+            models.Index(fields=['fecha_intento']),
+            models.Index(fields=['resultado']),
+        ]
+        ordering = ['-fecha_intento']
+
+    def __str__(self):
+        return f"{self.email} - {self.resultado} - {self.fecha_intento}"

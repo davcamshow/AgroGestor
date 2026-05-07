@@ -27,6 +27,12 @@ class CiclosNotifier extends AutoDisposeAsyncNotifier<List<CicloReproductivo>> {
     await client.dio.delete('ciclos-reproductivos/$id/');
     ref.invalidateSelf();
   }
+
+  Future<void> registrarNacimiento(Map<String, dynamic> data) async {
+    final client = ref.read(apiClientProvider);
+    await client.dio.post('nacimientos/', data: data);
+    ref.invalidateSelf();
+  }
 }
 
 final ciclosNotifierProvider =

@@ -1,0 +1,126 @@
+================================================================================
+                    PLAN DE IMPLEMENTACIÓN: ALIMENTACIÓN Y REPRODUCCIÓN
+                              (BOVINOS - AGROGESTOR)
+================================================================================
+
+--------------------------------------------------------------------------------
+SECCIÓN 1: ALIMENTACIÓN
+--------------------------------------------------------------------------------
+
+1.1 MODIFICACIONES EN MODELOS (Backend)
+--------------------------------------
+
+Archivo: backend/api/models.py
+
+| # | Modelo         | Campo Nuevo         | Tipo              | Descripción                           |
+|---|----------------|--------------------|------------------|---------------------------------------|
+| 1 | Dieta          | tipo_formulacion   | CharField choice | "porcentaje" o "tabla_kg"            |
+| 2 | Dieta          | cantidad_kg_cabeza | DecimalField     | Kg por cabeza/día (formato tabla)      |
+| 3 | Dieta          | periodicidad       | CharField choice | "diaria", "semanal", "quincenal"    |
+| 4 | DietaInsumo    | cantidad_kg        | DecimalField     | Kg por insumo (formato tabla)           |
+| 5 | AlimentacionDiaria | costo_real     | DecimalField     | Costo real registrado                 |
+
+1.2 MÓDULOS A IMPLEMENTAR
+-------------------------
+
+| # | Módulo                    | Descripción                                                                                  |
+|---|---------------------------|---------------------------------------------------------------------------------------------|
+| 1 | Calculadora de Raciones    | Input: # animales, peso promedio, días → Output: kg necesarios por insumo. Ambos formatos. |
+| 2 | Inventario Automático      | Al registrar AlimentacionDiaria, restar automáticamente del Insumo.cantidad_actual_kg.           |
+| 3 | Costo Real vs Estimado    | Comparar: (Dieta.costo_estimado_kg × kg consumidos) vs (costo real de compras).             |
+| 4 | Reporte de Consumo        | Por lote, por período: kg totales, $, $/cabeza, $/kgvivo.                                   |
+| 5 | Alertas Inteligentes     | Notificar cuando Insumo.cantidad_actual_kg < stock_minimo Y lote tenga esa dieta asignada. |
+
+1.3 PANTALLAS FRONTEND (Flutter)
+--------------------------------
+
+| # | Pantalla                 | Componente                                                     |
+|---|--------------------------|----------------------------------------------------------------|
+| 1 | CalculadoraScreen        | Formulario: seleccionar lote, # animales, peso prom, días.    |
+| 2 | DetalleDietaScreen       | Mostrar ingredientes como % o tabla kg según tipo_formulacion.|
+| 3 | ReporteConsumoScreen     | Gráficos: consumo por lote, tendencia de costo, $/cabeza.        |
+| 4 | AlertasInventarioScreen  | Lista de insumos con stock bajo, filtrable por categoría.      |
+
+
+--------------------------------------------------------------------------------
+SECCIÓN 2: REPRODUCCIÓN
+--------------------------------------------------------------------------------
+
+2.1 MODIFICACIONES EN MODELOS (Backend)
+--------------------------------------
+
+Archivo: backend/api/models.py
+
+| # | Modelo           | Campo Nuevo        | Tipo              | Descripción                                      |
+|---|------------------|--------------------|-------------------|--------------------------------------------------|
+| 1 | Animal           | fecha_ultimo_parto  | DateField         | Fecha del último parto (para calcular ICO)      |
+| 2 | Animal           | partos_count        | IntegerField      | Número de partos que ha tenido                  |
+| 3 | Animal           | dias_lactancia     | IntegerField      | Días actuales de lactation                      |
+| 4 | CicloReproductivo| temporada         | CharField         | Nombre de temporada (ej: "Primavera 2026")     |
+| 5 | CicloReproductivo| formato            | CharField choice | "temporada" o "continuo" - cómo se maneja       |
+| 6 | CicloReproductivo| fecha_destete      | DateField         | Fecha estimada de destete                        |
+| 7 | RegistroNacimiento| sexo_cria         | CharField choice | "M" (macho) o "H" (hembra)                   |
+| 8 | RegistroNacimiento| peso_nacimiento  | DecimalField     | Peso de la cria al nacimiento                   |
+| 9 | RegistroNacimiento| arete_cria        | CharField        | Número de arete asignado a la cria                 |
+|10 | RegistroNacimiento| observaciones     | TextField        | Notas sobre el nacimiento                      |
+
+2.2 MÓDULOS A IMPLEMENTAR
+--------------------------
+
+| # | Módulo                       | Descripción                                                                               |
+|---|------------------------------|------------------------------------------------------------------------------------------|
+| 1 | Calendario Reproductivo      | Vista mensual: partos esperados, servicios programados, cerdas por destetar.               |
+| 2 | Resumen KPIs Reproductivos   | Tasa concepción (%), natalidad, intervalo entre partos, semanas lactation/año.          |
+| 3 | Registro de Nacimientos     | Al marcar ciclo como "pario": registrar sexo, peso, arete de cria, anomalías.             |
+| 4 | Árbol Genealógico           | Ver pedigree: padres, abuelos, historial de crías de cada vaca.                        |
+| 5 | Calculadora de Fechas IA   | Sugerir mejor fecha para servicio basada en: fecha último parto + 60 días (involución). |
+| 6 | Panel de Estaciones        | Agrupar animales por temporada de servicio assigned.                                     |
+
+2.3 PANTALLAS FRONTEND (Flutter)
+--------------------------------
+
+| # | Pantalla                   | Componente                                                                  |
+|---|-----------------------------|-----------------------------------------------------------------------------|
+| 1 | CalendarioReproduccionScreen| Calendario mensual con eventos (partos, servicios, destetes).                 |
+| 2 | DetalleAnimalScreen        | Ver árbol genealógico + histórico de ciclos.                                |
+| 3 | RegistroNacimientoSheet   | Formulario para registrar cria: sexo, peso, arete, observaciones.            |
+| 4 | KPIsReproduccionScreen    | Dashboard con métricas: tasa concepción, natalidad, IEP, lactation/year.           |
+| 5 | TemporadasScreen         | Listar/crear temporadas de servicio + asociar animales.                  |
+
+
+--------------------------------------------------------------------------------
+DATOS TÉCNICOS BOVINOS (Valores por defecto)
+--------------------------------------------------------------------------------
+
+- Días de gestación: 283 días
+- Días mínimos entre partos (involución): 60 días
+- Días para destete推荐的: 60-90 días
+- Peso al nacimiento típico: 30-40 kg
+- Ganancia diaria media (GDM) esperado: 0.8-1.2 kg/día
+
+
+--------------------------------------------------------------------------------
+PRECEDENCIA DE IMPLEMENTACIÓN
+--------------------------------------------------------------------------------
+
+FASE 1 (Alta Prioridad):
+  1. Calculadora de Raciones (Alimentación)
+  2. Inventario Automático (Alimentación)
+  3. Calendario Reproductivo (Reproducción)
+  4. Registro de Nacimientos (Reproducción)
+
+FASE 2 (Media Prioridad):
+  5. Costo Real vs Estimado (Alimentación)
+  6. KPIs Reproductivos (Reproducción)
+  7. Reporte de Consumo (Alimentación)
+  8. Árbol Genealógico (Reproducción)
+
+FASE 3 (Baja Prioridad):
+  9. Alertas Inteligentes (Alimentación)
+ 10. Calculadora de Fechas IA (Reproducción)
+ 11. Panel de Estaciones (Reproducción)
+
+
+================================================================================
+                                 FIN DEL PLAN
+================================================================================

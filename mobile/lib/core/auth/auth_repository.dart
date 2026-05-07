@@ -36,12 +36,42 @@ class AuthRepository {
       await _tokenStorage.saveTokens(accessToken, refreshToken);
 
       return await getProfile();
+    } on DioException catch (e) {
+      final errorMsg = _parseLoginError(e);
+      print('[AUTH] Error de login: $errorMsg');
+      throw Exception(errorMsg);
     } catch (e) {
-      if (e is DioException) {
-        print('[AUTH] Error response: ${e.response?.data}');
-      }
-      throw Exception('Login failed: $e');
+      print('[AUTH] Error unexpected: $e');
+      throw Exception('Error de conexión. Verifica tu red e intenta de nuevo.');
     }
+  }
+
+  String _parseLoginError(DioException e) {
+    if (e.response?.statusCode == 401) {
+      return 'Usuario o contraseña incorrectos';
+    }
+    if (e.response?.statusCode == 400) {
+      final data = e.response?.data;
+      if (data is Map) {
+        if (data.containsKey('detail')) {
+          return data['detail'].toString();
+        }
+        if (data.containsKey('username')) {
+          return data['username']?.toString() ?? 'Credenciales inválidas';
+        }
+        if (data.containsKey('password')) {
+          return data['password']?.toString() ?? 'Contraseña inválida';
+        }
+      }
+      return 'Credenciales incorrectas';
+    }
+    if (e.type == DioExceptionType.connectionTimeout) {
+      return 'Tiempo de conexión agotado. Verifica tu internet.';
+    }
+    if (e.type == DioExceptionType.connectionError) {
+      return 'No se pudo conectar al servidor. Verifica la configuración.';
+    }
+    return 'Error de conexión. Intenta de nuevo.';
   }
 
   Future<void> register({

@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.validators import UniqueValidator
-from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario
+from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento
 from django.utils import timezone
 
 # Auth Serializers
@@ -88,9 +88,44 @@ class DietaInsumoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class LoteSerializer(serializers.ModelSerializer):
+    capacidad_maxima = serializers.IntegerField(read_only=True)
+    animales_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Lote
         fields = '__all__'
+
+    def get_animales_count(self, obj):
+        return obj.animales.count()
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        if attrs.get('cantidad_cabezas'):
+            cantidad = attrs['cantidad_cabezas']
+            etapa = attrs.get('etapa_productiva')
+            
+            CAPACIDADES = {
+                'destete': 50,
+                'crecimiento': 100,
+                'engorda': 200,
+                'produccion': 150,
+                'vigilancia': 30,
+            }
+            
+            capacidad_max = CAPACIDADES.get(etapa.lower() if etapa else '', 100)
+            capacidad_min = 1
+            
+            if cantidad > capacidad_max:
+                raise serializers.ValidationError({
+                    'cantidad_cabezas': f'La capacidad máxima para etapa {etapa} es de {capacidad_max} cabezas'
+                })
+            if cantidad < capacidad_min:
+                raise serializers.ValidationError({
+                    'cantidad_cabezas': f'La capacidad mínima es de {capacidad_min} cabeza(s)'
+                })
+            
+            attrs['capacidad_maxima'] = capacidad_max
+        return attrs
 
 class PesajeLoteSerializer(serializers.ModelSerializer):
     class Meta:
@@ -148,3 +183,17 @@ class EventoSanitarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = EventoSanitario
         fields = '__all__'
+
+
+class AuditoriaLoginSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AuditoriaLogin
+        fields = '__all__'
+        read_only_fields = ('fecha_intento',)
+
+
+class RegistroNacimientoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RegistroNacimiento
+        fields = '__all__'
+        read_only_fields = ('fecha_registro',)
