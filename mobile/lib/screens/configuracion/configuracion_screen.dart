@@ -204,6 +204,23 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
                 .fadeIn(delay: 800.ms)
                 .slideY(begin: 0.3),
             const SizedBox(height: 24),
+            // Sección Planes
+            _buildSectionTitle(context, 'Suscripción', Icons.credit_card),
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: ListTile(
+                leading: const Icon(Icons.workspace_premium, color: AppTheme.primary),
+                title: const Text('Planes y Precios'),
+                subtitle: const Text('Ver o cambiar tu plan'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/planes'),
+              ),
+            ).animate().fadeIn(delay: 750.ms).slideX(begin: 0.3),
+            const SizedBox(height: 24),
             // Botón logout
             SizedBox(
               width: double.infinity,
