@@ -176,3 +176,11 @@ class AnyoneExceptContador(HasGroupPermission):
 class IsGerenteOrVeterinarioOrOperario(HasGroupPermission):
     def __init__(self):
         super().__init__([GERENTE_PRODUCCION_GROUP, VETERINARIO_GROUP, OPERARIO_CAMPO_GROUP])
+
+class IsGerenteOrContadorOrOperario(HasGroupPermission):
+    def __init__(self):
+        super().__init__([GERENTE_PRODUCCION_GROUP, CONTADOR_GROUP, OPERARIO_CAMPO_GROUP])
+
+class IsGerenteOrVeterinarioOrOperario(HasGroupPermission):
+    def __init__(self):
+        super().__init__([GERENTE_PRODUCCION_GROUP, VETERINARIO_GROUP, OPERARIO_CAMPO_GROUP])
