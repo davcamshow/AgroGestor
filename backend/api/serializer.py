@@ -142,6 +142,8 @@ class AlimentacionDiariaSerializer(serializers.ModelSerializer):
 class AnimalSerializer(serializers.ModelSerializer):
     edad_dias = serializers.SerializerMethodField()
     ultimo_peso_kg = serializers.SerializerMethodField()
+    total_eventos_sanitarios = serializers.SerializerMethodField()
+    ultimo_evento = serializers.SerializerMethodField()
 
     class Meta:
         model = Animal
@@ -154,8 +156,23 @@ class AnimalSerializer(serializers.ModelSerializer):
         return None
 
     def get_ultimo_peso_kg(self, obj):
+        if obj.ultimo_peso_kg:
+            return str(obj.ultimo_peso_kg)
         ultimo = obj.registros_peso.first()
         return str(ultimo.peso_kg) if ultimo else None
+
+    def get_total_eventos_sanitarios(self, obj):
+        return obj.eventos_sanitarios.count()
+
+    def get_ultimo_evento(self, obj):
+        ultimo = obj.eventos_sanitarios.first()
+        if ultimo:
+            return {
+                'tipo': ultimo.tipo,
+                'producto': ultimo.producto,
+                'fecha': ultimo.fecha_aplicacion,
+            }
+        return None
 
 
 class CicloReproductivoSerializer(serializers.ModelSerializer):
