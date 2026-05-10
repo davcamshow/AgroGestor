@@ -92,4 +92,14 @@ class ApiClient {
     final response = await _dio.post(path, data: data);
     return response.data;
   }
+
+  Future<dynamic> put(String path, {dynamic data}) async {
+    final response = await _dio.put(path, data: data);
+    return response.data;
+  }
+
+  Future<dynamic> delete(String path) async {
+    final response = await _dio.delete(path);
+    return response.data;
+  }
 }

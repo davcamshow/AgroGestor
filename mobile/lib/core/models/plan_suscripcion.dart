@@ -4,6 +4,7 @@ class PlanSuscripcion {
   final String nombre;
   final String? descripcion;
   final double precioMxn;
+  final double precioAnual;
   final int limiteAnimales;
   final int limiteUsuarios;
   final bool incluyeModuloAnimales;
@@ -21,6 +22,7 @@ class PlanSuscripcion {
     required this.nombre,
     this.descripcion,
     required this.precioMxn,
+    required this.precioAnual,
     required this.limiteAnimales,
     required this.limiteUsuarios,
     required this.incluyeModuloAnimales,
@@ -34,16 +36,11 @@ class PlanSuscripcion {
   });
 
   factory PlanSuscripcion.fromJson(Map<String, dynamic> json) {
-    final precio = json['precio_mxn'];
-    double precioMxn;
-    if (precio is double) {
-      precioMxn = precio;
-    } else if (precio is int) {
-      precioMxn = precio.toDouble();
-    } else if (precio is String) {
-      precioMxn = double.tryParse(precio) ?? 0.0;
-    } else {
-      precioMxn = 0.0;
+    double parsePrecio(dynamic precio) {
+      if (precio is double) return precio;
+      if (precio is int) return precio.toDouble();
+      if (precio is String) return double.tryParse(precio) ?? 0.0;
+      return 0.0;
     }
     
     return PlanSuscripcion(
@@ -51,7 +48,8 @@ class PlanSuscripcion {
       codigo: json['codigo']?.toString() ?? '',
       nombre: json['nombre']?.toString() ?? '',
       descripcion: json['descripcion']?.toString(),
-      precioMxn: precioMxn,
+      precioMxn: parsePrecio(json['precio_mxn']),
+      precioAnual: parsePrecio(json['precio_anual']),
       limiteAnimales: json['limite_animales'] is int ? json['limite_animales'] : int.tryParse(json['limite_animales']?.toString() ?? '0') ?? 0,
       limiteUsuarios: json['limite_usuarios'] is int ? json['limite_usuarios'] : int.tryParse(json['limite_usuarios']?.toString() ?? '1') ?? 1,
       incluyeModuloAnimales: json['incluye_modulo_animales'] ?? true,
@@ -101,7 +99,7 @@ class InfoPlanUsuario {
     final planJson = json['plan'];
     return InfoPlanUsuario(
       plan: planJson is String 
-          ? PlanSuscripcion(id: 0, codigo: planJson, nombre: planJson, precioMxn: 0, limiteAnimales: 50, limiteUsuarios: 1, incluyeModuloAnimales: true, incluyeModuloLotes: true, incluyeModuloDietas: true, incluyeModuloSanitaria: true, incluyeReportesAvanzados: false, incluyeApi: false, soportePrioritario: false, activo: true)
+          ? PlanSuscripcion(id: 0, codigo: planJson, nombre: planJson, precioMxn: 0, precioAnual: 0, limiteAnimales: 50, limiteUsuarios: 1, incluyeModuloAnimales: true, incluyeModuloLotes: true, incluyeModuloDietas: true, incluyeModuloSanitaria: true, incluyeReportesAvanzados: false, incluyeApi: false, soportePrioritario: false, activo: true)
           : PlanSuscripcion.fromJson(planJson),
       limiteAnimales: json['limite_animales'] ?? 50,
       animalesActuales: json['animales_actuales'] ?? 0,

@@ -197,13 +197,27 @@ class PlanesScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    plan.precioMxn == 0 ? 'Gratis' : '\$${plan.precioMxn.toStringAsFixed(0)}/mes',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: esBasico ? Colors.grey : AppTheme.primary,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        plan.precioMxn == 0 ? 'Gratis' : '\$${plan.precioMxn.toStringAsFixed(0)}/mes',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: esBasico ? Colors.grey : AppTheme.primary,
+                        ),
+                      ),
+                      if (plan.precioAnual > 0) ...[
+                        const SizedBox(width: 12),
+                        Text(
+                          '\$${plan.precioAnual.toStringAsFixed(0)}/año',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),

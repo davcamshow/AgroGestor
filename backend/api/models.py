@@ -16,6 +16,7 @@ class PlanSuscripcion(models.Model):
     nombre = models.CharField(max_length=100)
     descripcion = models.TextField(blank=True, null=True)
     precio_mxn = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    precio_anual = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     limite_animales = models.IntegerField(default=50)
     limite_usuarios = models.IntegerField(default=1)
     incluye_modulo_animales = models.BooleanField(default=True)
@@ -418,6 +419,9 @@ class Animal(models.Model):
     fecha_ultimo_parto = models.DateField(null=True, blank=True, help_text='Fecha del último parto')
     partos_count = models.IntegerField(default=0, help_text='Número de partos registrados')
     dias_lactancia = models.IntegerField(null=True, blank=True, help_text='Días actuales de lactation')
+    ultimo_peso_kg = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    fecha_ultimo_peso = models.DateField(null=True, blank=True)
+    total_eventos_sanitarios = models.IntegerField(default=0)
     
     fecha_registro = models.DateTimeField(auto_now_add=True)
 
@@ -555,7 +559,7 @@ class RegistroPeso(models.Model):
         ordering = ['-fecha_pesaje']
 
     def save(self, *args, **kwargs):
-        # Calcular GMD respecto al pesaje anterior
+        Animal = self.animal.__class__
         pesaje_anterior = RegistroPeso.objects.filter(
             animal=self.animal,
             fecha_pesaje__lt=self.fecha_pesaje
@@ -565,6 +569,10 @@ class RegistroPeso(models.Model):
             if dias > 0:
                 self.ganancia_diaria_kg = (self.peso_kg - pesaje_anterior.peso_kg) / dias
         super().save(*args, **kwargs)
+        Animal.objects.filter(pk=self.animal.pk).update(
+            ultimo_peso_kg=self.peso_kg,
+            fecha_ultimo_peso=self.fecha_pesaje
+        )
 
 
 class EventoSanitario(models.Model):

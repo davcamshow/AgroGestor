@@ -38,6 +38,12 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
   int _partosCount = 0;
   int? _diasLactancia;
 
+  // Campos de genealogía
+  int? _madreId;
+  int? _padreId;
+  String? _madreArete;
+  String? _padreArete;
+
   @override
   void initState() {
     super.initState();
@@ -59,6 +65,8 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
       _fechaUltimoParto = a.fechaUltimoParto;
       _partosCount = a.partosCount ?? 0;
       _diasLactancia = a.diasLactancia;
+      _madreId = a.madreId;
+      _padreId = a.padreId;
     }
   }
 
@@ -146,6 +154,8 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
         'fecha_ultimo_parto': _fechaUltimoParto?.toIso8601String().split('T')[0],
         'partos_count': _partosCount > 0 ? _partosCount : null,
         'dias_lactancia': (_diasLactancia ?? 0) > 0 ? _diasLactancia : null,
+        'madre': _madreId,
+        'padre': _padreId,
       };
 
       late final int animalId;
@@ -499,6 +509,88 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                             ),
                             const SizedBox(height: 20),
                           ],
+                          const SizedBox(height: 20),
+                          // Sección Genealogía
+                          const Text(
+                            'Genealogía',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Madre
+                          const Text('Madre'),
+                          const SizedBox(height: 8),
+                          InkWell(
+                            onTap: () => _seleccionarAnimal(context, true),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey[300]!),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.female, color: Colors.pink[300]),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _madreArete ?? (_madreId != null ? 'Madre asignada' : 'Seleccionar madre'),
+                                      style: TextStyle(
+                                        color: _madreId != null ? Colors.black : Colors.grey[600],
+                                      ),
+                                    ),
+                                  ),
+                                  if (_madreId != null)
+                                    IconButton(
+                                      icon: const Icon(Icons.clear),
+                                      onPressed: () => setState(() {
+                                        _madreId = null;
+                                        _madreArete = null;
+                                      }),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          // Padre
+                          const Text('Padre'),
+                          const SizedBox(height: 8),
+                          InkWell(
+                            onTap: () => _seleccionarAnimal(context, false),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey[300]!),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.male, color: Colors.blue[300]),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Text(
+                                      _padreArete ?? (_padreId != null ? 'Padre asignado' : 'Seleccionar padre'),
+                                      style: TextStyle(
+                                        color: _padreId != null ? Colors.black : Colors.grey[600],
+                                      ),
+                                    ),
+                                  ),
+                                  if (_padreId != null)
+                                    IconButton(
+                                      icon: const Icon(Icons.clear),
+                                      onPressed: () => setState(() {
+                                        _padreId = null;
+                                        _padreArete = null;
+                                      }),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
                           // Botón guardar
                           SizedBox(
                             width: double.infinity,
@@ -677,5 +769,66 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
         ),
       ),
     );
+  }
+
+  Future<void> _seleccionarAnimal(BuildContext context, bool esMadre) async {
+    final animales = await ref.read(animalesNotifierProvider.future);
+    final sexosFiltrar = esMadre ? 'H' : 'M';
+    final disponibles = animales.where((a) => a.sexo == sexosFiltrar && a.id != widget.animalToEdit?.id).toList();
+
+    if (disponibles.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No hay animales ${esMadre ? "hembra" : "macho"} disponibles')),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+
+    final seleccionado = await showDialog<dynamic>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Seleccionar ${esMadre ? "Madre" : "Padre"}'),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 300,
+          child: ListView.builder(
+            itemCount: disponibles.length,
+            itemBuilder: (context, index) {
+              final animal = disponibles[index];
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: esMadre ? Colors.pink[100] : Colors.blue[100],
+                  child: Icon(esMadre ? Icons.female : Icons.male, color: esMadre ? Colors.pink : Colors.blue),
+                ),
+                title: Text(animal.numeroArete),
+                subtitle: Text(animal.nombre ?? animal.raza ?? ''),
+                onTap: () => Navigator.pop(ctx, animal),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+        ],
+      ),
+    );
+
+    if (seleccionado != null) {
+      setState(() {
+        if (esMadre) {
+          _madreId = seleccionado.id;
+          _madreArete = seleccionado.numeroArete;
+        } else {
+          _padreId = seleccionado.id;
+          _padreArete = seleccionado.numeroArete;
+        }
+      });
+    }
   }
 }
