@@ -1,7 +1,17 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User
 from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario
-# Register your models here.
 
+# Custom User Admin to include groups (groups ya está en Permissions, pero aseguramos)
+class CustomUserAdmin(UserAdmin):
+    pass  # Por ahora, solo para extender si es necesario
+
+# Unregister the default User admin and register the custom one
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
+
+# Register your models here.
 admin.site.register(Usuario)
 admin.site.register(Proveedor)
 admin.site.register(CategoriaInsumo)

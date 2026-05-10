@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 #Importaciones para los viewsets en /api/
 from .serializer import UsuarioSerializer, ProveedorSerializer, CategoriaInsumoSerializer, InsumoSerializer, MovimientoInventarioSerializer, DietaSerializer, DietaInsumoSerializer, LoteSerializer, PesajeLoteSerializer, AlimentacionDiariaSerializer, RegisterSerializer, UserProfileSerializer, AnimalSerializer, CicloReproductivoSerializer, RegistroPesoSerializer, EventoSanitarioSerializer, AuditoriaLoginSerializer, RegistroNacimientoSerializer
 from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento
+from .permissions import IsVeterinario, IsNutricionista, IsOperarioCampo, IsGerenteProduccion, IsContador, IsAdministrador, IsGerenteOrContador, IsGerenteReadOnlyOrNutricionista, IsContadorReadOnlyOrGerenteOrOperario, IsGerenteReadOnlyOrOperarioReadOnlyOrVeterinario, IsOperarioReadOnlyOrGerenteReadOnlyOrContador, IsGerenteOrOperarioOrVeterinarioOrNutricionista, IsGerenteReadOnlyOrOperarioReadOnlyOrVeterinarioOrNutricionista, AnyoneExceptContador, AnyoneReadOnlyExceptContador
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -87,9 +88,11 @@ def me_view(request):
 # ViewSets para cada modelo
 class ProveedorViewSet(viewsets.ModelViewSet):
     serializer_class = ProveedorSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsGerenteOrContador]
 
     def get_queryset(self):
+        if self.request.user.groups.filter(name='Administrador').exists():
+            return Proveedor.objects.all()
         return Proveedor.objects.filter(usuario=self.request.user.perfil)
 
     def perform_create(self, serializer):
@@ -98,9 +101,11 @@ class ProveedorViewSet(viewsets.ModelViewSet):
 
 class CategoriaInsumoViewSet(viewsets.ModelViewSet):
     serializer_class = CategoriaInsumoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsGerenteOrContador]
 
     def get_queryset(self):
+        if self.request.user.groups.filter(name='Administrador').exists():
+            return CategoriaInsumo.objects.all()
         return CategoriaInsumo.objects.filter(usuario=self.request.user.perfil)
 
     def perform_create(self, serializer):
@@ -109,9 +114,11 @@ class CategoriaInsumoViewSet(viewsets.ModelViewSet):
 
 class InsumoViewSet(viewsets.ModelViewSet):
     serializer_class = InsumoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsGerenteOrContadorOrOperario]
 
     def get_queryset(self):
+        if self.request.user.groups.filter(name='Administrador').exists():
+            return Insumo.objects.all()
         return Insumo.objects.filter(usuario=self.request.user.perfil)
 
     def perform_create(self, serializer):
@@ -120,17 +127,21 @@ class InsumoViewSet(viewsets.ModelViewSet):
 
 class MovimientoInventarioViewSet(viewsets.ModelViewSet):
     serializer_class = MovimientoInventarioSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsContadorReadOnlyOrGerenteOrOperario]
 
     def get_queryset(self):
+        if self.request.user.groups.filter(name='Administrador').exists():
+            return MovimientoInventario.objects.all()
         return MovimientoInventario.objects.filter(insumo__usuario=self.request.user.perfil)
 
 
 class DietaViewSet(viewsets.ModelViewSet):
     serializer_class = DietaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsGerenteReadOnlyOrOperarioReadOnlyOrVeterinario]
 
     def get_queryset(self):
+        if self.request.user.groups.filter(name='Administrador').exists():
+            return Dieta.objects.all()
         return Dieta.objects.filter(usuario=self.request.user.perfil)
 
     def perform_create(self, serializer):
@@ -139,17 +150,21 @@ class DietaViewSet(viewsets.ModelViewSet):
 
 class DietaInsumoViewSet(viewsets.ModelViewSet):
     serializer_class = DietaInsumoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsGerenteReadOnlyOrOperarioReadOnlyOrVeterinario]
 
     def get_queryset(self):
+        if self.request.user.groups.filter(name='Administrador').exists():
+            return DietaInsumo.objects.all()
         return DietaInsumo.objects.filter(dieta__usuario=self.request.user.perfil)
 
 
 class LoteViewSet(viewsets.ModelViewSet):
     serializer_class = LoteSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOperarioReadOnlyOrGerenteReadOnlyOrContador]
 
     def get_queryset(self):
+        if self.request.user.groups.filter(name='Administrador').exists():
+            return Lote.objects.all()
         return Lote.objects.filter(usuario=self.request.user.perfil)
 
     def perform_create(self, serializer):
@@ -158,27 +173,37 @@ class LoteViewSet(viewsets.ModelViewSet):
 
 class PesajeLoteViewSet(viewsets.ModelViewSet):
     serializer_class = PesajeLoteSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsGerenteOrOperarioOrVeterinarioOrNutricionista]
 
     def get_queryset(self):
+        if self.request.user.groups.filter(name='Administrador').exists():
+            return PesajeLote.objects.all()
         return PesajeLote.objects.filter(lote__usuario=self.request.user.perfil)
 
 
 class AlimentacionDiariaViewSet(viewsets.ModelViewSet):
     serializer_class = AlimentacionDiariaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsGerenteReadOnlyOrOperarioReadOnlyOrVeterinarioOrNutricionista]
 
     def get_queryset(self):
+        if self.request.user.groups.filter(name='Administrador').exists():
+            return AlimentacionDiaria.objects.all()
         return AlimentacionDiaria.objects.filter(lote__usuario=self.request.user.perfil)
 
 
 # ViewSets Bovion
 class AnimalViewSet(viewsets.ModelViewSet):
     serializer_class = AnimalSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, AnyoneExceptContador]
 
     def get_queryset(self):
-        qs = Animal.objects.filter(usuario=self.request.user.perfil)
+        if self.request.user.groups.filter(name='Administrador').exists():
+            qs = Animal.objects.all()
+        else:
+            try:
+                qs = Animal.objects.filter(usuario=self.request.user.perfil)
+            except Usuario.DoesNotExist:
+                return Animal.objects.none()
         lote_id = self.request.query_params.get('lote')
         sexo = self.request.query_params.get('sexo')
         estado = self.request.query_params.get('estado')
@@ -196,10 +221,16 @@ class AnimalViewSet(viewsets.ModelViewSet):
 
 class CicloReproductivoViewSet(viewsets.ModelViewSet):
     serializer_class = CicloReproductivoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, AnyoneExceptContador]
 
     def get_queryset(self):
-        qs = CicloReproductivo.objects.filter(animal__usuario=self.request.user.perfil)
+        if self.request.user.groups.filter(name='Administrador').exists():
+            qs = CicloReproductivo.objects.all()
+        else:
+            try:
+                qs = CicloReproductivo.objects.filter(animal__usuario=self.request.user.perfil)
+            except Usuario.DoesNotExist:
+                return CicloReproductivo.objects.none()
         estado = self.request.query_params.get('estado')
         if estado:
             qs = qs.filter(estado=estado)
@@ -208,10 +239,13 @@ class CicloReproductivoViewSet(viewsets.ModelViewSet):
 
 class RegistroPesoViewSet(viewsets.ModelViewSet):
     serializer_class = RegistroPesoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, AnyoneExceptContador]
 
     def get_queryset(self):
-        qs = RegistroPeso.objects.filter(animal__usuario=self.request.user.perfil)
+        if self.request.user.groups.filter(name='Administrador').exists():
+            qs = RegistroPeso.objects.all()
+        else:
+            qs = RegistroPeso.objects.filter(animal__usuario=self.request.user.perfil)
         animal_id = self.request.query_params.get('animal')
         if animal_id:
             qs = qs.filter(animal_id=animal_id)
@@ -220,10 +254,16 @@ class RegistroPesoViewSet(viewsets.ModelViewSet):
 
 class EventoSanitarioViewSet(viewsets.ModelViewSet):
     serializer_class = EventoSanitarioSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, AnyoneExceptContador]
 
     def get_queryset(self):
-        qs = EventoSanitario.objects.filter(animal__usuario=self.request.user.perfil)
+        if self.request.user.groups.filter(name='Administrador').exists():
+            qs = EventoSanitario.objects.all()
+        else:
+            try:
+                qs = EventoSanitario.objects.filter(animal__usuario=self.request.user.perfil)
+            except Usuario.DoesNotExist:
+                return EventoSanitario.objects.none()
         animal_id = self.request.query_params.get('animal')
         tipo = self.request.query_params.get('tipo')
         if animal_id:
@@ -238,7 +278,13 @@ class AuditoriaLoginViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        qs = AuditoriaLogin.objects.filter(usuario=self.request.user.perfil)
+        if self.request.user.groups.filter(name='Administrador').exists():
+            qs = AuditoriaLogin.objects.all()
+        else:
+            try:
+                qs = AuditoriaLogin.objects.filter(usuario=self.request.user.perfil)
+            except Usuario.DoesNotExist:
+                return AuditoriaLogin.objects.none()
         resultado = self.request.query_params.get('resultado')
         if resultado:
             qs = qs.filter(resultado=resultado)
@@ -247,10 +293,16 @@ class AuditoriaLoginViewSet(viewsets.ReadOnlyModelViewSet):
 
 class RegistroNacimientoViewSet(viewsets.ModelViewSet):
     serializer_class = RegistroNacimientoSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsGerenteOrVeterinarioOrOperario]
 
     def get_queryset(self):
-        qs = RegistroNacimiento.objects.filter(madre__usuario=self.request.user.perfil)
+        if self.request.user.groups.filter(name='Administrador').exists():
+            qs = RegistroNacimiento.objects.all()
+        else:
+            try:
+                qs = RegistroNacimiento.objects.filter(madre__usuario=self.request.user.perfil)
+            except Usuario.DoesNotExist:
+                return RegistroNacimiento.objects.none()
         ciclo_id = self.request.query_params.get('ciclo')
         if ciclo_id:
             qs = qs.filter(ciclo_id=ciclo_id)
@@ -262,7 +314,7 @@ class RegistroNacimientoViewSet(viewsets.ModelViewSet):
 
 # ==================== KPIs Reproductivos ====================
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, AnyoneExceptContador])
 def kpis_reproductivos(request):
     from datetime import timedelta
     from django.db.models import Count, Avg, F
@@ -336,9 +388,9 @@ def kpis_reproductivos(request):
     })
 
 
-# ==================== Á rbol Genealógico ====================
+# ==================== Árbol Genealógico ====================
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, AnyoneExceptContador])
 def arbol_genealogico(request, animal_id):
     usuario = request.user.perfil
     
@@ -402,7 +454,7 @@ def arbol_genealogico(request, animal_id):
 
 # ==================== Reporte de Consumo ====================
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, AnyoneReadOnlyExceptContador])
 def reporte_consumo(request):
     from datetime import timedelta
     from django.db.models import Sum, Avg
