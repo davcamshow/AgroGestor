@@ -27,6 +27,8 @@ import '../screens/reproduccion/temporadas_screen.dart';
 import '../screens/alimentacion/calculadora_screen.dart';
 import '../screens/alimentacion/reporte_consumo_screen.dart';
 import '../screens/alimentacion/alertas_stock_screen.dart';
+import '../screens/planes/planes_screen.dart';
+import '../screens/salud/salud_screen.dart';
 import '../widgets/app_shell.dart';
 
 
@@ -167,6 +169,16 @@ GoRoute(
               ),
             ],
           ),
+          // Tab 5: Suscripción
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/suscripcion',
+                name: 'suscripcion',
+                builder: (_, __) => const PlanesScreen(),
+              ),
+            ],
+          ),
         ],
       ),
       // Rutas secundarias (fuera del shell)
@@ -211,6 +223,11 @@ GoRoute(
         path: '/configuracion',
         name: 'configuracion',
         builder: (_, __) => const ConfiguracionScreen(),
+      ),
+      GoRoute(
+        path: '/planes',
+        name: 'planes',
+        builder: (_, __) => const PlanesScreen(),
       ),
     ],
   );

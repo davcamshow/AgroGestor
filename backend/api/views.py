@@ -1,6 +1,6 @@
 ﻿from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework import viewsets, generics
+from rest_framework import viewsets, generics, serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth import authenticate
@@ -10,8 +10,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 #Importaciones para los viewsets en /api/
-from .serializer import UsuarioSerializer, ProveedorSerializer, CategoriaInsumoSerializer, InsumoSerializer, MovimientoInventarioSerializer, DietaSerializer, DietaInsumoSerializer, LoteSerializer, PesajeLoteSerializer, AlimentacionDiariaSerializer, RegisterSerializer, UserProfileSerializer, AnimalSerializer, CicloReproductivoSerializer, RegistroPesoSerializer, EventoSanitarioSerializer, AuditoriaLoginSerializer, RegistroNacimientoSerializer
-from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento
+from .serializer import UsuarioSerializer, ProveedorSerializer, CategoriaInsumoSerializer, InsumoSerializer, MovimientoInventarioSerializer, DietaSerializer, DietaInsumoSerializer, LoteSerializer, PesajeLoteSerializer, AlimentacionDiariaSerializer, RegisterSerializer, UserProfileSerializer, AnimalSerializer, CicloReproductivoSerializer, RegistroPesoSerializer, EventoSanitarioSerializer, AuditoriaLoginSerializer, RegistroNacimientoSerializer, PlanSuscripcionSerializer, UsuarioInvitadoSerializer
+from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento, PlanSuscripcion, SuscripcionUsuario, UsuarioInvitado
 from .permissions import IsVeterinario, IsNutricionista, IsOperarioCampo, IsGerenteProduccion, IsContador, IsAdministrador, IsGerenteOrContador, IsGerenteReadOnlyOrNutricionista, IsContadorReadOnlyOrGerenteOrOperario, IsGerenteReadOnlyOrOperarioReadOnlyOrVeterinario, IsOperarioReadOnlyOrGerenteReadOnlyOrContador, IsGerenteOrOperarioOrVeterinarioOrNutricionista, IsGerenteReadOnlyOrOperarioReadOnlyOrVeterinarioOrNutricionista, AnyoneExceptContador, AnyoneReadOnlyExceptContador, IsGerenteOrContadorOrOperario, IsGerenteOrVeterinarioOrOperario
 
 @api_view(['GET'])
@@ -216,7 +216,13 @@ class AnimalViewSet(viewsets.ModelViewSet):
         return qs.select_related('lote', 'madre', 'padre').prefetch_related('registros_peso')
 
     def perform_create(self, serializer):
-        serializer.save(usuario=self.request.user.perfil)
+        usuario = self.request.user.perfil
+        if not usuario.puede_crear_animal():
+            plan = usuario.plan_actual
+            raise serializers.ValidationError({
+                'limite': f'Has alcanzado el límite de {plan.limite_animales} animales de tu plan {plan.nombre}. Upgrade tu plan para agregar más.'
+            })
+        serializer.save(usuario=usuario)
 
 
 class CicloReproductivoViewSet(viewsets.ModelViewSet):
@@ -459,26 +465,26 @@ def reporte_consumo(request):
     from datetime import timedelta
     from django.db.models import Sum, Avg
     from django.utils import timezone
-    
+
     usuario = request.user.perfil
     dias = int(request.query_params.get('dias', 30))
     lote_id = request.query_params.get('lote')
-    
+
     fecha_inicio = timezone.now() - timedelta(days=dias)
-    
+
     query = AlimentacionDiaria.objects.filter(
         lote__usuario=usuario,
         fecha__gte=fecha_inicio
     )
-    
+
     if lote_id:
         query = query.filter(lote_id=lote_id)
-    
+
     total_kg = query.aggregate(Sum('cantidad_servida_kg'))['cantidad_servida_kg__sum'] or 0
     costo_total = query.aggregate(Sum('costo_total_racion'))['costo_total_racion__sum'] or 0
-    
+
     animales_alimentados = query.values('lote').distinct().count()
-    
+
     return Response({
         'periodo_dias': dias,
         'total_kg': float(total_kg),
@@ -486,4 +492,172 @@ def reporte_consumo(request):
         'animales_atendidos': animales_alimentados,
         'kg_por_animal': float(total_kg / animales_alimentados) if animales_alimentados > 0 else 0,
         'costo_por_animal': float(costo_total / animales_alimentados) if animales_alimentados > 0 else 0,
+    })
+
+
+# ==================== Planes de Suscripción ====================
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def listar_planes(request):
+    """Lista todos los planes disponibles"""
+    planes = PlanSuscripcion.objects.filter(activo=True)
+    serializer = PlanSuscripcionSerializer(planes, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def mi_plan(request):
+    """Información del plan actual del usuario"""
+    usuario = request.user.perfil
+    plan = usuario.plan_actual
+    animales_actuales = usuario.animales.count()
+    usuarios_actuales = usuario.colaboradores.filter(activo=True).count()
+
+    data = {
+        'plan': PlanSuscripcionSerializer(plan).data,
+        'limite_animales': plan.limite_animales,
+        'animales_actuales': animales_actuales,
+        'animales_disponibles': max(0, plan.limite_animales - animales_actuales),
+        'limite_usuarios': plan.limite_usuarios,
+        'usuarios_actuales': usuarios_actuales,
+        'usuarios_disponibles': max(0, plan.limite_usuarios - usuarios_actuales),
+        'puede_crear_animal': usuario.puede_crear_animal(),
+        'puede_invitar': usuario.puede_invitar_usuario(),
+        'incluye_modulo_animales': plan.incluye_modulo_animales,
+        'incluye_modulo_lotes': plan.incluye_modulo_lotes,
+        'incluye_modulo_dietas': plan.incluye_modulo_dietas,
+        'incluye_modulo_sanitaria': plan.incluye_modulo_sanitaria,
+        'incluye_reportes_avanzados': plan.incluye_reportes_avanzados,
+        'incluye_api': plan.incluye_api,
+        'soporte_prioritario': plan.soporte_prioritario,
+    }
+
+    if hasattr(usuario, 'suscripcion'):
+        data['suscripcion'] = {
+            'fecha_inicio': usuario.suscripcion.fecha_inicio,
+            'fecha_renovacion': usuario.suscripcion.fecha_renovacion,
+            'activa': usuario.suscripcion.activa,
+        }
+
+    return Response(data)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def cambiar_plan(request):
+    """Cambiar el plan de suscripción del usuario"""
+    usuario = request.user.perfil
+    plan_codigo = request.data.get('plan_codigo')
+
+    if not plan_codigo:
+        return Response({'error': 'Se requiere plan_codigo'}, status=400)
+
+    try:
+        plan = PlanSuscripcion.objects.get(codigo=plan_codigo, activo=True)
+    except PlanSuscripcion.DoesNotExist:
+        return Response({'error': 'Plan no encontrado'}, status=404)
+
+    from datetime import timedelta
+    from dateutil.relativedelta import relativedelta
+    from django.utils import timezone
+
+    if hasattr(usuario, 'suscripcion'):
+        suscripcion = usuario.suscripcion
+        suscripcion.plan = plan
+        suscripcion.activa = True
+        suscripcion.fecha_cancelacion = None
+        if plan.precio_mxn > 0:
+            suscripcion.fecha_renovacion = timezone.now().date() + relativedelta(months=1)
+        suscripcion.save()
+    else:
+        fecha_renovacion = None
+        if plan.precio_mxn > 0:
+            fecha_renovacion = timezone.now().date() + relativedelta(months=1)
+
+        SuscripcionUsuario.objects.create(
+            usuario=usuario,
+            plan=plan,
+            fecha_renovacion=fecha_renovacion,
+            activa=True
+        )
+
+    return Response({
+        'mensaje': f'Plan cambiado a {plan.nombre}',
+        'plan': PlanSuscripcionSerializer(plan).data
+    })
+
+
+@api_view(['GET', 'POST', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def gestionar_colaboradores(request, colaborador_id=None):
+    """Gestionar colaboradores de la cuenta"""
+    usuario = request.user.perfil
+    plan = usuario.plan_actual
+
+    if request.method == 'GET':
+        colaboradores = usuario.colaboradores.filter(activo=True)
+        serializer = UsuarioInvitadoSerializer(colaboradores, many=True)
+        return Response(serializer.data)
+
+    elif request.method == 'POST':
+        if not plan.limite_usuarios > 1:
+            return Response({'error': 'Tu plan no permite invitar colaboradores'}, status=403)
+
+        email_invitado = request.data.get('email')
+        rol = request.data.get('rol', 'editor')
+
+        if not email_invitado:
+            return Response({'error': 'Se requiere email'}, status=400)
+
+        try:
+            usuario_invitado = Usuario.objects.get(email=email_invitado)
+        except Usuario.DoesNotExist:
+            return Response({'error': 'Usuario no encontrado. Debe registrarse primero en la plataforma.'}, status=404)
+
+        if usuario.colaboradores.filter(activo=True).count() >= plan.limite_usuarios:
+            return Response({'error': 'Has alcanzado el límite de usuarios de tu plan'}, status=403)
+
+        if UsuarioInvitado.objects.filter(cuenta_principal=usuario, usuario=usuario_invitado).exists():
+            return Response({'error': 'Este usuario ya es colaborador de tu cuenta'}, status=400)
+
+        UsuarioInvitado.objects.create(
+            cuenta_principal=usuario,
+            usuario=usuario_invitado,
+            rol=rol
+        )
+
+        return Response({'mensaje': f'Usuario {email_invitado} añadido como colaborador'})
+
+    elif request.method == 'DELETE':
+        if not colaborador_id:
+            return Response({'error': 'Se requiere ID del colaborador'}, status=400)
+
+        try:
+            colaborador = UsuarioInvitado.objects.get(id=colaborador_id, cuenta_principal=usuario)
+            colaborador.activo = False
+            colaborador.save()
+            return Response({'mensaje': 'Colaborador eliminado'})
+        except UsuarioInvitado.DoesNotExist:
+            return Response({'error': 'Colaborador no encontrado'}, status=404)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def verificar_limites(request):
+    """Verificar si el usuario puede realizar ciertas acciones"""
+    usuario = request.user.perfil
+    plan = usuario.plan_actual
+    animales_actuales = usuario.animales.count()
+    usuarios_actuales = usuario.colaboradores.filter(activo=True).count()
+
+    return Response({
+        'puede_crear_animal': usuario.puede_crear_animal(),
+        'animales_disponibles': max(0, plan.limite_animales - animales_actuales),
+        'limite_animales': plan.limite_animales,
+        'puede_invitar': usuario.puede_invitar_usuario(),
+        'usuarios_disponibles': max(0, plan.limite_usuarios - usuarios_actuales),
+        'limite_usuarios': plan.limite_usuarios,
+        'incluye_reportes_avanzados': plan.incluye_reportes_avanzados,
+        'incluye_api': plan.incluye_api,
     })

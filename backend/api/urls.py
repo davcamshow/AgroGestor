@@ -36,4 +36,11 @@ urlpatterns = [
     path('kpis/reproductivos/', views.kpis_reproductivos, name='kpis-reproductivos'),
     path('arbol-genealogico/<int:animal_id>/', views.arbol_genealogico, name='arbol-genealogico'),
     path('reporte/consumo/', views.reporte_consumo, name='reporte-consumo'),
+    # Planes de Suscripción
+    path('planes/', views.listar_planes, name='listar-planes'),
+    path('planes/mi-plan/', views.mi_plan, name='mi-plan'),
+    path('planes/cambiar/', views.cambiar_plan, name='cambiar-plan'),
+    path('planes/verificar-limites/', views.verificar_limites, name='verificar-limites'),
+    path('colaboradores/', views.gestionar_colaboradores, name='gestionar-colaboradores'),
+    path('colaboradores/<int:colaborador_id>/', views.gestionar_colaboradores, name='eliminar-colaborador'),
 ]

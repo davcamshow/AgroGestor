@@ -1,258 +1,104 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/providers/eventos_sanitarios_provider.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/auth/auth_state.dart';
-import '../../widgets/loading_shimmer.dart';
 
 class SaludScreen extends ConsumerWidget {
   const SaludScreen({super.key});
 
-  Color _getTipoColor(String tipo) {
-    switch (tipo) {
-      case 'vacunacion':
-        return AppTheme.success;
-      case 'desparasitacion':
-        return AppTheme.warning;
-      case 'tratamiento':
-        return AppTheme.error;
-      case 'cirugia':
-        return AppTheme.info;
-      default:
-        return AppTheme.primary;
-    }
-  }
-
-  IconData _getTipoIcon(String tipo) {
-    switch (tipo) {
-      case 'vacunacion':
-        return Icons.vaccines_outlined;
-      case 'desparasitacion':
-        return Icons.bug_report_outlined;
-      case 'tratamiento':
-        return Icons.healing;
-      case 'cirugia':
-        return Icons.medical_services_outlined;
-      default:
-        return Icons.health_and_safety;
-    }
-  }
-
-  String _getTipoLabel(String tipo) {
-    switch (tipo) {
-      case 'vacunacion':
-        return 'Vacunación';
-      case 'desparasitacion':
-        return 'Desparasitación';
-      case 'tratamiento':
-        return 'Tratamiento';
-      case 'cirugia':
-        return 'Cirugía';
-      default:
-        return tipo;
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final eventosAsync = ref.watch(eventosSanitariosNotifierProvider);
-    final proximosAsync = ref.watch(eventosProximosProvider);
-
-    return DefaultTabController(
-      length: 2,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Salud', style: TextStyle(color: Colors.white)),
-          backgroundColor: AppTheme.primary,
-          elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.white),
-          actions: [
-            IconButton(
-              icon: CircleAvatar(
-                radius: 16,
-                backgroundColor: Colors.white.withOpacity(0.2),
-                child: const Icon(Icons.person, color: Colors.white, size: 18),
-              ),
-              onPressed: () => context.go('/configuracion'),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Salud', style: TextStyle(color: Colors.white)),
+        backgroundColor: AppTheme.primary,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          IconButton(
+            icon: CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.white.withOpacity(0.2),
+              child: const Icon(Icons.person, color: Colors.white, size: 18),
             ),
-          ],
-          bottom: const TabBar(
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.white,
-            tabs: [
-              Tab(text: 'Próximos'),
-              Tab(text: 'Historial'),
-            ],
+            onPressed: () => context.go('/configuracion'),
           ),
-        ),
-        body: TabBarView(
+        ],
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Tab 1: Próximos eventos
-            proximosAsync.when(
-              loading: () => ListView.builder(
-                itemCount: 3,
-                itemBuilder: (_, i) => LoadingShimmerListItem(),
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
               ),
-              error: (err, stack) => Center(
-                child: Text('Error: $err'),
+              child: Icon(
+                Icons.construction,
+                size: 64,
+                color: AppTheme.primary,
               ),
-              data: (proximos) {
-                return proximos.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.check_circle_outline,
-                                size: 64, color: Colors.grey[300]),
-                            const SizedBox(height: 16),
-                            Text('Todo al día',
-                                style:
-                                    Theme.of(context).textTheme.bodyMedium),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: proximos.length,
-                        itemBuilder: (context, index) {
-                          final evento = proximos[index];
-                          final diasRestantes = evento.proximaAplicacion
-                              ?.difference(DateTime.now())
-                              .inDays ??
-                              0;
-                          final urgencia = diasRestantes < 7
-                              ? 'Urgente'
-                              : diasRestantes < 14
-                                  ? 'Pronto'
-                                  : 'Próximo';
-
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 16),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: _getTipoColor(evento.tipo),
-                                width: 2,
-                              ),
-                              boxShadow: [AppTheme.softShadow],
-                            ),
-                            child: ListTile(
-                              leading: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: _getTipoColor(evento.tipo)
-                                      .withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  _getTipoIcon(evento.tipo),
-                                  color: _getTipoColor(evento.tipo),
-                                ),
-                              ),
-                              title: Text(
-                                _getTipoLabel(evento.tipo),
-                                style: Theme.of(context)
-                                    .textTheme.titleMedium,
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 4),
-                                  Text(
-                                      'Animal #${evento.animal} • ${evento.producto}'),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '$diasRestantes días restantes',
-                                    style: TextStyle(
-                                      color: diasRestantes < 7
-                                          ? AppTheme.error
-                                          : AppTheme.warning,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              trailing: Chip(
-                                label: Text(urgencia),
-                                backgroundColor: diasRestantes < 7
-                                    ? AppTheme.error.withOpacity(0.2)
-                                    : AppTheme.warning.withOpacity(0.2),
-                              ),
-                            ),
-                          ).animate().fadeIn().slideX();
-                        },
-                      );
-              },
             ),
-            // Tab 2: Historial
-            eventosAsync.when(
-              loading: () => const Center(
-                  child: CircularProgressIndicator()),
-              error: (err, stack) =>
-                  Center(child: Text('Error: $err')),
-              data: (eventos) {
-                final historial = eventos
-                    .where((e) => e.fechaAplicacion.isBefore(DateTime.now()))
-                    .toList();
-                historial.sort((a, b) =>
-                    b.fechaAplicacion.compareTo(a.fechaAplicacion));
-
-                return historial.isEmpty
-                    ? Center(
-                        child: Text('Sin historial',
-                            style:
-                                Theme.of(context).textTheme.bodyMedium),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: historial.length,
-                        itemBuilder: (context, index) {
-                          final evento = historial[index];
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: Colors.grey[300]!,
-                              ),
-                            ),
-                            child: ListTile(
-                              leading: Icon(
-                                _getTipoIcon(evento.tipo),
-                                color: _getTipoColor(evento.tipo),
-                              ),
-                              title: Text(
-                                evento.producto,
-                                style: Theme.of(context)
-                                    .textTheme.labelLarge,
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                children: [
-                                  const SizedBox(height: 4),
-                                  Text(
-                                      'Animal #${evento.animal}'),
-                                  Text(DateFormat('dd/MM/yyyy')
-                                      .format(evento.fechaAplicacion)),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
-                      );
-              },
+            const SizedBox(height: 24),
+            Text(
+              'Próximamente...',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppTheme.primary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: Text(
+                'Estamos trabajando en nuevas funcionalidades de salud animal',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[600],
+                ),
+              ),
+            ),
+            const SizedBox(height: 32),
+            Container(
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.symmetric(horizontal: 32),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Próximas funcionalidades:',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildFeatureComing(Icons.vaccines, 'Calendario de Vacunas'),
+                  _buildFeatureComing(Icons.medical_services, 'Expedientes Médicos'),
+                  _buildFeatureComing(Icons.analytics, 'Reportes de Salud'),
+                  _buildFeatureComing(Icons.notifications, 'Alertas Automáticas'),
+                ],
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildFeatureComing(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: AppTheme.primary),
+          const SizedBox(width: 8),
+          Text(text, style: const TextStyle(fontSize: 13)),
+        ],
       ),
     );
   }
