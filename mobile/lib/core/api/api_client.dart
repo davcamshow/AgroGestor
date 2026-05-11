@@ -4,7 +4,11 @@ import '../auth/token_storage.dart';
 
 // ⚠️ CAMBIAR ESTA IP AL CONECTAR A DIFERENTE RED
 //const String _baseUrl = 'http:// 192.168.0.8:8000/api/';
+<<<<<<< HEAD
+const String _baseUrl = 'http://192.168.0.8:8000/api/';
+=======
 const String _baseUrl = 'http://192.168.0.111:8000/api/';
+>>>>>>> 9250debb656a650b22be73c03e43d59d22026c63
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   final tokenStorage = ref.read(tokenStorageProvider);
