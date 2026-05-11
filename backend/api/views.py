@@ -190,8 +190,17 @@ class AnimalViewSet(viewsets.ModelViewSet):
             qs = qs.filter(estado=estado)
         return qs.select_related('lote', 'madre', 'padre').prefetch_related('registros_peso')
 
+    def create(self, request, *args, **kwargs):
+        logger.info(f"[ANIMAL CREATE] Data received: {request.data}")
+        try:
+            return super().create(request, *args, **kwargs)
+        except Exception as e:
+            logger.error(f"[ANIMAL CREATE] Error: {e}")
+            raise
+
     def perform_create(self, serializer):
         usuario = self.request.user.perfil
+        logger.info(f"[ANIMAL CREATE] User: {usuario.email}, puede_crear: {usuario.puede_crear_animal()}")
         if not usuario.puede_crear_animal():
             plan = usuario.plan_actual
             raise serializers.ValidationError({
