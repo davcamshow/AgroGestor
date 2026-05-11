@@ -85,6 +85,43 @@ class UsuarioInvitado(models.Model):
         return f"{self.usuario.email} -> {self.cuenta_principal.email} ({self.rol})"
 
 
+# ==================== Modelo de Farm/Granja ====================
+class Farm(models.Model):
+    """Representa una granja/rancho del sistema con múltiples usuarios con acceso"""
+    usuario_propietario = models.ForeignKey(
+        'Usuario',
+        on_delete=models.CASCADE,
+        related_name='farms_propias',
+        help_text='Usuario propietario/creador de la farm'
+    )
+    usuarios = models.ManyToManyField(
+        'Usuario',
+        related_name='farms_acceso',
+        help_text='Usuarios que pueden acceder a esta farm'
+    )
+
+    nombre = models.CharField(max_length=255)
+    descripcion = models.TextField(blank=True, null=True)
+    ubicacion = models.CharField(max_length=255, blank=True, null=True)
+    latitud = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    longitud = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
+    tipo_produccion = models.CharField(max_length=100, blank=True, null=True, help_text='Ej: ganadería, agricultura')
+    tamaño_hectareas = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+    activa = models.BooleanField(default=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['usuario_propietario']),
+            models.Index(fields=['activa']),
+        ]
+
+    def __str__(self):
+        return f"{self.nombre} - {self.usuario_propietario.email}"
+
+
 # 1. Modelo para Usarios
 class Usuario(models.Model):
     auth_user = models.OneToOneField(

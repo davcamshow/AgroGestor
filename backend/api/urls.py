@@ -7,6 +7,7 @@ from .views_google import GoogleAuthView
 router = routers.DefaultRouter()
 
 router.register(r'proveedores', views.ProveedorViewSet, basename='proveedor')
+router.register(r'farms', views.FarmViewSet, basename='farm')
 router.register(r'categorias-insumos', views.CategoriaInsumoViewSet, basename='categoria-insumo')
 router.register(r'insumos', views.InsumoViewSet, basename='insumo')
 router.register(r'movimientos-inventario', views.MovimientoInventarioViewSet, basename='movimiento-inventario')

@@ -10,9 +10,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 #Importaciones para los viewsets en /api/
-from .serializer import UsuarioSerializer, ProveedorSerializer, CategoriaInsumoSerializer, InsumoSerializer, MovimientoInventarioSerializer, DietaSerializer, DietaInsumoSerializer, LoteSerializer, PesajeLoteSerializer, AlimentacionDiariaSerializer, RegisterSerializer, UserProfileSerializer, AnimalSerializer, CicloReproductivoSerializer, RegistroPesoSerializer, EventoSanitarioSerializer, AuditoriaLoginSerializer, RegistroNacimientoSerializer, PlanSuscripcionSerializer, UsuarioInvitadoSerializer
-from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento, PlanSuscripcion, SuscripcionUsuario, UsuarioInvitado
-from .permissions import IsVeterinario, IsNutricionista, IsOperarioCampo, IsGerenteProduccion, IsContador, IsAdministrador, IsGerenteOrContador, IsGerenteReadOnlyOrNutricionista, IsContadorReadOnlyOrGerenteOrOperario, IsGerenteReadOnlyOrOperarioReadOnlyOrVeterinario, IsOperarioReadOnlyOrGerenteReadOnlyOrContador, IsGerenteOrOperarioOrVeterinarioOrNutricionista, IsGerenteReadOnlyOrOperarioReadOnlyOrVeterinarioOrNutricionista, AnyoneExceptContador, AnyoneReadOnlyExceptContador, IsGerenteOrContadorOrOperario, IsGerenteOrVeterinarioOrOperario
+from .serializer import UsuarioSerializer, FarmSerializer, ProveedorSerializer, CategoriaInsumoSerializer, InsumoSerializer, MovimientoInventarioSerializer, DietaSerializer, DietaInsumoSerializer, LoteSerializer, PesajeLoteSerializer, AlimentacionDiariaSerializer, RegisterSerializer, UserProfileSerializer, AnimalSerializer, CicloReproductivoSerializer, RegistroPesoSerializer, EventoSanitarioSerializer, AuditoriaLoginSerializer, RegistroNacimientoSerializer, PlanSuscripcionSerializer, UsuarioInvitadoSerializer
+from .models import Usuario, Farm, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento, PlanSuscripcion, SuscripcionUsuario, UsuarioInvitado
+from .permissions import IsVeterinario, IsNutricionista, IsOperarioCampo, IsGerenteProduccion, IsContador, IsAdministrador, IsGerenteOrContador, IsGerenteReadOnlyOrNutricionista, IsContadorReadOnlyOrGerenteOrOperario, IsGerenteReadOnlyOrOperarioReadOnlyOrVeterinario, IsOperarioReadOnlyOrGerenteReadOnlyOrContador, IsGerenteOrOperarioOrVeterinarioOrNutricionista, IsGerenteReadOnlyOrOperarioReadOnlyOrVeterinarioOrNutricionista, AnyoneExceptContador, AnyoneReadOnlyExceptContador, IsGerenteOrContadorOrOperario, IsGerenteOrVeterinarioOrOperario, CanAccessFarm, IsFarmOwner
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -97,6 +97,64 @@ class ProveedorViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user.perfil)
+
+
+class FarmViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet para gestionar Farms (granjas).
+    - GET /farms/ : Lista todas las farms a las que el usuario tiene acceso
+    - POST /farms/ : Crear una nueva farm (solo propietario)
+    - GET /farms/{id}/ : Obtener detalle de una farm
+    - PUT/PATCH /farms/{id}/ : Actualizar farm (solo propietario)
+    - DELETE /farms/{id}/ : Eliminar farm (solo propietario)
+    - POST /farms/{id}/add_user/ : Agregar usuario a la farm (solo propietario)
+    - POST /farms/{id}/remove_user/ : Remover usuario de la farm (solo propietario)
+    """
+    serializer_class = FarmSerializer
+    permission_classes = [IsAuthenticated, CanAccessFarm]
+
+    def get_queryset(self):
+        """
+        Retorna solo las farms a las que el usuario tiene acceso:
+        - Farms que es propietario
+        - Farms donde tiene acceso (está en la relación ManyToMany)
+        """
+        user_profile = self.request.user.perfil
+        
+        if self.request.user.groups.filter(name='Administrador').exists():
+            return Farm.objects.all()
+        
+        # Farms donde el usuario es propietario O tiene acceso
+        from django.db.models import Q
+        return Farm.objects.filter(
+            Q(usuario_propietario=user_profile) | Q(usuarios=user_profile)
+        ).distinct()
+
+    def perform_create(self, serializer):
+        """Al crear una farm, el usuario actual se establece como propietario"""
+        farm = serializer.save(usuario_propietario=self.request.user.perfil)
+        # Agregar el propietario a la lista de usuarios con acceso
+        farm.usuarios.add(self.request.user.perfil)
+
+    def get_permissions(self):
+        """
+        Permisos personalizados por acción:
+        - create: Solo usuarios autenticados
+        - destroy, update, partial_update: Solo propietario (IsFarmOwner)
+        - list, retrieve: CanAccessFarm
+        """
+        if self.action in ['destroy', 'update', 'partial_update']:
+            self.permission_classes = [IsAuthenticated, IsFarmOwner]
+        return super().get_permissions()
+
+    def get_object(self):
+        """
+        Obtiene el objeto farm y valida permisos.
+        """
+        obj = super().get_object()
+        # Validar permisos a nivel de objeto
+        self.check_object_permissions(self.request, obj)
+        return obj
 
 
 class CategoriaInsumoViewSet(viewsets.ModelViewSet):
@@ -559,7 +617,6 @@ def cambiar_plan(request):
         return Response({'error': 'Plan no encontrado'}, status=404)
 
     from datetime import timedelta
-    from dateutil.relativedelta import relativedelta
     from django.utils import timezone
 
     if hasattr(usuario, 'suscripcion'):
@@ -568,12 +625,12 @@ def cambiar_plan(request):
         suscripcion.activa = True
         suscripcion.fecha_cancelacion = None
         if plan.precio_mxn > 0:
-            suscripcion.fecha_renovacion = timezone.now().date() + relativedelta(months=1)
+            suscripcion.fecha_renovacion = timezone.now().date() + timedelta(days=30)
         suscripcion.save()
     else:
         fecha_renovacion = None
         if plan.precio_mxn > 0:
-            fecha_renovacion = timezone.now().date() + relativedelta(months=1)
+            fecha_renovacion = timezone.now().date() + timedelta(days=30)
 
         SuscripcionUsuario.objects.create(
             usuario=usuario,
@@ -588,7 +645,7 @@ def cambiar_plan(request):
     })
 
 
-@api_view(['GET', 'POST', 'DELETE'])
+@api_view(['GET', 'POST', 'DELETE', 'PUT', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def gestionar_colaboradores(request, colaborador_id=None):
     """Gestionar colaboradores de la cuenta"""
@@ -628,6 +685,27 @@ def gestionar_colaboradores(request, colaborador_id=None):
         )
 
         return Response({'mensaje': f'Usuario {email_invitado} añadido como colaborador'})
+
+    elif request.method in ['PUT', 'PATCH']:
+        if not colaborador_id:
+            return Response({'error': 'Se requiere ID del colaborador'}, status=400)
+
+        rol = request.data.get('rol')
+        if not rol:
+            return Response({'error': 'Se requiere el nuevo rol del colaborador'}, status=400)
+
+        valid_roles = dict(UsuarioInvitado.ROLES).keys()
+        if rol not in valid_roles:
+            return Response({'error': f'Rol inválido. Los valores válidos son: {", ".join(valid_roles)}'}, status=400)
+
+        try:
+            colaborador = UsuarioInvitado.objects.get(id=colaborador_id, cuenta_principal=usuario)
+            colaborador.rol = rol
+            colaborador.save()
+            serializer = UsuarioInvitadoSerializer(colaborador)
+            return Response(serializer.data)
+        except UsuarioInvitado.DoesNotExist:
+            return Response({'error': 'Colaborador no encontrado'}, status=404)
 
     elif request.method == 'DELETE':
         if not colaborador_id:

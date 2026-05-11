@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.validators import UniqueValidator
-from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento, PlanSuscripcion, SuscripcionUsuario, UsuarioInvitado
+from .models import Usuario, Farm, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento, PlanSuscripcion, SuscripcionUsuario, UsuarioInvitado
 from django.utils import timezone
 
 # Auth Serializers
@@ -56,6 +56,19 @@ class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
         fields = '__all__'
+
+class FarmSerializer(serializers.ModelSerializer):
+    """Serializer para Farm con información de usuarios con acceso"""
+    usuario_propietario_info = UsuarioSerializer(source='usuario_propietario', read_only=True)
+    usuarios_acceso = UsuarioSerializer(source='usuarios', many=True, read_only=True)
+
+    class Meta:
+        model = Farm
+        fields = ('id', 'usuario_propietario', 'usuario_propietario_info', 'usuarios_acceso', 
+                  'nombre', 'descripcion', 'ubicacion', 'latitud', 'longitud', 
+                  'tipo_produccion', 'tamaño_hectareas', 'fecha_creacion', 
+                  'fecha_actualizacion', 'activa')
+        read_only_fields = ('usuario_propietario', 'fecha_creacion', 'fecha_actualizacion')
 
 class ProveedorSerializer(serializers.ModelSerializer):
     class Meta:
