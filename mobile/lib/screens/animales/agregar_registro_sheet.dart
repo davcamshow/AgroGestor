@@ -4,6 +4,7 @@ import '../../core/models/registro_peso.dart';
 import '../../core/models/evento_sanitario.dart';
 import '../../core/providers/registros_peso_provider.dart';
 import '../../core/providers/eventos_sanitarios_provider.dart';
+import '../../core/providers/animales_provider.dart';
 import '../../core/theme/app_theme.dart';
 
 class AgregarRegistroSheet extends ConsumerStatefulWidget {
@@ -365,6 +366,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
         'peso_kg': _pesoController.text,
         'condicion_corporal': _condicionCorporal,
       });
+      ref.invalidate(registrosPesoAnimalProvider(widget.animalId));
+      ref.invalidate(animalesNotifierProvider);
 
       if (mounted) {
         Navigator.pop(context);
@@ -401,6 +404,7 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
       }
 
       await ref.read(eventosSanitariosNotifierProvider.notifier).createEvento(data);
+      ref.invalidate(eventosSanitariosNotifierProvider);
 
       if (mounted) {
         Navigator.pop(context);

@@ -74,35 +74,51 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen> {
                 icon: const Icon(Icons.edit),
                 onPressed: () => _showEditSheet(context, animal),
               ),
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                onPressed: () {
+                  ref.invalidate(animalesNotifierProvider);
+                  ref.invalidate(registrosPesoAnimalProvider(int.tryParse(widget.animalId) ?? 0));
+                  ref.invalidate(eventosSanitariosNotifierProvider);
+                },
+              ),
             ],
           ),
-          body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(animal).animate().fadeIn().slideY(begin: -0.2),
-                const SizedBox(height: 24),
-                
-                _buildSection('Información', Icons.info_outline, [
-                  _buildInfoCard(animal),
-                ]).animate().fadeIn(delay: 200.ms).slideX(),
-                const SizedBox(height: 16),
-                
-                _buildSection('Genealogía', Icons.family_restroom, [
-                  _buildGenealogiaCard(animal, animales),
-                ]).animate().fadeIn(delay: 300.ms).slideX(),
-                const SizedBox(height: 16),
-                
-                _buildSection('Registros', Icons.history, [
-                  _buildRegistrosCard(animal, eventosAnimal, registrosAsync),
-                ]).animate().fadeIn(delay: 400.ms).slideX(),
-                const SizedBox(height: 16),
-                
-                _buildSection('Calendario de Eventos', Icons.calendar_month, [
-                  _buildCalendarioCard(animal, eventosAnimal),
-                ]).animate().fadeIn(delay: 500.ms).slideX(),
-              ],
+body: RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(animalesNotifierProvider);
+              ref.invalidate(registrosPesoAnimalProvider(int.tryParse(widget.animalId) ?? 0));
+              ref.invalidate(eventosSanitariosNotifierProvider);
+            },
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(animal).animate().fadeIn().slideY(begin: -0.2),
+                  const SizedBox(height: 24),
+                  
+                  _buildSection('Información', Icons.info_outline, [
+                    _buildInfoCard(animal),
+                  ]).animate().fadeIn(delay: 200.ms).slideX(),
+                  const SizedBox(height: 16),
+                  
+                  _buildSection('Genealogía', Icons.family_restroom, [
+                    _buildGenealogiaCard(animal, animales),
+                  ]).animate().fadeIn(delay: 300.ms).slideX(),
+                  const SizedBox(height: 16),
+                  
+                  _buildSection('Registros', Icons.history, [
+                    _buildRegistrosCard(animal, eventosAnimal, registrosAsync),
+                  ]).animate().fadeIn(delay: 400.ms).slideX(),
+                  const SizedBox(height: 16),
+                  
+                  _buildSection('Calendario de Eventos', Icons.calendar_month, [
+                    _buildCalendarioCard(animal, eventosAnimal),
+                  ]).animate().fadeIn(delay: 500.ms).slideX(),
+                ],
+              ),
             ),
           ),
         );
