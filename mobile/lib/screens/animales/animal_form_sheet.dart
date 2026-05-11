@@ -151,9 +151,9 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
         'peso_nacimiento_kg': _pesoController.text.isNotEmpty ? _pesoController.text : null,
         'fecha_nacimiento': _fechaNacimiento?.toIso8601String().split('T')[0],
         'estado': 'activo',
-        'fecha_ultimo_parto': _fechaUltimoParto?.toIso8601String().split('T')[0],
-        'partos_count': _partosCount > 0 ? _partosCount : null,
-        'dias_lactancia': (_diasLactancia ?? 0) > 0 ? _diasLactancia : null,
+        if (_fechaUltimoParto != null) 'fecha_ultimo_parto': _fechaUltimoParto!.toIso8601String().split('T')[0],
+        if (_partosCount > 0) 'partos_count': _partosCount,
+        if (_diasLactancia != null && _diasLactancia! > 0) 'dias_lactancia': _diasLactancia,
         'madre': _madreId,
         'padre': _padreId,
       };
