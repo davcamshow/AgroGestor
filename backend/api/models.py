@@ -186,6 +186,14 @@ class Proveedor(models.Model):
         on_delete=models.CASCADE,
         related_name='proveedores'
     )
+    farm = models.ForeignKey(
+        'Farm',
+        on_delete=models.CASCADE,
+        related_name='proveedores',
+        null=True,
+        blank=True,
+        help_text='Farm a la que pertenece este proveedor'
+    )
     nombre_empresa = models.CharField(max_length=255)
     contacto = models.CharField(max_length=255, blank=True, null=True)
     telefono = models.CharField(max_length=50, blank=True, null=True)
@@ -202,6 +210,14 @@ class CategoriaInsumo(models.Model):
         on_delete=models.CASCADE,
         related_name='categorias'
     )
+    farm = models.ForeignKey(
+        'Farm',
+        on_delete=models.CASCADE,
+        related_name='categorias_insumo',
+        null=True,
+        blank=True,
+        help_text='Farm a la que pertenece esta categoría'
+    )
     nombre = models.CharField(max_length=100)
 
     def __str__(self):
@@ -213,6 +229,14 @@ class Insumo(models.Model):
         Usuario,
         on_delete=models.CASCADE,
         related_name='insumos'
+    )
+    farm = models.ForeignKey(
+        'Farm',
+        on_delete=models.CASCADE,
+        related_name='insumos',
+        null=True,
+        blank=True,
+        help_text='Farm a la que pertenece este insumo'
     )
     categoria = models.ForeignKey(
         CategoriaInsumo,
@@ -286,6 +310,14 @@ class Dieta(models.Model):
         on_delete=models.CASCADE,
         related_name='dietas'
     )
+    farm = models.ForeignKey(
+        'Farm',
+        on_delete=models.CASCADE,
+        related_name='dietas',
+        null=True,
+        blank=True,
+        help_text='Farm a la que pertenece esta dieta'
+    )
     nombre = models.CharField(max_length=255)
     objetivo = models.CharField(max_length=100)
     estado = models.CharField(max_length=50, choices=ESTADOS, default='activa')
@@ -346,6 +378,14 @@ class Lote(models.Model):
         Usuario,
         on_delete=models.CASCADE,
         related_name='lotes'
+    )
+    farm = models.ForeignKey(
+        'Farm',
+        on_delete=models.CASCADE,
+        related_name='lotes',
+        null=True,
+        blank=True,
+        help_text='Farm a la que pertenece este lote'
     )
     dieta = models.ForeignKey(
         Dieta,
@@ -419,6 +459,14 @@ class Animal(models.Model):
         Usuario,
         on_delete=models.CASCADE,
         related_name='animales'
+    )
+    farm = models.ForeignKey(
+        'Farm',
+        on_delete=models.CASCADE,
+        related_name='animales',
+        null=True,
+        blank=True,
+        help_text='Farm a la que pertenece este animal'
     )
     lote = models.ForeignKey(
         Lote,

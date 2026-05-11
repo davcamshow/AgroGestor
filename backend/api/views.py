@@ -157,7 +157,28 @@ class FarmViewSet(viewsets.ModelViewSet):
         return obj
 
 
-class CategoriaInsumoViewSet(viewsets.ModelViewSet):
+class FarmFilteredViewSetMixin:
+    """
+    Mixin que filtra querysets por farm si se proporciona farm_id en query params.
+    También valida que el usuario tenga acceso a la farm.
+    """
+    def filter_by_farm(self, queryset):
+        """Filtra el queryset por farm si se proporciona farm_id"""
+        farm_id = self.request.query_params.get('farm_id')
+        if farm_id:
+            try:
+                farm = Farm.objects.get(id=farm_id)
+                # Verificar que el usuario tenga acceso a la farm
+                if not (farm.usuario_propietario == self.request.user.perfil or 
+                        farm.usuarios.filter(id=self.request.user.perfil.id).exists()):
+                    return queryset.none()
+                return queryset.filter(farm=farm)
+            except Farm.DoesNotExist:
+                return queryset.none()
+        return queryset
+
+
+class CategoriaInsumoViewSet(FarmFilteredViewSetMixin, viewsets.ModelViewSet):
     serializer_class = CategoriaInsumoSerializer
     permission_classes = [IsAuthenticated, IsGerenteOrContador]
 
