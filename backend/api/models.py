@@ -2,6 +2,90 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import User as AuthUser
 
+
+# ==================== Plan de Suscripción ====================
+class PlanSuscripcion(models.Model):
+    """Planes disponibles en el sistema SaaS"""
+    PLANES = [
+        ('basico', 'Básico'),
+        ('productor', 'Productor'),
+        ('empresarial', 'Empresarial'),
+    ]
+
+    codigo = models.CharField(max_length=20, unique=True, choices=PLANES)
+    nombre = models.CharField(max_length=100)
+    descripcion = models.TextField(blank=True, null=True)
+    precio_mxn = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    precio_anual = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    limite_animales = models.IntegerField(default=50)
+    limite_usuarios = models.IntegerField(default=1)
+    incluye_modulo_animales = models.BooleanField(default=True)
+    incluye_modulo_lotes = models.BooleanField(default=True)
+    incluye_modulo_dietas = models.BooleanField(default=True)
+    incluye_modulo_sanitaria = models.BooleanField(default=True)
+    incluye_reportes_avanzados = models.BooleanField(default=False)
+    incluye_api = models.BooleanField(default=False)
+    soporte_prioritario = models.BooleanField(default=False)
+    activo = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.nombre} (${self.precio_mxn}/mes)"
+
+    class Meta:
+        ordering = ['precio_mxn']
+
+
+class SuscripcionUsuario(models.Model):
+    """Suscripción activa de cada usuario"""
+    usuario = models.OneToOneField(
+        'Usuario',
+        on_delete=models.CASCADE,
+        related_name='suscripcion'
+    )
+    plan = models.ForeignKey(
+        PlanSuscripcion,
+        on_delete=models.PROTECT,
+        related_name='suscriptores'
+    )
+    fecha_inicio = models.DateField(auto_now_add=True)
+    fecha_renovacion = models.DateField(null=True, blank=True)
+    activa = models.BooleanField(default=True)
+    fecha_cancelacion = models.DateField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.usuario.email} - {self.plan.nombre}"
+
+
+# ==================== Modelo de Usuarios Colaboradores ====================
+class UsuarioInvitado(models.Model):
+    """Usuarios adicionales que pueden acceder a una cuenta de proveedor"""
+    ROLES = [
+        ('admin', 'Administrador'),
+        ('editor', 'Editor'),
+        ('viewer', 'Solo lectura'),
+    ]
+
+    cuenta_principal = models.ForeignKey(
+        'Usuario',
+        on_delete=models.CASCADE,
+        related_name='colaboradores'
+    )
+    usuario = models.ForeignKey(
+        'Usuario',
+        on_delete=models.CASCADE,
+        related_name='cuentas_acceso'
+    )
+    rol = models.CharField(max_length=20, choices=ROLES, default='editor')
+    activo = models.BooleanField(default=True)
+    fecha_invitacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('cuenta_principal', 'usuario')
+
+    def __str__(self):
+        return f"{self.usuario.email} -> {self.cuenta_principal.email} ({self.rol})"
+
+
 # 1. Modelo para Usarios
 class Usuario(models.Model):
     auth_user = models.OneToOneField(
@@ -22,7 +106,7 @@ class Usuario(models.Model):
         ('lb', 'Libra'),
     ]
 
-    nombre_completo = models.CharField(max_length=255)
+    nombre_completo = models.EmailField()
     email = models.EmailField(unique=True)
     password_hash = models.CharField(max_length=255)
     telefono = models.CharField(max_length=50, blank=True, null=True)
@@ -37,6 +121,26 @@ class Usuario(models.Model):
 
     def __str__(self):
         return f"{self.nombre_completo} - {self.email}"
+
+    @property
+    def tiene_suscripcion_activa(self):
+        return hasattr(self, 'suscripcion') and self.suscripcion.activa
+
+    @property
+    def plan_actual(self):
+        if hasattr(self, 'suscripcion') and self.suscripcion.activa:
+            return self.suscripcion.plan
+        return PlanSuscripcion.objects.filter(codigo='basico').first()
+
+    def puede_crear_animal(self):
+        plan = self.plan_actual
+        total_animales = self.animales.count()
+        return total_animales < plan.limite_animales
+
+    def puede_invitar_usuario(self):
+        plan = self.plan_actual
+        total_usuarios = self.colaboradores.filter(activo=True).count()
+        return total_usuarios < plan.limite_usuarios
     
 
 #Modelos para Proveedores e Inventarios
@@ -315,6 +419,9 @@ class Animal(models.Model):
     fecha_ultimo_parto = models.DateField(null=True, blank=True, help_text='Fecha del último parto')
     partos_count = models.IntegerField(default=0, help_text='Número de partos registrados')
     dias_lactancia = models.IntegerField(null=True, blank=True, help_text='Días actuales de lactation')
+    ultimo_peso_kg = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    fecha_ultimo_peso = models.DateField(null=True, blank=True)
+    total_eventos_sanitarios = models.IntegerField(default=0)
     
     fecha_registro = models.DateTimeField(auto_now_add=True)
 
@@ -452,7 +559,7 @@ class RegistroPeso(models.Model):
         ordering = ['-fecha_pesaje']
 
     def save(self, *args, **kwargs):
-        # Calcular GMD respecto al pesaje anterior
+        Animal = self.animal.__class__
         pesaje_anterior = RegistroPeso.objects.filter(
             animal=self.animal,
             fecha_pesaje__lt=self.fecha_pesaje
@@ -462,6 +569,10 @@ class RegistroPeso(models.Model):
             if dias > 0:
                 self.ganancia_diaria_kg = (self.peso_kg - pesaje_anterior.peso_kg) / dias
         super().save(*args, **kwargs)
+        Animal.objects.filter(pk=self.animal.pk).update(
+            ultimo_peso_kg=self.peso_kg,
+            fecha_ultimo_peso=self.fecha_pesaje
+        )
 
 
 class EventoSanitario(models.Model):

@@ -3,7 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/token_storage.dart';
 
 // ⚠️ CAMBIAR ESTA IP AL CONECTAR A DIFERENTE RED
+<<<<<<< HEAD
 const String _baseUrl = 'http://10.31.2.106:8000/api/';
+=======
+//const String _baseUrl = 'http:// 192.168.0.8:8000/api/';
+<<<<<<< HEAD
+const String _baseUrl = 'http://192.168.0.8:8000/api/';
+=======
+const String _baseUrl = 'http://192.168.0.111:8000/api/';
+>>>>>>> 9250debb656a650b22be73c03e43d59d22026c63
+>>>>>>> 04c46d2b98c3c0b212dcba6d9e0f886d36e15bb3
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   final tokenStorage = ref.read(tokenStorageProvider);
@@ -89,6 +98,16 @@ class ApiClient {
 
   Future<dynamic> post(String path, {dynamic data}) async {
     final response = await _dio.post(path, data: data);
+    return response.data;
+  }
+
+  Future<dynamic> put(String path, {dynamic data}) async {
+    final response = await _dio.put(path, data: data);
+    return response.data;
+  }
+
+  Future<dynamic> delete(String path) async {
+    final response = await _dio.delete(path);
     return response.data;
   }
 }

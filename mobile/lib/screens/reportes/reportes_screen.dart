@@ -11,7 +11,7 @@ class ReportesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final registrosAsync = ref.watch(registrosPesoNotifierProvider);
+    final registrosAsync = ref.watch(registroPesoNotifierProvider);
     final animalesAsync = ref.watch(animalesNotifierProvider);
 
     return DefaultTabController(

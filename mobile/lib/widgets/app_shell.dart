@@ -21,6 +21,8 @@ class AppShell extends ConsumerWidget {
         return 'Alimentación';
       case 4:
         return 'Salud';
+      case 5:
+        return 'Suscripción';
       default:
         return '';
     }
@@ -59,6 +61,10 @@ class AppShell extends ConsumerWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.health_and_safety),
             label: 'Salud',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.workspace_premium),
+            label: 'Suscripción',
           ),
         ],
       ),

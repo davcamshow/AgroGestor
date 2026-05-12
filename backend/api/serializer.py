@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.validators import UniqueValidator
-from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento
+from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento, PlanSuscripcion, SuscripcionUsuario, UsuarioInvitado
 from django.utils import timezone
 
 # Auth Serializers
@@ -142,6 +142,8 @@ class AlimentacionDiariaSerializer(serializers.ModelSerializer):
 class AnimalSerializer(serializers.ModelSerializer):
     edad_dias = serializers.SerializerMethodField()
     ultimo_peso_kg = serializers.SerializerMethodField()
+    total_eventos_sanitarios = serializers.SerializerMethodField()
+    ultimo_evento = serializers.SerializerMethodField()
 
     class Meta:
         model = Animal
@@ -154,8 +156,23 @@ class AnimalSerializer(serializers.ModelSerializer):
         return None
 
     def get_ultimo_peso_kg(self, obj):
+        if obj.ultimo_peso_kg:
+            return str(obj.ultimo_peso_kg)
         ultimo = obj.registros_peso.first()
         return str(ultimo.peso_kg) if ultimo else None
+
+    def get_total_eventos_sanitarios(self, obj):
+        return obj.eventos_sanitarios.count()
+
+    def get_ultimo_evento(self, obj):
+        ultimo = obj.eventos_sanitarios.first()
+        if ultimo:
+            return {
+                'tipo': ultimo.tipo,
+                'producto': ultimo.producto,
+                'fecha': ultimo.fecha_aplicacion,
+            }
+        return None
 
 
 class CicloReproductivoSerializer(serializers.ModelSerializer):
@@ -197,3 +214,48 @@ class RegistroNacimientoSerializer(serializers.ModelSerializer):
         model = RegistroNacimiento
         fields = '__all__'
         read_only_fields = ('fecha_registro',)
+
+
+# ==================== Serializers de Planes ====================
+class PlanSuscripcionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PlanSuscripcion
+        fields = '__all__'
+
+
+class SuscripcionUsuarioSerializer(serializers.ModelSerializer):
+    plan = PlanSuscripcionSerializer(read_only=True)
+    plan_id = serializers.PrimaryKeyRelatedField(
+        queryset=PlanSuscripcion.objects.all(),
+        source='plan',
+        write_only=True
+    )
+
+    class Meta:
+        model = SuscripcionUsuario
+        fields = ['id', 'plan', 'plan_id', 'fecha_inicio', 'fecha_renovacion', 'activa', 'fecha_cancelacion']
+        read_only_fields = ('fecha_inicio',)
+
+
+class UsuarioInvitadoSerializer(serializers.ModelSerializer):
+    usuario_nombre = serializers.CharField(source='usuario.nombre_completo', read_only=True)
+    usuario_email = serializers.CharField(source='usuario.email', read_only=True)
+
+    class Meta:
+        model = UsuarioInvitado
+        fields = ['id', 'usuario', 'usuario_nombre', 'usuario_email', 'rol', 'activo', 'fecha_invitacion']
+        read_only_fields = ('fecha_invitacion',)
+
+
+class InfoPlanUsuarioSerializer(serializers.Serializer):
+    """Serializer con la información completa del plan del usuario"""
+    plan = PlanSuscripcionSerializer()
+    suscripcion = SuscripcionUsuarioSerializer()
+    limite_animales = serializers.IntegerField()
+    animales_actuales = serializers.IntegerField()
+    animales_disponibles = serializers.IntegerField()
+    limite_usuarios = serializers.IntegerField()
+    usuarios_actuales = serializers.IntegerField()
+    usuarios_disponibles = serializers.IntegerField()
+    puede_crear_animal = serializers.BooleanField()
+    puede_invitar = serializers.BooleanField()
