@@ -2,6 +2,7 @@
 from rest_framework.response import Response
 from rest_framework import viewsets, generics, serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.decorators import action
 from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth import authenticate
 from django.db.models import Sum
@@ -10,8 +11,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 #Importaciones para los viewsets en /api/
-from .serializer import UsuarioSerializer, ProveedorSerializer, CategoriaInsumoSerializer, InsumoSerializer, MovimientoInventarioSerializer, DietaSerializer, DietaInsumoSerializer, LoteSerializer, PesajeLoteSerializer, AlimentacionDiariaSerializer, RegisterSerializer, UserProfileSerializer, AnimalSerializer, CicloReproductivoSerializer, RegistroPesoSerializer, EventoSanitarioSerializer, AuditoriaLoginSerializer, RegistroNacimientoSerializer, PlanSuscripcionSerializer, UsuarioInvitadoSerializer
-from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento, PlanSuscripcion, SuscripcionUsuario, UsuarioInvitado
+from .serializer import UsuarioSerializer, ProveedorSerializer, CategoriaInsumoSerializer, InsumoSerializer, MovimientoInventarioSerializer, DietaSerializer, DietaInsumoSerializer, LoteSerializer, PesajeLoteSerializer, AlimentacionDiariaSerializer, RegisterSerializer, UserProfileSerializer, AnimalSerializer, CicloReproductivoSerializer, RegistroPesoSerializer, EventoSanitarioSerializer, AuditoriaLoginSerializer, RegistroNacimientoSerializer, PlanSuscripcionSerializer, UsuarioInvitadoSerializer, AuditoriaAnimalSerializer
+from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento, PlanSuscripcion, SuscripcionUsuario, UsuarioInvitado, AuditoriaAnimal
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -172,11 +173,23 @@ class AlimentacionDiariaViewSet(viewsets.ModelViewSet):
         return AlimentacionDiaria.objects.filter(lote__usuario=self.request.user.perfil)
 
 
-# ViewSets Bovion
+CAMPOS_AUDITABLES = [
+    'numero_arete', 'nombre', 'raza', 'sexo',
+    'fecha_nacimiento', 'color', 'peso_nacimiento_kg',
+    'estado', 'lote', 'madre', 'padre',
+]
+ 
+def _get_ip(request):
+    x_forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded:
+        return x_forwarded.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+ 
+ 
 class AnimalViewSet(viewsets.ModelViewSet):
     serializer_class = AnimalSerializer
     permission_classes = [IsAuthenticated]
-
+ 
     def get_queryset(self):
         qs = Animal.objects.filter(usuario=self.request.user.perfil)
         lote_id = self.request.query_params.get('lote')
@@ -189,24 +202,47 @@ class AnimalViewSet(viewsets.ModelViewSet):
         if estado:
             qs = qs.filter(estado=estado)
         return qs.select_related('lote', 'madre', 'padre').prefetch_related('registros_peso')
-
-    def create(self, request, *args, **kwargs):
-        logger.info(f"[ANIMAL CREATE] Data received: {request.data}")
-        try:
-            return super().create(request, *args, **kwargs)
-        except Exception as e:
-            logger.error(f"[ANIMAL CREATE] Error: {e}")
-            raise
-
+ 
     def perform_create(self, serializer):
-        usuario = self.request.user.perfil
-        logger.info(f"[ANIMAL CREATE] User: {usuario.email}, puede_crear: {usuario.puede_crear_animal()}")
-        if not usuario.puede_crear_animal():
-            plan = usuario.plan_actual
-            raise serializers.ValidationError({
-                'limite': f'Has alcanzado el límite de {plan.limite_animales} animales de tu plan {plan.nombre}. Upgrade tu plan para agregar más.'
-            })
-        serializer.save(usuario=usuario)
+        serializer.save(usuario=self.request.user.perfil)
+ 
+    def perform_update(self, serializer):
+        animal_antes = self.get_object()
+        valores_antes = {
+            campo: str(getattr(animal_antes, campo, None))
+            for campo in CAMPOS_AUDITABLES
+        }
+ 
+        animal = serializer.save()
+ 
+        # Registrar cada campo que cambió
+        try:
+            perfil = self.request.user.perfil
+        except Exception:
+            perfil = None
+ 
+        ip = _get_ip(self.request)
+ 
+        for campo in CAMPOS_AUDITABLES:
+            valor_antes = valores_antes.get(campo)
+            valor_despues = str(getattr(animal, campo, None))
+            if valor_antes != valor_despues:
+                AuditoriaAnimal.objects.create(
+                    animal=animal,
+                    usuario=perfil,
+                    campo=campo,
+                    valor_anterior=valor_antes,
+                    valor_nuevo=valor_despues,
+                    ip_address=ip,
+                )
+ 
+    @action(detail=True, methods=['get'], url_path='auditoria')
+    def auditoria(self, request, pk=None):
+        """Retorna el historial de cambios de un animal."""
+        animal = self.get_object()
+        registros = animal.auditoria.all()
+        serializer = AuditoriaAnimalSerializer(registros, many=True)
+        return Response(serializer.data)
 
 
 class CicloReproductivoViewSet(viewsets.ModelViewSet):

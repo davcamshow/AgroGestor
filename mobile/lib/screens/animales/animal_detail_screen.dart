@@ -2,16 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:table_calendar/table_calendar.dart';
+import 'package:intl/intl.dart';
 import '../../core/models/animal.dart';
-import '../../core/models/evento_sanitario.dart';
-import '../../core/models/registro_peso.dart';
 import '../../core/providers/animales_provider.dart';
-import '../../core/providers/eventos_sanitarios_provider.dart';
-import '../../core/providers/registros_peso_provider.dart';
+import '../../core/providers/auditoria_provider.dart';
 import '../../core/theme/app_theme.dart';
-import 'animal_form_sheet.dart';
-import 'agregar_registro_sheet.dart';
+import 'animal_edit_sheet.dart';
 
 class AnimalDetailScreen extends ConsumerStatefulWidget {
   final String animalId;
@@ -22,573 +18,427 @@ class AnimalDetailScreen extends ConsumerStatefulWidget {
   ConsumerState<AnimalDetailScreen> createState() => _AnimalDetailScreenState();
 }
 
-class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen> {
-  DateTime _focusedDay = DateTime.now();
-  DateTime _selectedDay = DateTime.now();
-  List<EventoSanitario> _eventosDelMes = [];
+class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final animalesAsync = ref.watch(animalesNotifierProvider);
-    final eventosAsync = ref.watch(eventosSanitariosNotifierProvider);
-    final registrosAsync = ref.watch(registrosPesoAnimalProvider(int.tryParse(widget.animalId) ?? 0));
 
     return animalesAsync.when(
-      loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
+      loading: () =>
+          const Scaffold(body: Center(child: CircularProgressIndicator())),
       error: (err, _) => Scaffold(
         appBar: AppBar(title: const Text('Error')),
         body: Center(child: Text('Error: $err')),
       ),
       data: (animales) {
-        final animal = animales.where((a) => a.id.toString() == widget.animalId).firstOrNull;
-        
+        final animal = animales
+            .where((a) => a.id.toString() == widget.animalId)
+            .firstOrNull;
+
         if (animal == null) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Animal no encontrado')),
+            appBar: AppBar(title: const Text('No encontrado')),
             body: const Center(child: Text('Animal no encontrado')),
           );
         }
-
-        final eventosAnimal = eventosAsync.valueOrNull
-                ?.where((e) => e.animalId == animal.id)
-                .toList() ??
-            [];
 
         return Scaffold(
           appBar: AppBar(
             leading: IconButton(
               icon: const Icon(Icons.arrow_back),
-              onPressed: () {
-                if (context.canPop()) {
-                  context.pop();
-                } else {
-                  context.go('/dashboard');
-                }
-              },
+              onPressed: () => context.pop(),
             ),
             title: Text(animal.nombre ?? animal.numeroArete),
             actions: [
               IconButton(
-                icon: const Icon(Icons.edit),
-                onPressed: () => _showEditSheet(context, animal),
-              ),
-              IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: () {
-                  ref.invalidate(animalesNotifierProvider);
-                  ref.invalidate(registrosPesoAnimalProvider(int.tryParse(widget.animalId) ?? 0));
-                  ref.invalidate(eventosSanitariosNotifierProvider);
-                },
+                icon: const Icon(Icons.edit_outlined),
+                tooltip: 'Editar',
+                onPressed: () => _abrirEdicion(context, animal),
               ),
             ],
-          ),
-body: RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(animalesNotifierProvider);
-              ref.invalidate(registrosPesoAnimalProvider(int.tryParse(widget.animalId) ?? 0));
-              ref.invalidate(eventosSanitariosNotifierProvider);
-            },
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(animal).animate().fadeIn().slideY(begin: -0.2),
-                  const SizedBox(height: 24),
-                  
-                  _buildSection('Información', Icons.info_outline, [
-                    _buildInfoCard(animal),
-                  ]).animate().fadeIn(delay: 200.ms).slideX(),
-                  const SizedBox(height: 16),
-                  
-                  _buildSection('Genealogía', Icons.family_restroom, [
-                    _buildGenealogiaCard(animal, animales),
-                  ]).animate().fadeIn(delay: 300.ms).slideX(),
-                  const SizedBox(height: 16),
-                  
-                  _buildSection('Registros', Icons.history, [
-                    _buildRegistrosCard(animal, eventosAnimal, registrosAsync),
-                  ]).animate().fadeIn(delay: 400.ms).slideX(),
-                  const SizedBox(height: 16),
-                  
-                  _buildSection('Calendario de Eventos', Icons.calendar_month, [
-                    _buildCalendarioCard(animal, eventosAnimal),
-                  ]).animate().fadeIn(delay: 500.ms).slideX(),
-                ],
-              ),
+            bottom: TabBar(
+              controller: _tabController,
+              labelColor: Colors.white,
+              unselectedLabelColor: Colors.white70,
+              indicatorColor: Colors.white,
+              tabs: const [
+                Tab(text: 'Info'),
+                Tab(text: 'Registros'),
+                Tab(text: 'Auditoría'),
+              ],
             ),
+          ),
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              _InfoTab(animal: animal),
+              _RegistrosTab(animal: animal),
+              _AuditoriaTab(animalId: animal.id),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildHeader(Animal animal) {
+  Future<void> _abrirEdicion(BuildContext context, Animal animal) async {
+    final cambio = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AnimalEditSheet(animal: animal),
+    );
+    if (cambio == true) {
+      ref.invalidate(animalesNotifierProvider);
+    }
+  }
+}
+
+// ─────────────────────── Tab Info ───────────────────────
+class _InfoTab extends StatelessWidget {
+  final Animal animal;
+  const _InfoTab({required this.animal});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          _buildHeader(context, animal).animate().fadeIn().slideY(begin: -0.2),
+          const SizedBox(height: 20),
+          _buildCard(context, 'Información General', Icons.info_outline, [
+            _row('Caravana', animal.numeroArete),
+            _row('Nombre', animal.nombre ?? '—'),
+            _row('Raza', animal.raza ?? '—'),
+            _row('Sexo', animal.sexo == 'M' ? 'Macho' : 'Hembra'),
+            _row('Color', animal.color ?? '—'),
+            _row('Estado', animal.estado),
+          ]).animate().fadeIn(delay: 100.ms).slideX(),
+          const SizedBox(height: 12),
+          _buildCard(context, 'Nacimiento & Peso', Icons.cake_outlined, [
+            _row('Fecha nacimiento',
+                animal.fechaNacimiento?.toString().split(' ')[0] ?? '—'),
+            _row('Edad (días)', animal.edadDias?.toString() ?? '—'),
+            _row('Peso al nacer (kg)',
+                animal.pesoNacimientoKg?.toString() ?? '—'),
+          ]).animate().fadeIn(delay: 200.ms).slideX(),
+          const SizedBox(height: 12),
+          _buildCard(context, 'Genealogía', Icons.family_restroom, [
+            _row('Madre', animal.madreId?.toString() ?? '—'),
+            _row('Padre', animal.padreId?.toString() ?? '—'),
+            _row('Lote', animal.loteId?.toString() ?? '—'),
+          ]).animate().fadeIn(delay: 300.ms).slideX(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, Animal animal) {
     return Center(
       child: Column(
         children: [
           Container(
-            width: 100,
-            height: 100,
+            width: 90,
+            height: 90,
             decoration: BoxDecoration(
               gradient: AppTheme.primaryGradient,
-              borderRadius: BorderRadius.circular(50),
+              borderRadius: BorderRadius.circular(45),
             ),
             child: Center(
               child: Text(
                 animal.numeroArete[0].toUpperCase(),
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                ),
+                    color: Colors.white,
+                    fontSize: 36,
+                    fontWeight: FontWeight.bold),
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            animal.numeroArete,
-            style: Theme.of(context).textTheme.headlineSmall,
-          ),
+          const SizedBox(height: 10),
+          Text(animal.numeroArete,
+              style: Theme.of(context).textTheme.headlineSmall),
           const SizedBox(height: 4),
           Chip(
-            label: Text(animal.estado ?? 'activo'),
-            backgroundColor: AppTheme.success.withOpacity(0.2),
+            label: Text(animal.estado),
+            backgroundColor: animal.estado == 'activo'
+                ? AppTheme.success.withOpacity(0.15)
+                : Colors.grey[200],
+            labelStyle: TextStyle(
+              color: animal.estado == 'activo'
+                  ? AppTheme.success
+                  : Colors.grey[700],
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSection(String title, IconData icon, List<Widget> children) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Icon(icon, color: AppTheme.primary, size: 20),
-            const SizedBox(width: 8),
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ...children,
-      ],
-    );
-  }
-
-  Widget _buildInfoCard(Animal animal) {
+  Widget _buildCard(
+      BuildContext context, String title, IconData icon, List<Widget> rows) {
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [AppTheme.softShadow],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildRow('Número de Arete', animal.numeroArete),
-          _buildRow('Nombre', animal.nombre ?? 'Sin nombre'),
-          _buildRow('Raza', animal.raza ?? 'No especificada'),
-          _buildRow('Sexo', animal.sexo == 'M' ? 'Macho' : 'Hembra'),
-          _buildRow('Color', animal.color ?? 'No especificado'),
-          _buildRow('Peso Nac. (kg)', animal.pesoNacimientoKg ?? 'N/A'),
-          _buildRow('Fecha Nac.', animal.fechaNacimiento?.toString().split(' ')[0] ?? 'N/A'),
-          _buildRow('Lote', animal.loteId?.toString() ?? 'Sin lote'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGenealogiaCard(Animal animal, List<Animal> allAnimales) {
-    final madre = animal.madreId != null
-        ? allAnimales.where((a) => a.id == animal.madreId).firstOrNull
-        : null;
-    final padre = animal.padreId != null
-        ? allAnimales.where((a) => a.id == animal.padreId).firstOrNull
-        : null;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [AppTheme.softShadow],
-      ),
-      child: Column(
-        children: [
-          _buildGenealogiaRow('Madre', madre, Icons.female),
-          const Divider(),
-          _buildGenealogiaRow('Padre', padre, Icons.male),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildGenealogiaRow(String label, Animal? parentesco, IconData icon) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Icon(icon, color: parentesco != null ? AppTheme.primary : Colors.grey, size: 20),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
               children: [
-                Text(label, style: const TextStyle(color: Colors.grey)),
-                Text(
-                  parentesco != null ? '${parentesco.numeroArete}${parentesco.nombre != null ? " - ${parentesco.nombre}" : ""}' : 'Sin registrar',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: parentesco != null ? Colors.black : Colors.grey,
-                  ),
-                ),
+                Icon(icon, size: 18, color: AppTheme.primary),
+                const SizedBox(width: 8),
+                Text(title, style: Theme.of(context).textTheme.titleSmall),
               ],
             ),
           ),
-          if (parentesco != null)
-            IconButton(
-              icon: const Icon(Icons.visibility, size: 18),
-              onPressed: () => context.go('/animales/${parentesco.id}'),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRegistrosCard(Animal animal, List<EventoSanitario> eventos, AsyncValue<List<RegistroPeso>> registrosAsync) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [AppTheme.softShadow],
-      ),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: () => _mostrarHistorialPesajes(context, registrosAsync),
-            child: _buildRow('Último peso', animal.ultimoPesoKg ?? 'Sin registro', isLink: true),
-          ),
-          _buildRow('Fecha último peso', animal.fechaUltimoPeso?.toString().split(' ')[0] ?? 'N/A'),
-          InkWell(
-            onTap: () => _mostrarHistorialEventos(context, eventos),
-            child: _buildRow('Total eventos sanitarios', '${eventos.length}', isLink: true),
-          ),
-          InkWell(
-            onTap: () => _mostrarHistorialEventos(context, eventos),
-            child: _buildRow('Último evento', eventos.isNotEmpty ? _formatearFecha(eventos.first.fechaAplicacion) : 'N/A', isLink: true),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () => _mostrarAgregarRegistro(context, animal),
-              icon: const Icon(Icons.add),
-              label: const Text('Agregar Registro'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                foregroundColor: Colors.white,
-              ),
-            ),
+          const Divider(height: 1),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(children: rows),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCalendarioCard(Animal animal, List<EventoSanitario> eventos) {
-    _eventosDelMes = eventos.where((e) {
-      if (e.fechaAplicacion.month == _focusedDay.month &&
-          e.fechaAplicacion.year == _focusedDay.year) {
-        return true;
-      }
-      if (e.proximaAplicacion != null &&
-          e.proximaAplicacion!.month == _focusedDay.month &&
-          e.proximaAplicacion!.year == _focusedDay.year) {
-        return true;
-      }
-      return false;
-    }).toList();
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [AppTheme.softShadow],
-      ),
-      child: Column(
-        children: [
-          TableCalendar(
-            firstDay: DateTime.utc(2020, 1, 1),
-            lastDay: DateTime.utc(2030, 12, 31),
-            focusedDay: _focusedDay,
-            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-            onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                _selectedDay = selectedDay;
-                _focusedDay = focusedDay;
-              });
-              _mostrarEventosDelDia(context, selectedDay, eventos);
-            },
-            onPageChanged: (focusedDay) {
-              setState(() {
-                _focusedDay = focusedDay;
-              });
-            },
-            calendarStyle: CalendarStyle(
-              todayDecoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.3),
-                shape: BoxShape.circle,
-              ),
-              selectedDecoration: const BoxDecoration(
-                color: AppTheme.primary,
-                shape: BoxShape.circle,
-              ),
-              markerDecoration: const BoxDecoration(
-                color: AppTheme.info,
-                shape: BoxShape.circle,
-              ),
-            ),
-            headerStyle: const HeaderStyle(
-              formatButtonVisible: false,
-              titleCentered: true,
-            ),
-            eventLoader: (day) {
-              return eventos.where((e) {
-                return isSameDay(e.fechaAplicacion, day) ||
-                    (e.proximaAplicacion != null && isSameDay(e.proximaAplicacion!, day));
-              }).toList();
-            },
-          ),
-          const SizedBox(height: 16),
-          if (_eventosDelMes.isNotEmpty) ...[
-            const Text('Eventos del mes:', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            ..._eventosDelMes.map((e) => Card(
-              child: ListTile(
-                leading: Icon(_getTipoIcon(e.tipo), color: AppTheme.info),
-                title: Text('${_getTipoLabel(e.tipo)} - ${e.producto}'),
-                subtitle: Text(_formatearFecha(e.fechaAplicacion)),
-              ),
-            )),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRow(String label, String value, {bool isLink = false}) {
+  Widget _row(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(
-            value,
-            style: TextStyle(
-              fontWeight: FontWeight.w500,
-              color: isLink ? AppTheme.primary : null,
-              decoration: isLink ? TextDecoration.underline : null,
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────── Tab Registros ───────────────────────
+class _RegistrosTab extends StatelessWidget {
+  final Animal animal;
+  const _RegistrosTab({required this.animal});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _infoRow(context, 'Último peso (kg)',
+            animal.ultimoPeso?.toString() ?? '—', Icons.scale),
+        const SizedBox(height: 8),
+        _infoRow(
+            context,
+            'Fecha último peso',
+            animal.fechaUltimoPeso?.toString().split(' ')[0] ?? '—',
+            Icons.calendar_today),
+      ],
+    );
+  }
+
+  Widget _infoRow(BuildContext ctx, String label, String val, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [AppTheme.softShadow],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppTheme.primary, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+              child: Text(label, style: const TextStyle(color: Colors.grey))),
+          Text(val, style: const TextStyle(fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────── Tab Auditoría ───────────────────────
+class _AuditoriaTab extends ConsumerWidget {
+  final int animalId;
+  const _AuditoriaTab({required this.animalId});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auditoriaAsync = ref.watch(auditoriaAnimalProvider(animalId));
+
+    return auditoriaAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, color: AppTheme.error, size: 48),
+            const SizedBox(height: 12),
+            Text('No se pudo cargar la auditoría',
+                style: Theme.of(context).textTheme.bodyMedium),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () =>
+                  ref.invalidate(auditoriaAnimalProvider(animalId)),
+              child: const Text('Reintentar'),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    );
-  }
+      data: (registros) {
+        if (registros.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.history, size: 64, color: Colors.grey[300]),
+                const SizedBox(height: 16),
+                Text('Sin cambios registrados',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: Colors.grey)),
+              ],
+            ),
+          );
+        }
 
-  void _showEditSheet(BuildContext context, Animal animal) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => AnimalFormSheet(animalToEdit: animal),
-    );
-  }
-
-  void _mostrarHistorialEventos(BuildContext context, List<EventoSanitario> eventos) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Historial de Eventos'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 400,
-          child: eventos.isEmpty
-              ? const Center(child: Text('No hay eventos registrados'))
-              : ListView.builder(
-                  itemCount: eventos.length,
-                  itemBuilder: (context, index) {
-                    final evento = eventos[index];
-                    return Card(
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: AppTheme.info.withOpacity(0.2),
-                          child: Icon(_getTipoIcon(evento.tipo), color: AppTheme.info),
+        return ListView.separated(
+          padding: const EdgeInsets.all(16),
+          itemCount: registros.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          itemBuilder: (context, index) {
+            final reg = registros[index];
+            return Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [AppTheme.softShadow],
+                border: Border.all(color: Colors.grey[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
                         ),
-                        title: Text('${_getTipoLabel(evento.tipo)} - ${evento.producto}'),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Fecha: ${_formatearFecha(evento.fechaAplicacion)}'),
-                            if (evento.dosis != null) Text('Dósis: ${evento.dosis}'),
-                            if (evento.proximaAplicacion != null)
-                              Text(
-                                'Próxima: ${_formatearFecha(evento.proximaAplicacion!)}',
-                                style: TextStyle(color: AppTheme.info),
-                              ),
-                          ],
+                        child: Text(
+                          _labelCampo(reg.campo),
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.primary,
+                              fontWeight: FontWeight.w600),
                         ),
-                        trailing: evento.costo > 0
-                            ? Text('\$${evento.costo.toStringAsFixed(0)}')
-                            : null,
                       ),
-                    );
-                  },
-                ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _mostrarHistorialPesajes(BuildContext context, AsyncValue<List<RegistroPeso>> registrosAsync) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Historial de Pesajes'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 400,
-          child: registrosAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (err, _) => Center(child: Text('Error: $err')),
-            data: (registros) => registros.isEmpty
-                ? const Center(child: Text('No hay pesajes registrados'))
-                : ListView.builder(
-                    itemCount: registros.length,
-                    itemBuilder: (context, index) {
-                      final reg = registros[index];
-                      return Card(
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: AppTheme.secondary.withOpacity(0.2),
-                            child: const Icon(Icons.scale, color: AppTheme.secondary),
-                          ),
-                          title: Text('${reg.pesoKg} kg'),
-                          subtitle: Text(_formatearFecha(reg.fechaPesaje)),
-                          trailing: reg.gananciaDiariaKg != null
-                              ? Text('${reg.gananciaDiariaKg} kg/día')
-                              : null,
-                        ),
-                      );
-                    },
+                      const Spacer(),
+                      Text(
+                        DateFormat('dd/MM/yyyy HH:mm')
+                            .format(reg.fechaCambio.toLocal()),
+                        style:
+                            const TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
+                    ],
                   ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _valorChip(
+                          label: 'Antes',
+                          valor: reg.valorAnterior ?? '—',
+                          color: AppTheme.error,
+                        ),
+                      ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        child: Icon(Icons.arrow_forward,
+                            size: 16, color: Colors.grey),
+                      ),
+                      Expanded(
+                        child: _valorChip(
+                          label: 'Después',
+                          valor: reg.valorNuevo ?? '—',
+                          color: AppTheme.success,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ).animate().fadeIn(delay: Duration(milliseconds: index * 40));
+          },
+        );
+      },
+    );
+  }
+
+  String _labelCampo(String campo) {
+    const etiquetas = {
+      'numero_arete': 'Caravana',
+      'nombre': 'Nombre',
+      'raza': 'Raza',
+      'sexo': 'Sexo',
+      'fecha_nacimiento': 'F. Nacimiento',
+      'color': 'Color',
+      'peso_nacimiento_kg': 'Peso Nacer',
+      'estado': 'Estado',
+      'lote': 'Lote',
+      'madre': 'Madre',
+      'padre': 'Padre',
+    };
+    return etiquetas[campo] ?? campo;
+  }
+
+  Widget _valorChip(
+      {required String label, required String valor, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.07),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: TextStyle(
+                  fontSize: 10, color: color, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 2),
+          Text(valor,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+              overflow: TextOverflow.ellipsis),
         ],
       ),
     );
-  }
-
-  void _mostrarAgregarRegistro(BuildContext context, Animal animal) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => AgregarRegistroSheet(
-        animalId: animal.id,
-        animalArete: animal.numeroArete,
-      ),
-    );
-  }
-
-  void _mostrarEventosDelDia(BuildContext context, DateTime dia, List<EventoSanitario> eventos) {
-    final eventosDelDia = eventos.where((e) {
-      return isSameDay(e.fechaAplicacion, dia) ||
-          (e.proximaAplicacion != null && isSameDay(e.proximaAplicacion!, dia));
-    }).toList();
-
-    if (eventosDelDia.isEmpty) return;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Eventos del ${_formatearFecha(dia)}'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 300,
-          child: ListView.builder(
-            itemCount: eventosDelDia.length,
-            itemBuilder: (context, index) {
-              final evento = eventosDelDia[index];
-              return Card(
-                child: ListTile(
-                  leading: Icon(_getTipoIcon(evento.tipo), color: AppTheme.info),
-                  title: Text('${_getTipoLabel(evento.tipo)} - ${evento.producto}'),
-                  subtitle: Text(evento.dosis ?? ''),
-                ),
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  IconData _getTipoIcon(String tipo) {
-    switch (tipo) {
-      case 'vacunacion':
-        return Icons.vaccines;
-      case 'desparasitacion':
-        return Icons.medication;
-      case 'tratamiento':
-        return Icons.healing;
-      case 'cirugia':
-        return Icons.medical_services;
-      default:
-        return Icons.event;
-    }
-  }
-
-  String _getTipoLabel(String tipo) {
-    switch (tipo) {
-      case 'vacunacion':
-        return 'Vacunación';
-      case 'desparasitacion':
-        return 'Desparasitación';
-      case 'tratamiento':
-        return 'Tratamiento';
-      case 'cirugia':
-        return 'Cirugía';
-      default:
-        return tipo;
-    }
-  }
-
-  String _formatearFecha(DateTime fecha) {
-    return '${fecha.day}/${fecha.month}/${fecha.year}';
   }
 }

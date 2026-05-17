@@ -93,9 +93,10 @@ DATABASES = {
         'NAME': os.getenv('DB_NAME', 'postgres'),
         'USER': os.getenv('DB_USER', 'postgres.xpmtapqogmmtzaknobzg'),
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
+        # CAMBIAR el host al Transaction Pooler (puerto 6543)
         'HOST': os.getenv('DB_HOST', 'aws-1-us-east-2.pooler.supabase.com'),
-        'PORT': os.getenv('DB_PORT', '5432'),
-        'CONN_MAX_AGE': 600,
+        'PORT': os.getenv('DB_PORT', '6543'),  # <-- cambiar 5432 por 6543
+        'CONN_MAX_AGE': 0,  # <-- cambiar 600 por 0
         'OPTIONS': {
             'sslmode': 'require',
         }
