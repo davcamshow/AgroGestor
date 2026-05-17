@@ -101,9 +101,9 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => AnimalEditSheet(animal: animal),
+      builder: (context) => AnimalEditSheet(animal: animal),
     );
-    if (cambio == true) {
+    if (cambio == true && mounted) {
       ref.invalidate(animalesNotifierProvider);
     }
   }

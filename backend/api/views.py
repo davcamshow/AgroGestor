@@ -205,27 +205,33 @@ class AnimalViewSet(viewsets.ModelViewSet):
  
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user.perfil)
- 
+
     def perform_update(self, serializer):
         animal_antes = self.get_object()
-        valores_antes = {
-            campo: str(getattr(animal_antes, campo, None))
-            for campo in CAMPOS_AUDITABLES
-        }
- 
+        
+        # Capturar valores anteriores de forma limpia
+        valores_antes = {}
+        for campo in CAMPOS_AUDITABLES:
+            valor = getattr(animal_antes, campo, None)
+            if hasattr(valor, 'id'):
+                valores_antes[campo] = str(valor.id)
+            else:
+                valores_antes[campo] = str(valor) if valor is not None else ''
+
         animal = serializer.save()
- 
-        # Registrar cada campo que cambió
+
         try:
             perfil = self.request.user.perfil
         except Exception:
             perfil = None
- 
+
         ip = _get_ip(self.request)
- 
+
         for campo in CAMPOS_AUDITABLES:
-            valor_antes = valores_antes.get(campo)
-            valor_despues = str(getattr(animal, campo, None))
+            valor_antes = valores_antes.get(campo, '')
+            nuevo_obj = getattr(animal, campo, None)
+            valor_despues = str(nuevo_obj.id) if hasattr(nuevo_obj, 'id') else (str(nuevo_obj) if nuevo_obj is not None else '')
+            
             if valor_antes != valor_despues:
                 AuditoriaAnimal.objects.create(
                     animal=animal,
