@@ -216,9 +216,9 @@ LOGGING = {
             'formatter': 'simple',
         },
         'file': {
-            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'class': 'logging.handlers.RotatingFileHandler',
             'filename': LOGS_DIR / 'agrogestor.log',
-            'when': 'midnight',
+            'maxBytes': 10 * 1024 * 1024,
             'backupCount': 30,
             'formatter': 'verbose',
             'encoding': 'utf-8',
