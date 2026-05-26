@@ -14,6 +14,7 @@ class AnimalesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final animalesAsync = ref.watch(animalesNotifierProvider);
     final filtros = ref.watch(animalesFilterProvider);
+    final estadoFiltro = ref.watch(animalesEstadoFiltroProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -22,6 +23,15 @@ class AnimalesScreen extends ConsumerWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
+          // Toggle activos / todos
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: _EstadoToggle(
+              valor: estadoFiltro,
+              onChanged: (v) =>
+                  ref.read(animalesEstadoFiltroProvider.notifier).state = v,
+            ),
+          ),
           IconButton(
             icon: CircleAvatar(
               radius: 16,
@@ -50,67 +60,80 @@ class AnimalesScreen extends ConsumerWidget {
           ),
         ),
         data: (animales) {
-          final filtrados = animales
-              .where((a) {
-                if (filtros.containsKey('sexo') &&
-                    a.sexo != filtros['sexo']) return false;
-                if (filtros.containsKey('estado') &&
-                    a.estado != filtros['estado']) return false;
-                return true;
-              })
-              .toList();
+          // Filtrar por estado seleccionado en el cliente
+          var filtrados = animales.where((a) {
+            if (estadoFiltro != 'todos' && a.estado != estadoFiltro) {
+              return false;
+            }
+            if (filtros.containsKey('sexo') && a.sexo != filtros['sexo']) {
+              return false;
+            }
+            return true;
+          }).toList();
 
-          return filtrados.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.pets, size: 64, color: Colors.grey[300]),
-                      const SizedBox(height: 16),
-                      Text('Sin animales registrados',
-                          style: Theme.of(context).textTheme.bodyMedium),
-                    ],
+          if (filtrados.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.pets, size: 64, color: Colors.grey[300]),
+                  const SizedBox(height: 16),
+                  Text(
+                    estadoFiltro == 'activo'
+                        ? 'Sin animales activos'
+                        : 'Sin animales registrados',
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                )
-              : ListView.builder(
-                  itemCount: filtrados.length,
-                  itemBuilder: (context, index) {
-                    final animal = filtrados[index];
-                    return Container(
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [AppTheme.softShadow],
+                ],
+              ),
+            );
+          }
+
+          return ListView.builder(
+            itemCount: filtrados.length,
+            itemBuilder: (context, index) {
+              final animal = filtrados[index];
+              final esInactivo = animal.estado != 'activo';
+
+              return Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: esInactivo ? Colors.grey[100] : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [AppTheme.softShadow],
+                  border: esInactivo
+                      ? Border.all(color: Colors.grey[300]!, width: 1)
+                      : null,
+                ),
+                child: ListTile(
+                  onTap: () => context.push('/animales/${animal.id}'),
+                  leading: CircleAvatar(
+                    backgroundColor: esInactivo
+                        ? Colors.grey[300]
+                        : AppTheme.secondary.withOpacity(0.2),
+                    child: Text(
+                      animal.numeroArete[0].toUpperCase(),
+                      style: TextStyle(
+                        color:
+                            esInactivo ? Colors.grey[600] : AppTheme.secondary,
+                        fontWeight: FontWeight.bold,
                       ),
-                      child: ListTile(
-                        onTap: () => context.push('/animales/${animal.id}'),
-                        leading: CircleAvatar(
-                          backgroundColor: AppTheme.secondary.withOpacity(0.2),
-                          child: Text(
-                            animal.numeroArete[0].toUpperCase(),
-                            style: const TextStyle(
-                              color: AppTheme.secondary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                    ),
+                  ),
+                  title: Text(
+                    animal.nombre ?? animal.numeroArete,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: esInactivo ? Colors.grey[600] : null,
                         ),
-                        title: Text(animal.nombre ?? animal.numeroArete,
-                            style: Theme.of(context)
-                                .textTheme.titleMedium),
-                        subtitle: Text(
-                            '${animal.raza ?? 'Sin raza'} • ${animal.sexo == 'M' ? 'Macho' : 'Hembra'}'),
-                        trailing: Chip(
-                          label: Text(animal.estado),
-                          backgroundColor: animal.estado == 'activo'
-                              ? AppTheme.success.withOpacity(0.2)
-                              : Colors.grey[200],
-                        ),
-                      ),
-                    ).animate().fadeIn().slideX();
-                  },
-                );
+                  ),
+                  subtitle: Text(
+                    '${animal.raza ?? 'Sin raza'} • ${animal.sexo == 'M' ? 'Macho' : 'Hembra'}',
+                  ),
+                  trailing: _EstadoChip(estado: animal.estado),
+                ),
+              ).animate().fadeIn().slideX();
+            },
+          );
         },
       ),
       floatingActionButton: FloatingActionButton(
@@ -124,6 +147,96 @@ class AnimalesScreen extends ConsumerWidget {
         },
         child: const Icon(Icons.add),
       ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Widget: toggle Activos / Todos
+// ---------------------------------------------------------------------------
+class _EstadoToggle extends StatelessWidget {
+  final String valor;
+  final ValueChanged<String> onChanged;
+
+  const _EstadoToggle({required this.valor, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => onChanged(valor == 'activo' ? 'todos' : 'activo'),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: valor == 'todos'
+              ? Colors.white.withOpacity(0.25)
+              : Colors.white.withOpacity(0.10),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white54),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              valor == 'todos' ? Icons.visibility : Icons.visibility_off,
+              color: Colors.white,
+              size: 15,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              valor == 'todos' ? 'Todos' : 'Activos',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Widget: chip de estado con color semántico
+// ---------------------------------------------------------------------------
+class _EstadoChip extends StatelessWidget {
+  final String estado;
+
+  const _EstadoChip({required this.estado});
+
+  Color get _color => switch (estado) {
+        'activo' => AppTheme.success,
+        'vendido' => Colors.purple,
+        'muerto' => AppTheme.error,
+        'transferido' => Colors.orange,
+        _ => Colors.grey,
+      };
+
+  String get _label => switch (estado) {
+        'activo' => 'Activo',
+        'vendido' => 'Vendido',
+        'muerto' => 'Muerto',
+        'transferido' => 'Transferido',
+        _ => estado,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return Chip(
+      label: Text(
+        _label,
+        style: TextStyle(
+          color: _color,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      backgroundColor: _color.withOpacity(0.12),
+      side: BorderSide(color: _color.withOpacity(0.3)),
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );
   }
 }
