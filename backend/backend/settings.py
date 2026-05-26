@@ -21,6 +21,10 @@ load_dotenv()
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Crear carpeta de logs si no existe
+LOGS_DIR = BASE_DIR / 'logs'
+LOGS_DIR.mkdir(exist_ok=True)
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -46,7 +50,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
-    'drf_spectacular', # Para documentación de la API automatizada
+    'drf_spectacular',  # Para documentación de la API automatizada
     'api',  # Tu app de API
 ]
 
@@ -213,10 +217,11 @@ LOGGING = {
         },
         'file': {
             'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'agrogestor.log'),
+            'filename': LOGS_DIR / 'agrogestor.log',
             'when': 'midnight',
             'backupCount': 30,
             'formatter': 'verbose',
+            'encoding': 'utf-8',
         },
     },
     'root': {
