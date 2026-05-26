@@ -8,6 +8,7 @@ import '../../core/providers/animales_provider.dart';
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import 'animal_form_sheet.dart';
+import 'mover_lote_sheet.dart';
 
 // ---------------------------------------------------------------------------
 // Provider de auditoría por animal
@@ -86,6 +87,13 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                   icon: const Icon(Icons.edit),
                   tooltip: 'Editar',
                   onPressed: () => _showEditSheet(context, animal),
+                ),
+              if (esActivo)
+                IconButton(
+                  icon: const Icon(Icons.compare_arrows),
+                  tooltip: 'Mover de lote',
+                  color: AppTheme.primary,
+                  onPressed: () => _showMoverLoteSheet(context, animal),
                 ),
               if (esActivo)
                 IconButton(
@@ -440,6 +448,15 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => AnimalFormSheet(animalToEdit: animal),
+    );
+  }
+
+  void _showMoverLoteSheet(BuildContext context, Animal animal) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => MoverLoteSheet(animal: animal),
     );
   }
 

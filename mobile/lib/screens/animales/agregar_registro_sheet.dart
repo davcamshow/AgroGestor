@@ -18,7 +18,8 @@ class AgregarRegistroSheet extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<AgregarRegistroSheet> createState() => _AgregarRegistroSheetState();
+  ConsumerState<AgregarRegistroSheet> createState() =>
+      _AgregarRegistroSheetState();
 }
 
 class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
@@ -85,8 +86,10 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
                 child: TextButton(
                   onPressed: () => setState(() => _selectedTab = 0),
                   style: TextButton.styleFrom(
-                    backgroundColor: _selectedTab == 0 ? AppTheme.primary : null,
-                    foregroundColor: _selectedTab == 0 ? Colors.white : AppTheme.primary,
+                    backgroundColor:
+                        _selectedTab == 0 ? AppTheme.primary : null,
+                    foregroundColor:
+                        _selectedTab == 0 ? Colors.white : AppTheme.primary,
                   ),
                   child: const Text('Pesaje'),
                 ),
@@ -96,7 +99,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
                   onPressed: () => setState(() => _selectedTab = 1),
                   style: TextButton.styleFrom(
                     backgroundColor: _selectedTab == 1 ? AppTheme.info : null,
-                    foregroundColor: _selectedTab == 1 ? Colors.white : AppTheme.info,
+                    foregroundColor:
+                        _selectedTab == 1 ? Colors.white : AppTheme.info,
                   ),
                   child: const Text('Evento Sanitario'),
                 ),
@@ -119,7 +123,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Fecha de Pesaje', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Fecha de Pesaje',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             InkWell(
               onTap: () async {
@@ -142,7 +147,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('${_fechaPeso.day}/${_fechaPeso.month}/${_fechaPeso.year}'),
+                    Text(
+                        '${_fechaPeso.day}/${_fechaPeso.month}/${_fechaPeso.year}'),
                     const Icon(Icons.calendar_today),
                   ],
                 ),
@@ -163,7 +169,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
               },
             ),
             const SizedBox(height: 16),
-            const Text('Condición Corporal (1-5)', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Condición Corporal (1-5)',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -174,14 +181,18 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: _condicionCorporal == n ? AppTheme.primary : Colors.grey[200],
+                      color: _condicionCorporal == n
+                          ? AppTheme.primary
+                          : Colors.grey[200],
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Center(
                       child: Text(
                         n.toString(),
                         style: TextStyle(
-                          color: _condicionCorporal == n ? Colors.white : Colors.black,
+                          color: _condicionCorporal == n
+                              ? Colors.white
+                              : Colors.black,
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
                         ),
@@ -200,7 +211,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
                   backgroundColor: AppTheme.primary,
                   padding: const EdgeInsets.all(16),
                 ),
-                child: const Text('Guardar Pesaje', style: TextStyle(color: Colors.white)),
+                child: const Text('Guardar Pesaje',
+                    style: TextStyle(color: Colors.white)),
               ),
             ),
           ],
@@ -217,15 +229,19 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Tipo de Evento', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Tipo de Evento',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
               value: _tipoEvento,
               decoration: const InputDecoration(border: OutlineInputBorder()),
               items: const [
-                DropdownMenuItem(value: 'vacunacion', child: Text('Vacunación')),
-                DropdownMenuItem(value: 'desparasitacion', child: Text('Desparasitación')),
-                DropdownMenuItem(value: 'tratamiento', child: Text('Tratamiento')),
+                DropdownMenuItem(
+                    value: 'vacunacion', child: Text('Vacunación')),
+                DropdownMenuItem(
+                    value: 'desparasitacion', child: Text('Desparasitación')),
+                DropdownMenuItem(
+                    value: 'tratamiento', child: Text('Tratamiento')),
                 DropdownMenuItem(value: 'cirugia', child: Text('Cirugía')),
               ],
               onChanged: (v) => setState(() => _tipoEvento = v ?? 'vacunacion'),
@@ -238,7 +254,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
                 border: OutlineInputBorder(),
               ),
               validator: (value) {
-                if (value == null || value.isEmpty) return 'Ingresa el producto';
+                if (value == null || value.isEmpty)
+                  return 'Ingresa el producto';
                 return null;
               },
             ),
@@ -251,7 +268,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Fecha de Aplicación', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Fecha de Aplicación',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             InkWell(
               onTap: () async {
@@ -274,20 +292,23 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('${_fechaEvento.day}/${_fechaEvento.month}/${_fechaEvento.year}'),
+                    Text(
+                        '${_fechaEvento.day}/${_fechaEvento.month}/${_fechaEvento.year}'),
                     const Icon(Icons.calendar_today),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Próxima Aplicación (opcional)', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Próxima Aplicación (opcional)',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             InkWell(
               onTap: () async {
                 final date = await showDatePicker(
                   context: context,
-                  initialDate: _fechaProxima ?? DateTime.now().add(const Duration(days: 30)),
+                  initialDate: _fechaProxima ??
+                      DateTime.now().add(const Duration(days: 30)),
                   firstDate: DateTime.now(),
                   lastDate: DateTime.now().add(const Duration(days: 365)),
                 );
@@ -347,7 +368,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
                   backgroundColor: AppTheme.info,
                   padding: const EdgeInsets.all(16),
                 ),
-                child: const Text('Guardar Evento', style: TextStyle(color: Colors.white)),
+                child: const Text('Guardar Evento',
+                    style: TextStyle(color: Colors.white)),
               ),
             ),
           ],
@@ -362,7 +384,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
     try {
       await ref.read(registroPesoNotifierProvider.notifier).createRegistro({
         'animal': widget.animalId,
-        'fecha_pesaje': '${_fechaPeso.year}-${_fechaPeso.month.toString().padLeft(2, '0')}-${_fechaPeso.day.toString().padLeft(2, '0')}',
+        'fecha_pesaje':
+            '${_fechaPeso.year}-${_fechaPeso.month.toString().padLeft(2, '0')}-${_fechaPeso.day.toString().padLeft(2, '0')}',
         'peso_kg': _pesoController.text,
         'condicion_corporal': _condicionCorporal,
       });
@@ -392,24 +415,33 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
         'animal': widget.animalId,
         'tipo': _tipoEvento,
         'producto': _productoController.text,
-        'dosis': _dosisController.text.isNotEmpty ? _dosisController.text : null,
-        'fecha_aplicacion': '${_fechaEvento.year}-${_fechaEvento.month.toString().padLeft(2, '0')}-${_fechaEvento.day.toString().padLeft(2, '0')}',
-        'veterinario': _veterinarioController.text.isNotEmpty ? _veterinarioController.text : null,
+        'dosis':
+            _dosisController.text.isNotEmpty ? _dosisController.text : null,
+        'fecha_aplicacion':
+            '${_fechaEvento.year}-${_fechaEvento.month.toString().padLeft(2, '0')}-${_fechaEvento.day.toString().padLeft(2, '0')}',
+        'veterinario': _veterinarioController.text.isNotEmpty
+            ? _veterinarioController.text
+            : null,
         'costo': _costoController.text.isNotEmpty ? _costoController.text : '0',
-        'notas': _notasController.text.isNotEmpty ? _notasController.text : null,
+        'notas':
+            _notasController.text.isNotEmpty ? _notasController.text : null,
       };
 
       if (_fechaProxima != null) {
-        data['proxima_aplicacion'] = '${_fechaProxima!.year}-${_fechaProxima!.month.toString().padLeft(2, '0')}-${_fechaProxima!.day.toString().padLeft(2, '0')}';
+        data['proxima_aplicacion'] =
+            '${_fechaProxima!.year}-${_fechaProxima!.month.toString().padLeft(2, '0')}-${_fechaProxima!.day.toString().padLeft(2, '0')}';
       }
 
-      await ref.read(eventosSanitariosNotifierProvider.notifier).createEvento(data);
+      await ref
+          .read(eventosSanitariosNotifierProvider.notifier)
+          .createEvento(data);
       ref.invalidate(eventosSanitariosNotifierProvider);
 
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Evento sanitario registrado exitosamente')),
+          const SnackBar(
+              content: Text('Evento sanitario registrado exitosamente')),
         );
       }
     } catch (e) {

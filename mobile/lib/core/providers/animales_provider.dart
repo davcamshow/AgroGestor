@@ -51,6 +51,30 @@ class AnimalesNotifier extends AutoDisposeAsyncNotifier<List<Animal>> {
     ref.invalidateSelf();
     return response.data as Map<String, dynamic>;
   }
+
+  /// Realiza el traslado de un animal de un lote a otro.
+  /// Impacta el endpoint custom del backend recalculando contadores y auditando el evento.
+  Future<Map<String, dynamic>> moverLote({
+    required int animalId,
+    required int? loteOrigenId,
+    required int loteDestinoId,
+    required String fechaMovimiento, // Formato esperado 'YYYY-MM-DD'
+    String notas = '',
+  }) async {
+    final client = ref.read(apiClientProvider);
+    final response = await client.dio.post(
+      'animales/$animalId/mover-lote/',
+      data: {
+        'lote_origen_id': loteOrigenId,
+        'lote_destino_id': loteDestinoId,
+        'fecha_movimiento': fechaMovimiento,
+        'notas': notas,
+      },
+    );
+    // Invalida el estado actual para refrescar la información en detalle e historial de forma inmediata
+    ref.invalidateSelf();
+    return response.data as Map<String, dynamic>;
+  }
 }
 
 final animalesNotifierProvider =
