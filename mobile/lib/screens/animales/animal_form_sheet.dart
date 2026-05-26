@@ -9,7 +9,9 @@ import '../../core/providers/animales_provider.dart';
 import '../../core/providers/registros_peso_provider.dart';
 import '../../core/services/bovino_recognition_service.dart';
 import '../../core/theme/app_theme.dart';
-
+//validaciones 
+import 'package:flutter/services.dart'; // Añadir para FilteringTextInputFormatter
+import '../../core/utils/validators.dart'; // Añadir para acceder a AnimalValidator
 class AnimalFormSheet extends ConsumerStatefulWidget {
   final Animal? animalToEdit;
 
@@ -286,9 +288,12 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                             label: 'Número de Arete *',
                             icon: Icons.tag,
                             hint: 'Ej: 001, A024, etc.',
-                            validator: (v) => v?.isEmpty ?? true
-                                ? 'El arete es requerido'
-                                : null,
+                            // bloquea físicamente el teclado 
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\s]'))
+                            ],
+                            // Aquí llamamos al nuevo validador con tu mensaje personalizado
+                            validator: (v) => AnimalValidator.validateArete(v),
                           )
                               .animate()
                               .fadeIn(delay: 200.ms)
@@ -300,6 +305,8 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                             label: 'Nombre',
                             icon: Icons.pets,
                             hint: 'Ej: Negra, Blanca, etc.',
+                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]'))],
+                            validator: (v) => AnimalValidator.validateSoloLetras(v, 'nombre'),
                           )
                               .animate()
                               .fadeIn(delay: 250.ms)
@@ -311,6 +318,8 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                             label: 'Raza',
                             icon: Icons.info_outline,
                             hint: 'Ej: Angus, Hereford, etc.',
+                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]'))],
+                            validator: (v) => AnimalValidator.validateSoloLetras(v, 'raza'),
                           )
                               .animate()
                               .fadeIn(delay: 300.ms)
@@ -322,6 +331,8 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                             label: 'Color',
                             icon: Icons.palette,
                             hint: 'Ej: Negro, Blanco, Cafe, etc.',
+                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]'))],
+                            validator: (v) => AnimalValidator.validateSoloLetras(v, 'color'),
                           )
                               .animate()
                               .fadeIn(delay: 320.ms)
@@ -728,6 +739,7 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
     int maxLines = 1,
+    List<TextInputFormatter>? inputFormatters, // NUEVO PARÁMETRO
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -748,6 +760,7 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
           keyboardType: keyboardType,
           validator: validator,
           maxLines: maxLines,
+          inputFormatters: inputFormatters, // aqui validadores 
         ),
       ],
     );
