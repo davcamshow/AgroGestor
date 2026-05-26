@@ -307,3 +307,82 @@ class AnimalEdicionAuditoriaTests(APITestCase):
         response = self.client.patch(self.url_detalle, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('numero_arete', response.data)
+
+class AnimalBajaTests(APITestCase):
+
+    def setUp(self):
+        # 1. Crear usuario de prueba
+        self.auth_user = AuthUser.objects.create_user(
+            username='test@agrogestor.com',
+            email='test@agrogestor.com',
+            password='Password123!'
+        )
+        self.usuario_perfil = Usuario.objects.create(
+            auth_user=self.auth_user,
+            nombre_completo='Martín Cruz',
+            email='test@agrogestor.com'
+        )
+        
+        # Autenticar al usuario con JWT (o simular login de la request)
+        self.client.force_authenticate(user=self.auth_user)
+
+        # 2. Crear un animal activo para las pruebas de baja
+        self.animal = Animal.objects.create(
+            usuario=self.usuario_perfil,
+            numero_arete='MX-999888',
+            nombre='Bailadora',
+            sexo='H',
+            estado='activo'
+        )
+        
+        # URL dinámica para la baja del animal creado
+        self.url_baja = reverse('animal-registrar-baja', kwargs={'pk': self.animal.id})
+
+    def test_baja_por_venta_exitosa(self):
+        data = {
+            'causa': 'vendido',
+            'fecha': '2026-05-25',
+            'notas': 'Venta regular a productor local'
+        }
+        response = self.client.post(self.url_baja, data, format='json')
+        
+        self.assertEqual(response.status_code, 200)
+        self.animal.refresh_from_db()
+        self.assertEqual(self.animal.estado, 'vendido')
+        
+        # Verificar que se creó el registro de auditoría
+        audit_exists = AuditoriaAnimal.objects.filter(animal=self.animal, campo='estado', valor_nuevo='vendido').exists()
+        self.assertTrue(audit_exists)
+
+    def test_baja_por_muerte_exitosa(self):
+        data = {
+            'causa': 'muerto',
+            'fecha': '2026-05-20',
+            'notas': 'Fallecimiento por complicaciones respiratorias'
+        }
+        response = self.client.post(self.url_baja, data, format='json')
+        
+        self.assertEqual(response.status_code, 200)
+        self.animal.refresh_from_db()
+        self.assertEqual(self.animal.estado, 'muerto')
+
+    def test_baja_por_transferencia_exitosa(self):
+        data = {
+            'causa': 'transferido',
+            'fecha': '2026-05-24',
+            'notas': 'Transferido a rancho secundario colindante'
+        }
+        response = self.client.post(self.url_baja, data, format='json')
+        
+        self.assertEqual(response.status_code, 200)
+        self.animal.refresh_from_db()
+        self.assertEqual(self.animal.estado, 'transferido')
+
+    def test_baja_falla_por_campos_faltantes(self):
+        # Enviar datos incompletos sin fecha
+        data = {
+            'causa': 'muerto'
+        }
+        response = self.client.post(self.url_baja, data, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('error', response.data)

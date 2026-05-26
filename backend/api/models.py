@@ -376,6 +376,7 @@ class Animal(models.Model):
         ('activo', 'Activo'),
         ('vendido', 'Vendido'),
         ('muerto', 'Muerto'),
+        ('transferido', 'Transferido'),
     ]
 
     usuario = models.ForeignKey(
