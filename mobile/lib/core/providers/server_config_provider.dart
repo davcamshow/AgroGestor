@@ -1,15 +1,18 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 const _storage = FlutterSecureStorage();
 const _key = 'server_url';
 
+String get _defaultUrl => dotenv.env['BASE_URL'] ?? 'http://localhost:8000/api/';
+
 final serverUrlProvider = StateNotifierProvider<ServerUrlNotifier, String>((ref) {
   return ServerUrlNotifier();
 });
 
 class ServerUrlNotifier extends StateNotifier<String> {
-  ServerUrlNotifier() : super('http://192.168.101.14:8000/api/') {
+  ServerUrlNotifier() : super(_defaultUrl) {
     _loadUrl();
   }
 
@@ -21,18 +24,12 @@ class ServerUrlNotifier extends StateNotifier<String> {
   }
 
   Future<void> saveUrl(String url) async {
-    // Validar que no esté vacío y tenga formato correcto
     if (url.isEmpty) return;
 
-    // Asegurar que termine con /api/
     String finalUrl = url;
     if (!finalUrl.endsWith('/')) finalUrl += '/';
     if (!finalUrl.endsWith('api/')) {
-      if (finalUrl.endsWith('api/')) {
-        // Ya está bien
-      } else {
-        finalUrl += 'api/';
-      }
+      finalUrl += 'api/';
     }
 
     await _storage.write(key: _key, value: finalUrl);
@@ -41,6 +38,6 @@ class ServerUrlNotifier extends StateNotifier<String> {
 
   Future<void> clear() async {
     await _storage.delete(key: _key);
-    state = 'http://192.168.101.14:8000/api/';
+    state = _defaultUrl;
   }
 }
