@@ -190,17 +190,22 @@ class AnimalViewSet(viewsets.ModelViewSet):
     serializer_class = AnimalSerializer
     permission_classes = [IsAuthenticated]
  
+    # Modificación en backend/api/views.py -> AnimalViewSet
     def get_queryset(self):
         qs = Animal.objects.filter(usuario=self.request.user.perfil)
         lote_id = self.request.query_params.get('lote')
         sexo = self.request.query_params.get('sexo')
-        estado = self.request.query_params.get('estado')
+        
+        # CAMBIO: Si no se pasa un estado en la URL, filtramos solo los 'activo' por defecto
+        estado = self.request.query_params.get('estado', 'activo')
+        
         if lote_id:
             qs = qs.filter(lote_id=lote_id)
         if sexo:
             qs = qs.filter(sexo=sexo)
-        if estado:
+        if estado and estado != 'todos':  # Permite una opción para ver 'todos' si lo deseas en el frontend
             qs = qs.filter(estado=estado)
+            
         return qs.select_related('lote', 'madre', 'padre').prefetch_related('registros_peso')
  
     def perform_create(self, serializer):
@@ -249,6 +254,71 @@ class AnimalViewSet(viewsets.ModelViewSet):
         registros = animal.auditoria.all()
         serializer = AuditoriaAnimalSerializer(registros, many=True)
         return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path='baja')
+    def registrar_baja(self, request, pk=None):
+        """Registra la baja lógica de un animal (venta, muerte, transferencia)."""
+        animal = self.get_object()
+        
+        # Validar parámetros obligatorios según criterios de aceptación
+        causa = request.data.get('causa') # esperado: 'vendido', 'muerto', 'transferido'
+        fecha_baja = request.data.get('fecha') # esperado: 'YYYY-MM-DD'
+        notas = request.data.get('notas', '')
+
+        if not causa or not fecha_baja:
+            return Response(
+                {'error': 'La causa (estado) y la fecha de baja son campos obligatorios.'}, 
+                status=400
+            )
+            
+        opciones_baja = ['vendido', 'muerto', 'transferido']
+        if causa not in opciones_baja:
+            return Response(
+                {'error': f"Causa no válida. Opciones permitidas: {', '.join(opciones_baja)}"}, 
+                status=400
+            )
+
+        # Almacenar estado anterior para la auditoría
+        estado_anterior = animal.estado
+
+        # Cambiar estado del animal y sacarlo de su lote actual si corresponde
+        animal.estado = causa
+        animal.lote = None # Al darse de baja, deja de pertenecer al flujo activo de un lote
+        animal.save()
+
+        # Registrar de forma explícita en la tabla de auditoría de cambios
+        try:
+            perfil = self.request.user.perfil
+        except Exception:
+            perfil = None
+
+        AuditoriaAnimal.objects.create(
+            animal=animal,
+            usuario=perfil,
+            campo='estado',
+            valor_anterior=estado_anterior,
+            valor_nuevo=causa,
+            ip_address=_get_ip(self.request),
+        )
+
+        # Si hay notas o causa detallada, puedes dejar registro en el historial de auditoría
+        if notas:
+            AuditoriaAnimal.objects.create(
+                animal=animal,
+                usuario=perfil,
+                campo='notas_baja',
+                valor_anterior='',
+                valor_nuevo=f"Fecha baja: {fecha_baja}. Notas: {notas}",
+                ip_address=_get_ip(self.request),
+            )
+
+        return Response({
+            'mensaje': f'El animal con arete {animal.numero_arete} ha sido dado de baja por motivo: {causa}.',
+            'animal_id': animal.id,
+            'nuevo_estado': animal.estado
+        }, status=200)
+
+
 
 
 class CicloReproductivoViewSet(viewsets.ModelViewSet):
