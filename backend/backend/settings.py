@@ -91,7 +91,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.getenv('DB_NAME', 'postgres'),
-        'USER': os.getenv('DB_USER', 'postgres.xpmtapqogmmtzaknobzg'),
+        'USER': os.getenv('DB_USER', 'postgres.vcxdtkekiweomnemfwdk'),
         'PASSWORD': os.getenv('DB_PASSWORD', ''),
         # CAMBIAR el host al Transaction Pooler (puerto 6543)
         'HOST': os.getenv('DB_HOST', 'aws-1-us-east-2.pooler.supabase.com'),
