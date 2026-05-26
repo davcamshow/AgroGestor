@@ -408,11 +408,11 @@ class Animal(models.Model):
 
     numero_arete = models.CharField(max_length=100)
     nombre = models.CharField(max_length=100, blank=True, null=True)
-    raza = models.CharField(max_length=100, blank=True, null=True)
+    raza = models.CharField(max_length=100) #cambio para que sea obligatorio
     sexo = models.CharField(max_length=1, choices=SEXOS)
-    fecha_nacimiento = models.DateField(null=True, blank=True)
+    fecha_nacimiento = models.DateField()  #cambio para que sea obligatorio
     color = models.CharField(max_length=50, blank=True, null=True)
-    peso_nacimiento_kg = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    peso_nacimiento_kg = models.DecimalField(max_digits=8, decimal_places=2) #cambio para que sea obligatorio
     estado = models.CharField(max_length=20, choices=ESTADOS, default='activo')
     
     # Campos adicionales para reproducción
