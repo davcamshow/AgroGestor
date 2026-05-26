@@ -5,7 +5,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import action
 from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth import authenticate
-from django.db.models import Sum
+from django.db.models import Sum, Count
 import logging
 
 logger = logging.getLogger(__name__)
@@ -42,6 +42,7 @@ class RegisterView(generics.CreateAPIView):
                     mensaje='Usuario registrado exitosamente'
                 )
                 logger.info(f"Registro exitoso para {usuario.email}")
+                return Response(serializer.data, status=201)
             except Exception as e:
                 AuditoriaLogin.objects.create(
                     usuario=None,
@@ -52,8 +53,7 @@ class RegisterView(generics.CreateAPIView):
                     mensaje=f'Error en registro: {str(e)}'
                 )
                 logger.error(f"Error en registro: {str(e)}")
-                raise
-            return Response(serializer.data, status=201)
+                return Response({'error': f'Error interno al registrar: {str(e)}'}, status=500)
         return Response(serializer.errors, status=400)
 
     def get_client_ip(self, request):
@@ -113,7 +113,7 @@ class InsumoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Insumo.objects.filter(usuario=self.request.user.perfil)
+        return Insumo.objects.filter(usuario=self.request.user.perfil).select_related('categoria', 'proveedor_preferido')
 
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user.perfil)
@@ -124,7 +124,7 @@ class MovimientoInventarioViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return MovimientoInventario.objects.filter(insumo__usuario=self.request.user.perfil)
+        return MovimientoInventario.objects.filter(insumo__usuario=self.request.user.perfil).select_related('insumo')
 
 
 class DietaViewSet(viewsets.ModelViewSet):
@@ -143,7 +143,7 @@ class DietaInsumoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return DietaInsumo.objects.filter(dieta__usuario=self.request.user.perfil)
+        return DietaInsumo.objects.filter(dieta__usuario=self.request.user.perfil).select_related('dieta', 'insumo')
 
 
 class LoteViewSet(viewsets.ModelViewSet):
@@ -151,7 +151,7 @@ class LoteViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Lote.objects.filter(usuario=self.request.user.perfil)
+        return Lote.objects.filter(usuario=self.request.user.perfil).select_related('dieta').annotate(animales_count=Count('animales'))
 
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user.perfil)
@@ -162,7 +162,7 @@ class PesajeLoteViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return PesajeLote.objects.filter(lote__usuario=self.request.user.perfil)
+        return PesajeLote.objects.filter(lote__usuario=self.request.user.perfil).select_related('lote')
 
 
 class AlimentacionDiariaViewSet(viewsets.ModelViewSet):
@@ -170,7 +170,7 @@ class AlimentacionDiariaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return AlimentacionDiaria.objects.filter(lote__usuario=self.request.user.perfil)
+        return AlimentacionDiaria.objects.filter(lote__usuario=self.request.user.perfil).select_related('lote', 'dieta', 'usuario_registro')
 
 
 CAMPOS_AUDITABLES = [
@@ -626,7 +626,7 @@ def gestionar_colaboradores(request, colaborador_id=None):
             rol=rol
         )
 
-        return Response({'mensaje': f'Usuario {email_invitado} añadido como colaborador'})
+        return Response({'mensaje': f'Usuario {email_invitado} añadido como colaborador'}, status=201)
 
     elif request.method == 'DELETE':
         if not colaborador_id:
@@ -636,7 +636,7 @@ def gestionar_colaboradores(request, colaborador_id=None):
             colaborador = UsuarioInvitado.objects.get(id=colaborador_id, cuenta_principal=usuario)
             colaborador.activo = False
             colaborador.save()
-            return Response({'mensaje': 'Colaborador eliminado'})
+            return Response(status=204)
         except UsuarioInvitado.DoesNotExist:
             return Response({'error': 'Colaborador no encontrado'}, status=404)
 

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,7 +21,16 @@ void main() async {
     ),
   );
 
-  runApp(const ProviderScope(child: BovionApp()));
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+  };
+
+  runZonedGuarded(
+    () => runApp(const ProviderScope(child: BovionApp())),
+    (error, stack) {
+      debugPrint('Unhandled error: $error\n$stack');
+    },
+  );
 }
 
 class BovionApp extends ConsumerWidget {

@@ -97,7 +97,7 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST', 'aws-1-us-east-2.pooler.supabase.com'),
         'PORT': os.getenv('DB_PORT', '6543'),  # <-- cambiar 5432 por 6543
         'CONN_MAX_AGE': 0,  # <-- cambiar 600 por 0
-        'OPTIONS': {
+        'OPTIONS': {} if os.getenv('DB_HOST', 'aws-1-us-east-2.pooler.supabase.com') in ('localhost', '127.0.0.1', 'db', 'host.docker.internal') else {
             'sslmode': 'require',
         }
     }
@@ -191,26 +191,51 @@ SIMPLE_JWT = {
 }
 
 # Logging
+import logging.handlers
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'simple',
+        },
+        'file': {
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'agrogestor.log'),
+            'when': 'midnight',
+            'backupCount': 30,
+            'formatter': 'verbose',
         },
     },
     'root': {
-        'handlers': ['console'],
-        'level': 'DEBUG',
+        'handlers': ['console', 'file'],
+        'level': 'INFO',
     },
     'loggers': {
         'django': {
-            'handlers': ['console'],
+            'handlers': ['console', 'file'],
             'level': 'INFO',
             'propagate': False,
         },
         'django.request': {
-            'handlers': ['console'],
+            'handlers': ['file'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'api': {
+            'handlers': ['console', 'file'],
             'level': 'DEBUG',
             'propagate': False,
         },

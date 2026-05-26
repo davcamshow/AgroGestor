@@ -105,7 +105,7 @@ class Usuario(models.Model):
         ('lb', 'Libra'),
     ]
 
-    nombre_completo = models.EmailField()
+    nombre_completo = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     password_hash = models.CharField(max_length=255)
     telefono = models.CharField(max_length=50, blank=True, null=True)
@@ -523,15 +523,6 @@ class RegistroNacimiento(models.Model):
             if not self.fecha_destete:
                 self.fecha_destete = self.fecha_nacimiento + timedelta(days=70)
         super().save(*args, **kwargs)
-
-    class Meta:
-        indexes = [
-            models.Index(fields=['madre']),
-            models.Index(fields=['fecha_nacimiento']),
-        ]
-
-    def __str__(self):
-        return f"{self.madre.numero_arete} - {self.sexo} ({self.fecha_nacimiento})"
 
 
 class RegistroPeso(models.Model):

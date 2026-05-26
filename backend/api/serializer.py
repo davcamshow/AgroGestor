@@ -56,31 +56,37 @@ class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
         fields = '__all__'
+        read_only_fields = ('fecha_registro',)
 
 class ProveedorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Proveedor
         fields = '__all__'
+        read_only_fields = ('usuario',)
 
 class CategoriaInsumoSerializer(serializers.ModelSerializer):
     class Meta:
         model = CategoriaInsumo
         fields = '__all__'
+        read_only_fields = ('usuario',)
 
 class InsumoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Insumo
         fields = '__all__'
+        read_only_fields = ('usuario', 'fecha_actualizacion')
 
 class MovimientoInventarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = MovimientoInventario
         fields = '__all__'
+        read_only_fields = ('fecha_movimiento',)
 
 class DietaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dieta
         fields = '__all__'
+        read_only_fields = ('usuario', 'fecha_creacion', 'ultima_modificacion')
 
 class DietaInsumoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -89,14 +95,12 @@ class DietaInsumoSerializer(serializers.ModelSerializer):
 
 class LoteSerializer(serializers.ModelSerializer):
     capacidad_maxima = serializers.IntegerField(read_only=True)
-    animales_count = serializers.SerializerMethodField()
+    animales_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Lote
         fields = '__all__'
-
-    def get_animales_count(self, obj):
-        return obj.animales.count()
+        read_only_fields = ('usuario',)
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -123,8 +127,6 @@ class LoteSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     'cantidad_cabezas': f'La capacidad mínima es de {capacidad_min} cabeza(s)'
                 })
-            
-            attrs['capacidad_maxima'] = capacidad_max
         return attrs
 
 class PesajeLoteSerializer(serializers.ModelSerializer):
