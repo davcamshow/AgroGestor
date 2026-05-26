@@ -7,7 +7,8 @@ from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth import authenticate
 from django.db.models import Sum, Count
 import logging
-
+from django.db import transaction
+from rest_framework import status
 logger = logging.getLogger(__name__)
 
 #Importaciones para los viewsets en /api/
@@ -317,6 +318,105 @@ class AnimalViewSet(viewsets.ModelViewSet):
             'animal_id': animal.id,
             'nuevo_estado': animal.estado
         }, status=200)
+
+
+
+    @action(detail=True, methods=['post'], url_path='mover-lote')
+    def mover_lote(self, request, pk=None):
+        """
+        Mueve un animal de un lote origen a un lote destino.
+        """
+        animal = self.get_object()
+        usuario_perfil = request.user.perfil
+
+        lote_origen_id = request.data.get('lote_origen_id')
+        lote_destino_id = request.data.get('lote_destino_id')
+        fecha_movimiento = request.data.get('fecha_movimiento') # Opcional en el request body, si no se envía se puede usar la de auditoría
+        notas = request.data.get('notas', '')
+
+        # 1. Validaciones iniciales de parámetros
+        if not lote_destino_id:
+            return Response(
+                {'error': 'El lote destino (lote_destino_id) es un campo obligatorio.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # 2. Validación de existencia de los lotes pertenecientes al usuario
+        try:
+            lote_destino = Lote.objects.get(id=lote_destino_id, usuario=usuario_perfil)
+        except Lote.DoesNotExist:
+            return Response(
+                {'error': 'El lote destino no existe o no pertenece a tu cuenta.'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Validar si el animal ya se encuentra en el lote destino
+        if animal.lote_id == lote_destino.id:
+            return Response(
+                {'error': 'El animal ya se encuentra registrado en el lote de destino seleccionado.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Verificar lote de origen si es provisto por el frontend
+        if lote_origen_id and animal.lote_id != int(lote_origen_id):
+            return Response(
+                {'error': 'El lote de origen enviado no coincide con el lote actual del animal.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        lote_origen_previo = animal.lote
+
+        # 3. Proceso de actualización seguro con transacciones
+        with transaction.atomic():
+            # Guardamos el valor previo en formato string para la auditoría de FKs
+            valor_anterior_lote = str(lote_origen_previo.id) if lote_origen_previo else ''
+            
+            # Actualizar el lote del animal
+            animal.lote = lote_destino
+            animal.save()
+
+            # 4. Registro en AuditoriaAnimal (satisface criterios de aceptación e historial)
+            ip_cliente = _get_ip(self.request)
+            
+            # Auditoría del cambio de lote
+            AuditoriaAnimal.objects.create(
+                animal=animal,
+                usuario=usuario_perfil,
+                campo='lote',
+                valor_anterior=valor_anterior_lote,
+                valor_nuevo=str(lote_destino.id),
+                ip_address=ip_cliente,
+            )
+
+            # Si el frontend adjunta notas o fecha del movimiento en campo, se guarda en el historial
+            if notas or fecha_movimiento:
+                info_movimiento = f"Fecha Movimiento: {fecha_movimiento or 'No especificada'}. Notas: {notas}"
+                AuditoriaAnimal.objects.create(
+                    animal=animal,
+                    usuario=usuario_perfil,
+                    campo='movimiento_lote_detalles',
+                    valor_anterior='',
+                    valor_nuevo=info_movimiento,
+                    ip_address=ip_cliente,
+                )
+
+            # 5. Contadores de animales por lote
+            # Como tu LoteViewSet utiliza .annotate(animales_count=Count('animales')) de manera dinámica,
+            # no es estrictamente obligatorio alterar campos físicos de contadores, sin embargo,
+            # si en tus modelos guardas un valor estático por alguna razón, recalculamos aquí:
+            if hasattr(lote_destino, 'cantidad_cabezas'):
+                lote_destino.cantidad_cabezas = lote_destino.animales.filter(estado='activo').count()
+                lote_destino.save()
+            if lote_origen_previo and hasattr(lote_origen_previo, 'cantidad_cabezas'):
+                lote_origen_previo.cantidad_cabezas = lote_origen_previo.animales.filter(estado='activo').count()
+                lote_origen_previo.save()
+
+        return Response({
+            'mensaje': f'El animal con arete {animal.numero_arete} se movió exitosamente al lote "{lote_destino.nombre}".',
+            'animal_id': animal.id,
+            'lote_origen_id': lote_origen_previo.id if lote_origen_previo else None,
+            'lote_destino_id': animal.lote.id
+        }, status=status.HTTP_200_OK)
 
 
 
