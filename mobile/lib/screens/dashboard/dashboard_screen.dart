@@ -297,6 +297,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   Widget _buildAnimalWeightChart(int animalId) {
+    ref.watch(animalesNotifierProvider);
     final registrosAsync = ref.watch(registrosPesoAnimalProvider(animalId));
 
     return registrosAsync.when(

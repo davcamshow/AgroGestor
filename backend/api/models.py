@@ -2,7 +2,6 @@ from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import User as AuthUser
 
-
 # ==================== Plan de Suscripción ====================
 class PlanSuscripcion(models.Model):
     """Planes disponibles en el sistema SaaS"""
@@ -106,7 +105,7 @@ class Usuario(models.Model):
         ('lb', 'Libra'),
     ]
 
-    nombre_completo = models.EmailField()
+    nombre_completo = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     password_hash = models.CharField(max_length=255)
     telefono = models.CharField(max_length=50, blank=True, null=True)
@@ -377,6 +376,7 @@ class Animal(models.Model):
         ('activo', 'Activo'),
         ('vendido', 'Vendido'),
         ('muerto', 'Muerto'),
+        ('transferido', 'Transferido'),
     ]
 
     usuario = models.ForeignKey(
@@ -525,15 +525,6 @@ class RegistroNacimiento(models.Model):
                 self.fecha_destete = self.fecha_nacimiento + timedelta(days=70)
         super().save(*args, **kwargs)
 
-    class Meta:
-        indexes = [
-            models.Index(fields=['madre']),
-            models.Index(fields=['fecha_nacimiento']),
-        ]
-
-    def __str__(self):
-        return f"{self.madre.numero_arete} - {self.sexo} ({self.fecha_nacimiento})"
-
 
 class RegistroPeso(models.Model):
     animal = models.ForeignKey(
@@ -637,3 +628,33 @@ class AuditoriaLogin(models.Model):
 
     def __str__(self):
         return f"{self.email} - {self.resultado} - {self.fecha_intento}"
+
+class AuditoriaAnimal(models.Model):
+    animal = models.ForeignKey(
+        Animal,
+        on_delete=models.CASCADE,
+        related_name='auditoria'
+    )
+    usuario = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='auditorias'
+    )
+    campo = models.CharField(max_length=100)
+    valor_anterior = models.TextField(null=True, blank=True)
+    valor_nuevo = models.TextField(null=True,blank=True)
+    fecha_cambio = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['animal']),
+            models.Index(fields=['fecha_cambio']),
+        ]
+        ordering = ['fecha_cambio']
+
+    def __str__(self):
+        return f"[{self.fecha_cambio}] {self.animal} → {self.campo}: {self.valor_anterior} → {self.valor_nuevo}"
+

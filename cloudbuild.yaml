@@ -1,0 +1,77 @@
+steps:
+  # 1. Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/agrogestor/backend:latest'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/agrogestor/backend:$SHORT_SHA'
+      - './backend'
+
+  # 2. Push to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/agrogestor/backend:latest'
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/agrogestor/backend:$SHORT_SHA'
+
+  # 3. Run migrations on Cloud SQL (via a proxy sidecar)
+  - name: 'gcr.io/google-appengine/exec-wrapper'
+    args:
+      - '-i'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/agrogestor/backend:$SHORT_SHA'
+      - '-s'
+      - '$PROJECT_ID:us-central1:agrogestor-db'
+      - '-e'
+      - 'DJANGO_SETTINGS_MODULE=backend.settings'
+      - '--'
+      - 'python'
+      - 'manage.py'
+      - 'migrate'
+
+  # 4. Collect static files
+  - name: 'gcr.io/google-appengine/exec-wrapper'
+    args:
+      - '-i'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/agrogestor/backend:$SHORT_SHA'
+      - '-s'
+      - '$PROJECT_ID:us-central1:agrogestor-db'
+      - '-e'
+      - 'DJANGO_SETTINGS_MODULE=backend.settings'
+      - '--'
+      - 'python'
+      - 'manage.py'
+      - 'collectstatic'
+      - '--noinput'
+
+  # 5. Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'agrogestor-backend'
+      - '--image'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/agrogestor/backend:$SHORT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--add-cloudsql-instances'
+      - '$PROJECT_ID:us-central1:agrogestor-db'
+      - '--set-env-vars'
+      - 'DJANGO_SETTINGS_MODULE=backend.settings,DB_HOST=/cloudsql/$PROJECT_ID:us-central1:agrogestor-db,DB_NAME=agrogestor,DB_USER=agrogestor,DB_PORT=5432,DJANGO_DEBUG=False,DJANGO_ALLOWED_HOSTS=*'
+      - '--set-secrets'
+      - 'DB_PASSWORD=agrogestor-db-password:latest,DJANGO_SECRET_KEY=agrogestor-secret-key:latest'
+
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/agrogestor/backend:latest'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/agrogestor/backend:$SHORT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

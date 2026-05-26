@@ -2,16 +2,17 @@
 from rest_framework.response import Response
 from rest_framework import viewsets, generics, serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.decorators import action
 from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth import authenticate
-from django.db.models import Sum
+from django.db.models import Sum, Count
 import logging
 
 logger = logging.getLogger(__name__)
 
 #Importaciones para los viewsets en /api/
-from .serializer import UsuarioSerializer, ProveedorSerializer, CategoriaInsumoSerializer, InsumoSerializer, MovimientoInventarioSerializer, DietaSerializer, DietaInsumoSerializer, LoteSerializer, PesajeLoteSerializer, AlimentacionDiariaSerializer, RegisterSerializer, UserProfileSerializer, AnimalSerializer, CicloReproductivoSerializer, RegistroPesoSerializer, EventoSanitarioSerializer, AuditoriaLoginSerializer, RegistroNacimientoSerializer, PlanSuscripcionSerializer, UsuarioInvitadoSerializer
-from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento, PlanSuscripcion, SuscripcionUsuario, UsuarioInvitado
+from .serializer import UsuarioSerializer, ProveedorSerializer, CategoriaInsumoSerializer, InsumoSerializer, MovimientoInventarioSerializer, DietaSerializer, DietaInsumoSerializer, LoteSerializer, PesajeLoteSerializer, AlimentacionDiariaSerializer, RegisterSerializer, UserProfileSerializer, AnimalSerializer, CicloReproductivoSerializer, RegistroPesoSerializer, EventoSanitarioSerializer, AuditoriaLoginSerializer, RegistroNacimientoSerializer, PlanSuscripcionSerializer, UsuarioInvitadoSerializer, AuditoriaAnimalSerializer
+from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento, PlanSuscripcion, SuscripcionUsuario, UsuarioInvitado, AuditoriaAnimal
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -41,6 +42,7 @@ class RegisterView(generics.CreateAPIView):
                     mensaje='Usuario registrado exitosamente'
                 )
                 logger.info(f"Registro exitoso para {usuario.email}")
+                return Response(serializer.data, status=201)
             except Exception as e:
                 AuditoriaLogin.objects.create(
                     usuario=None,
@@ -51,8 +53,7 @@ class RegisterView(generics.CreateAPIView):
                     mensaje=f'Error en registro: {str(e)}'
                 )
                 logger.error(f"Error en registro: {str(e)}")
-                raise
-            return Response(serializer.data, status=201)
+                return Response({'error': f'Error interno al registrar: {str(e)}'}, status=500)
         return Response(serializer.errors, status=400)
 
     def get_client_ip(self, request):
@@ -112,7 +113,7 @@ class InsumoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Insumo.objects.filter(usuario=self.request.user.perfil)
+        return Insumo.objects.filter(usuario=self.request.user.perfil).select_related('categoria', 'proveedor_preferido')
 
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user.perfil)
@@ -123,7 +124,7 @@ class MovimientoInventarioViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return MovimientoInventario.objects.filter(insumo__usuario=self.request.user.perfil)
+        return MovimientoInventario.objects.filter(insumo__usuario=self.request.user.perfil).select_related('insumo')
 
 
 class DietaViewSet(viewsets.ModelViewSet):
@@ -142,7 +143,7 @@ class DietaInsumoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return DietaInsumo.objects.filter(dieta__usuario=self.request.user.perfil)
+        return DietaInsumo.objects.filter(dieta__usuario=self.request.user.perfil).select_related('dieta', 'insumo')
 
 
 class LoteViewSet(viewsets.ModelViewSet):
@@ -150,7 +151,7 @@ class LoteViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Lote.objects.filter(usuario=self.request.user.perfil)
+        return Lote.objects.filter(usuario=self.request.user.perfil).select_related('dieta').annotate(animales_count=Count('animales'))
 
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user.perfil)
@@ -161,7 +162,7 @@ class PesajeLoteViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return PesajeLote.objects.filter(lote__usuario=self.request.user.perfil)
+        return PesajeLote.objects.filter(lote__usuario=self.request.user.perfil).select_related('lote')
 
 
 class AlimentacionDiariaViewSet(viewsets.ModelViewSet):
@@ -169,44 +170,155 @@ class AlimentacionDiariaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return AlimentacionDiaria.objects.filter(lote__usuario=self.request.user.perfil)
+        return AlimentacionDiaria.objects.filter(lote__usuario=self.request.user.perfil).select_related('lote', 'dieta', 'usuario_registro')
 
 
-# ViewSets Bovion
+CAMPOS_AUDITABLES = [
+    'numero_arete', 'nombre', 'raza', 'sexo',
+    'fecha_nacimiento', 'color', 'peso_nacimiento_kg',
+    'estado', 'lote', 'madre', 'padre',
+]
+ 
+def _get_ip(request):
+    x_forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded:
+        return x_forwarded.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+ 
+ 
 class AnimalViewSet(viewsets.ModelViewSet):
     serializer_class = AnimalSerializer
     permission_classes = [IsAuthenticated]
-
+ 
+    # Modificación en backend/api/views.py -> AnimalViewSet
     def get_queryset(self):
         qs = Animal.objects.filter(usuario=self.request.user.perfil)
         lote_id = self.request.query_params.get('lote')
         sexo = self.request.query_params.get('sexo')
-        estado = self.request.query_params.get('estado')
+        
+        # CAMBIO: Si no se pasa un estado en la URL, filtramos solo los 'activo' por defecto
+        estado = self.request.query_params.get('estado', 'activo')
+        
         if lote_id:
             qs = qs.filter(lote_id=lote_id)
         if sexo:
             qs = qs.filter(sexo=sexo)
-        if estado:
+        if estado and estado != 'todos':  # Permite una opción para ver 'todos' si lo deseas en el frontend
             qs = qs.filter(estado=estado)
+            
         return qs.select_related('lote', 'madre', 'padre').prefetch_related('registros_peso')
-
-    def create(self, request, *args, **kwargs):
-        logger.info(f"[ANIMAL CREATE] Data received: {request.data}")
-        try:
-            return super().create(request, *args, **kwargs)
-        except Exception as e:
-            logger.error(f"[ANIMAL CREATE] Error: {e}")
-            raise
-
+ 
     def perform_create(self, serializer):
-        usuario = self.request.user.perfil
-        logger.info(f"[ANIMAL CREATE] User: {usuario.email}, puede_crear: {usuario.puede_crear_animal()}")
-        if not usuario.puede_crear_animal():
-            plan = usuario.plan_actual
-            raise serializers.ValidationError({
-                'limite': f'Has alcanzado el límite de {plan.limite_animales} animales de tu plan {plan.nombre}. Upgrade tu plan para agregar más.'
-            })
-        serializer.save(usuario=usuario)
+        serializer.save(usuario=self.request.user.perfil)
+
+    def perform_update(self, serializer):
+        animal_antes = self.get_object()
+        
+        # Capturar valores anteriores de forma limpia
+        valores_antes = {}
+        for campo in CAMPOS_AUDITABLES:
+            valor = getattr(animal_antes, campo, None)
+            if hasattr(valor, 'id'):
+                valores_antes[campo] = str(valor.id)
+            else:
+                valores_antes[campo] = str(valor) if valor is not None else ''
+
+        animal = serializer.save()
+
+        try:
+            perfil = self.request.user.perfil
+        except Exception:
+            perfil = None
+
+        ip = _get_ip(self.request)
+
+        for campo in CAMPOS_AUDITABLES:
+            valor_antes = valores_antes.get(campo, '')
+            nuevo_obj = getattr(animal, campo, None)
+            valor_despues = str(nuevo_obj.id) if hasattr(nuevo_obj, 'id') else (str(nuevo_obj) if nuevo_obj is not None else '')
+            
+            if valor_antes != valor_despues:
+                AuditoriaAnimal.objects.create(
+                    animal=animal,
+                    usuario=perfil,
+                    campo=campo,
+                    valor_anterior=valor_antes,
+                    valor_nuevo=valor_despues,
+                    ip_address=ip,
+                )
+ 
+    @action(detail=True, methods=['get'], url_path='auditoria')
+    def auditoria(self, request, pk=None):
+        """Retorna el historial de cambios de un animal."""
+        animal = self.get_object()
+        registros = animal.auditoria.all()
+        serializer = AuditoriaAnimalSerializer(registros, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'], url_path='baja')
+    def registrar_baja(self, request, pk=None):
+        """Registra la baja lógica de un animal (venta, muerte, transferencia)."""
+        animal = self.get_object()
+        
+        # Validar parámetros obligatorios según criterios de aceptación
+        causa = request.data.get('causa') # esperado: 'vendido', 'muerto', 'transferido'
+        fecha_baja = request.data.get('fecha') # esperado: 'YYYY-MM-DD'
+        notas = request.data.get('notas', '')
+
+        if not causa or not fecha_baja:
+            return Response(
+                {'error': 'La causa (estado) y la fecha de baja son campos obligatorios.'}, 
+                status=400
+            )
+            
+        opciones_baja = ['vendido', 'muerto', 'transferido']
+        if causa not in opciones_baja:
+            return Response(
+                {'error': f"Causa no válida. Opciones permitidas: {', '.join(opciones_baja)}"}, 
+                status=400
+            )
+
+        # Almacenar estado anterior para la auditoría
+        estado_anterior = animal.estado
+
+        # Cambiar estado del animal y sacarlo de su lote actual si corresponde
+        animal.estado = causa
+        animal.lote = None # Al darse de baja, deja de pertenecer al flujo activo de un lote
+        animal.save()
+
+        # Registrar de forma explícita en la tabla de auditoría de cambios
+        try:
+            perfil = self.request.user.perfil
+        except Exception:
+            perfil = None
+
+        AuditoriaAnimal.objects.create(
+            animal=animal,
+            usuario=perfil,
+            campo='estado',
+            valor_anterior=estado_anterior,
+            valor_nuevo=causa,
+            ip_address=_get_ip(self.request),
+        )
+
+        # Si hay notas o causa detallada, puedes dejar registro en el historial de auditoría
+        if notas:
+            AuditoriaAnimal.objects.create(
+                animal=animal,
+                usuario=perfil,
+                campo='notas_baja',
+                valor_anterior='',
+                valor_nuevo=f"Fecha baja: {fecha_baja}. Notas: {notas}",
+                ip_address=_get_ip(self.request),
+            )
+
+        return Response({
+            'mensaje': f'El animal con arete {animal.numero_arete} ha sido dado de baja por motivo: {causa}.',
+            'animal_id': animal.id,
+            'nuevo_estado': animal.estado
+        }, status=200)
+
+
 
 
 class CicloReproductivoViewSet(viewsets.ModelViewSet):
@@ -584,7 +696,7 @@ def gestionar_colaboradores(request, colaborador_id=None):
             rol=rol
         )
 
-        return Response({'mensaje': f'Usuario {email_invitado} añadido como colaborador'})
+        return Response({'mensaje': f'Usuario {email_invitado} añadido como colaborador'}, status=201)
 
     elif request.method == 'DELETE':
         if not colaborador_id:
@@ -594,7 +706,7 @@ def gestionar_colaboradores(request, colaborador_id=None):
             colaborador = UsuarioInvitado.objects.get(id=colaborador_id, cuenta_principal=usuario)
             colaborador.activo = False
             colaborador.save()
-            return Response({'mensaje': 'Colaborador eliminado'})
+            return Response(status=204)
         except UsuarioInvitado.DoesNotExist:
             return Response({'error': 'Colaborador no encontrado'}, status=404)
 

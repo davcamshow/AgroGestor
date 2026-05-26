@@ -86,5 +86,7 @@ AgroGestor/
 ```
 
 ---
+## COMANDO PARA INICIAR PRUEBAS EN EL BACK
+python manage.py test api.tests --settings=backend.test_settings --noinput
 
 **¡Listo! Solo ejecuta los comandos y ya funciona todo.** 🚀

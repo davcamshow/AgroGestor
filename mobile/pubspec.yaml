@@ -14,6 +14,9 @@ dependencies:
   # HTTP client with interceptors for JWT
   dio: ^5.4.3
 
+  # HTTP caching (in-memory)
+  dio_cache_interceptor: ^3.5.1
+
   # Secure token storage
   flutter_secure_storage: ^9.0.0
 
@@ -42,6 +45,9 @@ dependencies:
   intl: ^0.19.0
   cupertino_icons: ^1.0.6
 
+  # Environment variables (.env)
+  flutter_dotenv: ^5.1.0
+
   # Supabase Auth
   supabase_flutter: ^2.5.0
   google_sign_in: ^6.2.0
@@ -60,6 +66,7 @@ flutter:
 
   assets:
     - assets/images/
+    - .env
 
 flutter_launcher_icons:
   android: true

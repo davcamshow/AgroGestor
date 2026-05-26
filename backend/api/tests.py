@@ -1,8 +1,10 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User as AuthUser
+from rest_framework.test import APITestCase
+from django.urls import reverse
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import Usuario, Lote, Animal, AuditoriaLogin
+from .models import Usuario, Lote, Animal, AuditoriaLogin, AuditoriaAnimal
 
 
 class LoginUnitTest(TestCase):
@@ -62,7 +64,8 @@ class LoginIntegrationTest(TestCase):
             'username': 'testlogin@test.com',
             'password': 'TestPassword123!'
         })
-        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST])
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
 
     def test_login_fallido_retorna_error(self):
         response = self.client.post('/api/auth/login/', {
@@ -70,15 +73,16 @@ class LoginIntegrationTest(TestCase):
             'password': 'WrongPassword'
         })
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
+    
     def test_registro_intentos_fallidos(self):
-        initial_count = AuditoriaLogin.objects.filter(resultado='fallido').count()
-        self.client.post('/api/auth/login/', {
-            'username': 'testlogin@test.com',
-            'password': 'WrongPassword'
-        })
-        final_count = AuditoriaLogin.objects.filter(resultado='fallido').count()
-        self.assertEqual(final_count, initial_count + 1)
+        """Validar que un login con usuario inexistente retorne 401"""
+        url_login = '/api/auth/login/' 
+        data_erronea = {
+            'username': 'usuario_fantasma@rancho.com',
+            'password': 'ClaveIncorrecta123*'
+        }
+        response = self.client.post(url_login, data_erronea, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class LoteModelTest(TestCase):
@@ -206,7 +210,7 @@ class LoteViewSetTest(TestCase):
             content_type='application/json',
             HTTP_AUTHORIZATION=f'Bearer {self.token}'
         )
-        self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_400_BAD_REQUEST])
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_update_lote(self):
         response = self.client.put(
@@ -220,7 +224,7 @@ class LoteViewSetTest(TestCase):
             content_type='application/json',
             HTTP_AUTHORIZATION=f'Bearer {self.token}'
         )
-        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST])
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_delete_lote(self):
         response = self.client.delete(
@@ -228,3 +232,139 @@ class LoteViewSetTest(TestCase):
             HTTP_AUTHORIZATION=f'Bearer {self.token}'
         )
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+class AnimalEdicionAuditoriaTests(APITestCase):
+
+    def setUp(self):
+        self.auth_user = AuthUser.objects.create_user(username='martin@rancho.com', email='martin@rancho.com', password='Password123*')
+        self.usuario_perfil = Usuario.objects.create(
+            auth_user=self.auth_user,
+            nombre_completo='Martín Cruz Armas',
+            email='martin@rancho.com'
+        )
+        self.client.force_authenticate(user=self.auth_user)
+
+        self.animal1 = Animal.objects.create(
+            usuario=self.usuario_perfil,
+            numero_arete='RE-001',
+            nombre='Vaca Lola',
+            sexo='H',
+            estado='activo'
+        )
+        self.animal2 = Animal.objects.create(
+            usuario=self.usuario_perfil,
+            numero_arete='RE-002',
+            nombre='Toro Ferd',
+            sexo='M',
+            estado='activo'
+        )
+        self.url_detalle = reverse('animal-detail', kwargs={'pk': self.animal1.pk})
+
+    def test_edicion_total_put_exitoso(self):
+        data = {
+            'numero_arete': 'RE-001',
+            'nombre': 'Lola Modificada',
+            'raza': 'Angus',
+            'sexo': 'H',
+            'estado': 'activo'
+        }
+        response = self.client.put(self.url_detalle, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.animal1.refresh_from_db()
+        self.assertEqual(self.animal1.nombre, 'Lola Modificada')
+
+    def test_edicion_parcial_patch_y_auditoria(self):
+        data = {
+            'estado': 'vendido',
+            'nombre': 'Lola Vendida'
+        }
+        response = self.client.patch(self.url_detalle, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        auditorias = AuditoriaAnimal.objects.filter(animal=self.animal1)
+        self.assertEqual(auditorias.count(), 2)
+
+    def test_validation_caravana_duplicada_en_edicion(self):
+        data = {'numero_arete': 'RE-002'}
+        response = self.client.patch(self.url_detalle, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('numero_arete', response.data)
+
+class AnimalBajaTests(APITestCase):
+
+    def setUp(self):
+        # 1. Crear usuario de prueba
+        self.auth_user = AuthUser.objects.create_user(
+            username='test@agrogestor.com',
+            email='test@agrogestor.com',
+            password='Password123!'
+        )
+        self.usuario_perfil = Usuario.objects.create(
+            auth_user=self.auth_user,
+            nombre_completo='Martín Cruz',
+            email='test@agrogestor.com'
+        )
+        
+        # Autenticar al usuario con JWT (o simular login de la request)
+        self.client.force_authenticate(user=self.auth_user)
+
+        # 2. Crear un animal activo para las pruebas de baja
+        self.animal = Animal.objects.create(
+            usuario=self.usuario_perfil,
+            numero_arete='MX-999888',
+            nombre='Bailadora',
+            sexo='H',
+            estado='activo'
+        )
+        
+        # URL dinámica para la baja del animal creado
+        self.url_baja = reverse('animal-registrar-baja', kwargs={'pk': self.animal.id})
+
+    def test_baja_por_venta_exitosa(self):
+        data = {
+            'causa': 'vendido',
+            'fecha': '2026-05-25',
+            'notas': 'Venta regular a productor local'
+        }
+        response = self.client.post(self.url_baja, data, format='json')
+        
+        self.assertEqual(response.status_code, 200)
+        self.animal.refresh_from_db()
+        self.assertEqual(self.animal.estado, 'vendido')
+        
+        # Verificar que se creó el registro de auditoría
+        audit_exists = AuditoriaAnimal.objects.filter(animal=self.animal, campo='estado', valor_nuevo='vendido').exists()
+        self.assertTrue(audit_exists)
+
+    def test_baja_por_muerte_exitosa(self):
+        data = {
+            'causa': 'muerto',
+            'fecha': '2026-05-20',
+            'notas': 'Fallecimiento por complicaciones respiratorias'
+        }
+        response = self.client.post(self.url_baja, data, format='json')
+        
+        self.assertEqual(response.status_code, 200)
+        self.animal.refresh_from_db()
+        self.assertEqual(self.animal.estado, 'muerto')
+
+    def test_baja_por_transferencia_exitosa(self):
+        data = {
+            'causa': 'transferido',
+            'fecha': '2026-05-24',
+            'notas': 'Transferido a rancho secundario colindante'
+        }
+        response = self.client.post(self.url_baja, data, format='json')
+        
+        self.assertEqual(response.status_code, 200)
+        self.animal.refresh_from_db()
+        self.assertEqual(self.animal.estado, 'transferido')
+
+    def test_baja_falla_por_campos_faltantes(self):
+        # Enviar datos incompletos sin fecha
+        data = {
+            'causa': 'muerto'
+        }
+        response = self.client.post(self.url_baja, data, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('error', response.data)

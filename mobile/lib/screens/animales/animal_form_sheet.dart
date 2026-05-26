@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'dart:io';
 import '../../core/models/animal.dart';
 import '../../core/providers/animales_provider.dart';
+import '../../core/providers/registros_peso_provider.dart';
 import '../../core/services/bovino_recognition_service.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -162,8 +163,18 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
       if (_isEditing) {
         animalId = widget.animalToEdit!.id;
         await ref.read(animalesNotifierProvider.notifier).updateAnimal(animalId, data);
+        ref.invalidate(animalesNotifierProvider);
       } else {
         animalId = await ref.read(animalesNotifierProvider.notifier).createAnimal(data);
+        ref.invalidate(animalesNotifierProvider);
+        if (_pesoController.text.isNotEmpty) {
+          await ref.read(registroPesoNotifierProvider.notifier).createRegistro({
+            'animal': animalId,
+            'fecha_pesaje': _fechaNacimiento?.toIso8601String().split('T')[0] ?? DateTime.now().toIso8601String().split('T')[0],
+            'peso_kg': _pesoController.text,
+          });
+          ref.invalidate(registrosPesoAnimalProvider(animalId));
+        }
       }
 
       if (mounted) {

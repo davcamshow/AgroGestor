@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.validators import UniqueValidator
-from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento, PlanSuscripcion, SuscripcionUsuario, UsuarioInvitado
+from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento, PlanSuscripcion, SuscripcionUsuario, UsuarioInvitado, AuditoriaAnimal
 from django.utils import timezone
 
 # Auth Serializers
@@ -56,31 +56,37 @@ class UsuarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = Usuario
         fields = '__all__'
+        read_only_fields = ('fecha_registro',)
 
 class ProveedorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Proveedor
         fields = '__all__'
+        read_only_fields = ('usuario',)
 
 class CategoriaInsumoSerializer(serializers.ModelSerializer):
     class Meta:
         model = CategoriaInsumo
         fields = '__all__'
+        read_only_fields = ('usuario',)
 
 class InsumoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Insumo
         fields = '__all__'
+        read_only_fields = ('usuario', 'fecha_actualizacion')
 
 class MovimientoInventarioSerializer(serializers.ModelSerializer):
     class Meta:
         model = MovimientoInventario
         fields = '__all__'
+        read_only_fields = ('fecha_movimiento',)
 
 class DietaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Dieta
         fields = '__all__'
+        read_only_fields = ('usuario', 'fecha_creacion', 'ultima_modificacion')
 
 class DietaInsumoSerializer(serializers.ModelSerializer):
     class Meta:
@@ -89,14 +95,12 @@ class DietaInsumoSerializer(serializers.ModelSerializer):
 
 class LoteSerializer(serializers.ModelSerializer):
     capacidad_maxima = serializers.IntegerField(read_only=True)
-    animales_count = serializers.SerializerMethodField()
+    animales_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Lote
         fields = '__all__'
-
-    def get_animales_count(self, obj):
-        return obj.animales.count()
+        read_only_fields = ('usuario',)
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -123,8 +127,6 @@ class LoteSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({
                     'cantidad_cabezas': f'La capacidad mínima es de {capacidad_min} cabeza(s)'
                 })
-            
-            attrs['capacidad_maxima'] = capacidad_max
         return attrs
 
 class PesajeLoteSerializer(serializers.ModelSerializer):
@@ -138,41 +140,55 @@ class AlimentacionDiariaSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-# Serializers Bovion
+class AuditoriaAnimalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AuditoriaAnimal
+        fields = '__all__'
+ 
+ 
 class AnimalSerializer(serializers.ModelSerializer):
     edad_dias = serializers.SerializerMethodField()
     ultimo_peso_kg = serializers.SerializerMethodField()
-    total_eventos_sanitarios = serializers.SerializerMethodField()
-    ultimo_evento = serializers.SerializerMethodField()
-
+    ultimo_peso = serializers.SerializerMethodField()
+    fecha_ultimo_peso = serializers.SerializerMethodField()
+ 
     class Meta:
         model = Animal
         fields = '__all__'
         read_only_fields = ('usuario', 'fecha_registro')
-
+ 
     def get_edad_dias(self, obj):
         if obj.fecha_nacimiento:
             return (timezone.now().date() - obj.fecha_nacimiento).days
         return None
-
+ 
     def get_ultimo_peso_kg(self, obj):
-        if obj.ultimo_peso_kg:
-            return str(obj.ultimo_peso_kg)
         ultimo = obj.registros_peso.first()
         return str(ultimo.peso_kg) if ultimo else None
-
-    def get_total_eventos_sanitarios(self, obj):
-        return obj.eventos_sanitarios.count()
-
-    def get_ultimo_evento(self, obj):
-        ultimo = obj.eventos_sanitarios.first()
-        if ultimo:
-            return {
-                'tipo': ultimo.tipo,
-                'producto': ultimo.producto,
-                'fecha': ultimo.fecha_aplicacion,
-            }
-        return None
+ 
+    def get_ultimo_peso(self, obj):
+        ultimo = obj.registros_peso.first()
+        return float(ultimo.peso_kg) if ultimo else None
+ 
+    def get_fecha_ultimo_peso(self, obj):
+        ultimo = obj.registros_peso.first()
+        return ultimo.fecha_pesaje if ultimo else None
+ 
+    def validate_numero_arete(self, value):
+        """Asegura que la caravana sea única por usuario, excluyendo la instancia actual."""
+        request = self.context.get('request')
+        usuario = None
+        if request and hasattr(request.user, 'perfil'):
+            usuario = request.user.perfil
+ 
+        qs = Animal.objects.filter(usuario=usuario, numero_arete=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(
+                f"Ya existe un animal con el número de caravana '{value}'."
+            )
+        return value
 
 
 class CicloReproductivoSerializer(serializers.ModelSerializer):
