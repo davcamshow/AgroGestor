@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: agrogestor
+      POSTGRES_USER: agrogestor
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-agrogestor_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agrogestor"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_NAME: agrogestor
+      DB_USER: agrogestor
+      DB_PASSWORD: ${DB_PASSWORD:-agrogestor_dev}
+      DB_HOST: db
+      DB_PORT: "5432"
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-django-insecure-dev-key-change-in-prod}
+      DJANGO_DEBUG: "False"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/logs:/app/logs
+      - ./backend/staticfiles:/app/staticfiles
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py collectstatic --noinput &&
+             gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 4"
+
+volumes:
+  postgres_data:

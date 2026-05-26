@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:dio_cache_interceptor/dio_cache_interceptor.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/token_storage.dart';
 
@@ -23,7 +24,20 @@ class ApiClient {
       receiveTimeout: const Duration(seconds: 15),
       headers: {'Content-Type': 'application/json'},
     ));
+    _dio.interceptors.add(_cacheInterceptor());
     _dio.interceptors.add(_jwtInterceptor());
+  }
+
+  Interceptor _cacheInterceptor() {
+    return DioCacheInterceptor(
+      options: CacheOptions(
+        store: MemCacheStore(),
+        policy: CachePolicy.request,
+        hitCacheOnErrorExcept: [401, 403, 404],
+        maxStale: const Duration(minutes: 5),
+        priority: CachePriority.normal,
+      ),
+    );
   }
 
   Interceptor _jwtInterceptor() {

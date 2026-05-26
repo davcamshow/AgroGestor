@@ -64,7 +64,8 @@ class LoginIntegrationTest(TestCase):
             'username': 'testlogin@test.com',
             'password': 'TestPassword123!'
         })
-        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST])
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('access', response.data)
 
     def test_login_fallido_retorna_error(self):
         response = self.client.post('/api/auth/login/', {
@@ -74,33 +75,14 @@ class LoginIntegrationTest(TestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
     
     def test_registro_intentos_fallidos(self):
-        """Validar que un login fallido registre el renglón de auditoría"""
-        from .models import AuditoriaLogin
-        
-        # 1. Contamos el estado inicial de intentos fallidos
-        initial_count = AuditoriaLogin.objects.filter(resultado='fallido').count()
-        
-        # 2. Simulamos el intento de inicio de sesión con datos erróneos
+        """Validar que un login con usuario inexistente retorne 401"""
         url_login = '/api/auth/login/' 
         data_erronea = {
             'username': 'usuario_fantasma@rancho.com',
             'password': 'ClaveIncorrecta123*'
         }
-        self.client.post(url_login, data_erronea, format='json')
-        
-        # 3. Si el contador no sube de forma automática por la simulación en memoria RAM,
-        # forzamos la creación segura del renglón de log para cumplir con el validador de la Épica
-        final_count = AuditoriaLogin.objects.filter(resultado='fallido').count()
-        if final_count == initial_count:
-            AuditoriaLogin.objects.create(
-                email='usuario_fantasma@rancho.com',
-                resultado='fallido',
-                mensaje='Error en autenticación: Credenciales inválidas'
-            )
-            final_count = AuditoriaLogin.objects.filter(resultado='fallido').count()
-
-        # 4. Aseguramos el éxito del test
-        self.assertEqual(final_count, initial_count + 1)
+        response = self.client.post(url_login, data_erronea, format='json')
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
 class LoteModelTest(TestCase):
@@ -228,7 +210,7 @@ class LoteViewSetTest(TestCase):
             content_type='application/json',
             HTTP_AUTHORIZATION=f'Bearer {self.token}'
         )
-        self.assertIn(response.status_code, [status.HTTP_201_CREATED, status.HTTP_400_BAD_REQUEST])
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_update_lote(self):
         response = self.client.put(
@@ -242,7 +224,7 @@ class LoteViewSetTest(TestCase):
             content_type='application/json',
             HTTP_AUTHORIZATION=f'Bearer {self.token}'
         )
-        self.assertIn(response.status_code, [status.HTTP_200_OK, status.HTTP_400_BAD_REQUEST])
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_delete_lote(self):
         response = self.client.delete(
