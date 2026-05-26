@@ -4,16 +4,9 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/token_storage.dart';
 
-<<<<<<< HEAD
-// ⚠️ CAMBIAR ESTA IP AL CONECTAR A DIFERENTE RED
-//const String _baseUrl = 'http:// 192.168.0.8:8000/api/';
 
 String get _baseUrl => dotenv.env['BASE_URL'] ?? 'http://localhost:8000/api/';
 
-
-=======
-String get _baseUrl => dotenv.env['BASE_URL'] ?? 'http://localhost:8000/api/';
->>>>>>> 8e0684338d2ff781e9c0fed947be91286590b72c
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   final tokenStorage = ref.read(tokenStorageProvider);
