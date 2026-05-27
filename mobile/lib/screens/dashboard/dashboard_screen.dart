@@ -280,6 +280,93 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                 );
               },
             ),
+            const SizedBox(height: 24),
+            Text(
+              'Últimos Eventos',
+              style: Theme.of(context).textTheme.titleMedium,
+            ).animate().fadeIn(delay: 800.ms),
+            const SizedBox(height: 12),
+            eventosAsync.when(
+              loading: () => const SizedBox.shrink(),
+              error: (err, _) => Center(child: Text('Error: $err')),
+              data: (eventos) {
+                if (eventos.isEmpty) {
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [AppTheme.softShadow],
+                    ),
+                    child: const Center(
+                      child: Text('Sin eventos registrados',
+                          style: TextStyle(color: Colors.grey)),
+                    ),
+                  );
+                }
+                final recientes = [...eventos]
+                  ..sort((a, b) =>
+                      b.fechaAplicacion.compareTo(a.fechaAplicacion));
+                final ultimos = recientes.take(5).toList();
+                return Column(
+                  children: ultimos.map((evento) {
+                    final animal = animalesAsync.valueOrNull
+                        ?.where((a) => a.id == evento.animalId)
+                        .firstOrNull;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [AppTheme.softShadow],
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 18,
+                            backgroundColor: AppTheme.info.withOpacity(0.15),
+                            child: Icon(
+                              _getTipoIcon(evento.tipo),
+                              size: 18,
+                              color: AppTheme.info,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '${_getTipoLabel(evento.tipo)} - ${evento.producto}',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 13),
+                                ),
+                                Text(
+                                  animal?.numeroArete ?? 'Animal #${evento.animalId}',
+                                  style: TextStyle(
+                                    color: Colors.grey[600],
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            _formatearFecha(evento.fechaAplicacion),
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ).animate().fadeIn().slideX();
+                  }).toList(),
+                );
+              },
+            ),
           ],
         ),
       ),

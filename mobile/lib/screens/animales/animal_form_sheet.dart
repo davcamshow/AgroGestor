@@ -435,7 +435,7 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                               .slideX(begin: 0.3),
                           const SizedBox(height: 28),
                           // Sección Reproducción
-                          if (_sexoSeleccionado == 'M') ...[
+                          if (_sexoSeleccionado == 'H') ...[
                             const Text(
                               'Datos de Reproducción',
                               style: TextStyle(
