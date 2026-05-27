@@ -6,8 +6,19 @@ class AnimalesNotifier extends AutoDisposeAsyncNotifier<List<Animal>> {
   @override
   Future<List<Animal>> build() async {
     final client = ref.read(apiClientProvider);
-    // Por defecto solo trae activos (estado=activo es el default del backend)
-    final response = await client.dio.get('animales/');
+
+    // Leer el estado actual del filtro (activo, todos, vendido, etc.)
+    final estado = ref.watch(animalesEstadoFiltroProvider);
+    final filtrosAdicionales = ref.watch(animalesFilterProvider);
+
+    // Construir los query parameters dinámicamente
+    final queryParams = <String, dynamic>{
+      'estado': estado,
+      ...filtrosAdicionales,
+    };
+
+    final response =
+        await client.dio.get('animales/', queryParameters: queryParams);
     return (response.data as List).map((j) => Animal.fromJson(j)).toList();
   }
 
@@ -85,7 +96,7 @@ final animalesNotifierProvider =
 
 /// Estado seleccionado en el listado: 'activo' | 'todos' | 'vendido' | 'muerto' | 'transferido'
 final animalesEstadoFiltroProvider =
-    StateProvider.autoDispose<String>((ref) => 'activo');
+    StateProvider.autoDispose<String>((ref) => 'todos');
 
 /// Filtros adicionales (sexo, etc.)
 final animalesFilterProvider =

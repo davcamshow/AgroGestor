@@ -302,16 +302,19 @@ class AnimalViewSet(viewsets.ModelViewSet):
             ip_address=_get_ip(self.request),
         )
 
-        # Si hay notas o causa detallada, puedes dejar registro en el historial de auditoría
+        # Registrar las notas de baja y la fecha SIEMPRE, incluso si 'notas' está vacío
+        detalle_baja = f"Fecha baja: {fecha_baja}"
         if notas:
-            AuditoriaAnimal.objects.create(
-                animal=animal,
-                usuario=perfil,
-                campo='notas_baja',
-                valor_anterior='',
-                valor_nuevo=f"Fecha baja: {fecha_baja}. Notas: {notas}",
-                ip_address=_get_ip(self.request),
-            )
+            detalle_baja += f" | Notas: {notas}"
+
+        AuditoriaAnimal.objects.create(
+            animal=animal,
+            usuario=perfil,
+            campo='notas_baja',
+            valor_anterior='',
+            valor_nuevo=detalle_baja,
+            ip_address=_get_ip(self.request),
+        )
 
         return Response({
             'mensaje': f'El animal con arete {animal.numero_arete} ha sido dado de baja por motivo: {causa}.',

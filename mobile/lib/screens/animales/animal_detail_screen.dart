@@ -122,7 +122,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                 IconButton(
                   icon: const Icon(Icons.compare_arrows),
                   tooltip: 'Mover de lote',
-                  color: AppTheme.primary,
+                  color: Colors.white,
                   onPressed: () => _showMoverLoteSheet(context, animal),
                 ),
               if (esActivo)
@@ -168,15 +168,13 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
         children: [
           _buildHeader(animal).animate().fadeIn().slideY(begin: -0.2),
           const SizedBox(height: 24),
-          _buildInfoCard(animal)
-              .animate()
-              .fadeIn(delay: 200.ms)
-              .slideX(),
+          if (animal.estado != 'activo') ...[
+            _buildBajaCard(animal).animate().fadeIn(delay: 150.ms).slideX(),
+            const SizedBox(height: 16),
+          ],
+          _buildInfoCard(animal).animate().fadeIn(delay: 200.ms).slideX(),
           const SizedBox(height: 16),
-          _buildRegistrosCard(animal)
-              .animate()
-              .fadeIn(delay: 300.ms)
-              .slideX(),
+          _buildRegistrosCard(animal).animate().fadeIn(delay: 300.ms).slideX(),
           const SizedBox(height: 24),
           _buildEventsCalendar(animal)
               .animate()
@@ -194,6 +192,46 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
               .slideY(begin: 0.2),
         ],
       ),
+    );
+  }
+
+  Widget _buildBajaCard(Animal animal) {
+    final auditoriaAsync = ref.watch(auditoriaAnimalProvider(animal.id));
+
+    return auditoriaAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (registros) {
+        final notasBaja =
+            registros.where((r) => r['campo'] == 'notas_baja').toList();
+
+        notasBaja.sort((a, b) => (a['fecha_cambio'] as String)
+            .compareTo(b['fecha_cambio'] as String));
+        final ultimoRegistro = notasBaja.lastOrNull;
+
+        if (ultimoRegistro == null) return const SizedBox.shrink();
+
+        final valorNuevo =
+            ultimoRegistro['valor_nuevo'] as String? ?? 'Sin detalles de baja';
+
+        return _Card(
+          title: 'Detalles de Baja',
+          icon: Icons.info,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Descripción y Fecha:',
+                  style: TextStyle(color: Colors.grey, fontSize: 13)),
+              const SizedBox(height: 4),
+              Text(
+                valorNuevo,
+                style:
+                    const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -220,8 +258,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                 lastDay: DateTime(2030),
                 focusedDay: _focusedDay,
                 calendarFormat: _calendarFormat,
-                selectedDayPredicate: (day) =>
-                    isSameDay(_selectedDay, day),
+                selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
                 onDaySelected: (selectedDay, focusedDay) {
                   setState(() {
                     _selectedDay = selectedDay;
@@ -236,18 +273,16 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                 },
                 onHeaderLongPressed: (focusedDay) =>
                     _showYearPickerDialog(focusedDay),
-                eventLoader: (day) =>
-                    _getEventsForDay(day, eventos, pesos),
+                eventLoader: (day) => _getEventsForDay(day, eventos, pesos),
                 headerStyle: const HeaderStyle(
                   formatButtonVisible: true,
                   titleCentered: true,
-                  formatButtonTextStyle:
-                      TextStyle(color: AppTheme.primary),
+                  formatButtonTextStyle: TextStyle(color: AppTheme.primary),
                   headerMargin: EdgeInsets.only(bottom: 8),
-                  leftChevronIcon: Icon(Icons.chevron_left,
-                      color: AppTheme.primary),
-                  rightChevronIcon: Icon(Icons.chevron_right,
-                      color: AppTheme.primary),
+                  leftChevronIcon:
+                      Icon(Icons.chevron_left, color: AppTheme.primary),
+                  rightChevronIcon:
+                      Icon(Icons.chevron_right, color: AppTheme.primary),
                 ),
                 calendarStyle: CalendarStyle(
                   todayDecoration: BoxDecoration(
@@ -273,8 +308,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                             ? AppTheme.warning
                             : _eventTypeColor(e.type);
                         return Container(
-                          margin:
-                              const EdgeInsets.symmetric(horizontal: 1),
+                          margin: const EdgeInsets.symmetric(horizontal: 1),
                           width: 6,
                           height: 6,
                           decoration: BoxDecoration(
@@ -311,8 +345,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
           type: e.tipo,
         ));
       }
-      if (e.proximaAplicacion != null &&
-          isSameDay(e.proximaAplicacion!, day)) {
+      if (e.proximaAplicacion != null && isSameDay(e.proximaAplicacion!, day)) {
         events.add(_CalendarEvent(
           title: 'Próxima: ${_eventTypeLabel(e.tipo)}',
           type: e.tipo,
@@ -411,8 +444,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
               width: 300,
               height: 300,
               child: GridView.builder(
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
                   mainAxisSpacing: 8,
                   crossAxisSpacing: 8,
@@ -420,11 +452,10 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                 itemCount: 12,
                 itemBuilder: (ctx, index) {
                   final month = index + 1;
-                  final isSelected =
-                      selectedYear == focusedDay.year &&
+                  final isSelected = selectedYear == focusedDay.year &&
                       month == focusedDay.month;
-                  final isCurrent = month == selectedMonth &&
-                      selectedYear == focusedDay.year;
+                  final isCurrent =
+                      month == selectedMonth && selectedYear == focusedDay.year;
                   return GestureDetector(
                     onTap: () {
                       setState(() {
@@ -448,9 +479,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                         child: Text(
                           _monthName(month),
                           style: TextStyle(
-                            color: isSelected
-                                ? Colors.white
-                                : Colors.black87,
+                            color: isSelected ? Colors.white : Colors.black87,
                             fontWeight: isSelected
                                 ? FontWeight.bold
                                 : FontWeight.normal,
@@ -616,14 +645,11 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
         final hermanos = animales
             .where((a) =>
                 a.id != animal.id &&
-                (animal.madreId != null &&
-                        a.madreId == animal.madreId ||
-                    animal.padreId != null &&
-                        a.padreId == animal.padreId))
+                (animal.madreId != null && a.madreId == animal.madreId ||
+                    animal.padreId != null && a.padreId == animal.padreId))
             .toList();
         final hijos = animales
-            .where((a) =>
-                a.madreId == animal.id || a.padreId == animal.id)
+            .where((a) => a.madreId == animal.id || a.padreId == animal.id)
             .toList();
 
         return SingleChildScrollView(
@@ -698,8 +724,10 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                 _buildFamilySection('Hijos', hijos, animales),
               ],
 
-              if (hermanos.isEmpty && hijos.isEmpty &&
-                  madre == null && padre == null)
+              if (hermanos.isEmpty &&
+                  hijos.isEmpty &&
+                  madre == null &&
+                  padre == null)
                 Padding(
                   padding: const EdgeInsets.only(top: 40),
                   child: Column(
@@ -892,9 +920,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                     children: [
                       CircleAvatar(
                         radius: 18,
-                        backgroundColor: (esMacho
-                                ? Colors.blue
-                                : Colors.pink)
+                        backgroundColor: (esMacho ? Colors.blue : Colors.pink)
                             .withOpacity(0.15),
                         child: Icon(
                           esMacho ? Icons.male : Icons.female,
@@ -1013,8 +1039,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
           Text(value,
               style:
                   const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
@@ -1035,8 +1060,8 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content:
-                Text('No hay animales ${esMadre ? "hembra" : "macho"} disponibles'),
+            content: Text(
+                'No hay animales ${esMadre ? "hembra" : "macho"} disponibles'),
           ),
         );
       }
@@ -1108,9 +1133,9 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
   // ---------------------------------------------------------------------------
   Future<void> _showBajaDialog(BuildContext context, Animal animal) async {
     final causaOptions = [
-      ('vendido', 'Venta', Icons.sell_outlined, Colors.purple),
-      ('muerto', 'Muerte', Icons.close_outlined, AppTheme.error),
-      ('transferido', 'Transferencia', Icons.swap_horiz, Colors.orange),
+      ('vendido', 'Venta', Icons.sell_outlined, AppTheme.primary),
+      ('muerto', 'Muerte', Icons.close_outlined, AppTheme.primary),
+      ('transferido', 'Transferencia', Icons.swap_horiz, AppTheme.primary),
     ];
 
     String causaSeleccionada = 'vendido';
@@ -1123,11 +1148,17 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: Row(
             children: [
               Icon(Icons.remove_circle_outline, color: AppTheme.error),
-              const SizedBox(width: 8),
-              const Text('Dar de baja'),
+              const SizedBox(width: 10),
+              const Text(
+                'Dar de baja',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ],
           ),
           content: SingleChildScrollView(
@@ -1135,39 +1166,84 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Animal: ${animal.nombre ?? animal.numeroArete}',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.pets, size: 18, color: Colors.grey[600]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Animal: ${animal.nombre ?? animal.numeroArete}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 16),
-                const Text('Motivo de baja',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
+                const SizedBox(height: 20),
+                const Text(
+                  'Motivo de baja',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const SizedBox(height: 10),
                 Wrap(
                   spacing: 8,
+                  runSpacing: 8,
                   children: causaOptions.map((opt) {
                     final (valor, label, icon, color) = opt;
                     final seleccionado = causaSeleccionada == valor;
+
                     return FilterChip(
-                      avatar: Icon(icon,
-                          size: 16, color: seleccionado ? Colors.white : color),
+                      elevation: seleccionado ? 2 : 0,
+                      pressElevation: 4,
+                      avatar: Icon(
+                        icon,
+                        size: 16,
+                        // Corrige el color del icono inactivo
+                        color: seleccionado ? Colors.white : color,
+                      ),
                       label: Text(label),
                       selected: seleccionado,
                       onSelected: (_) =>
                           setDialogState(() => causaSeleccionada = valor),
                       selectedColor: color,
-                      labelStyle: TextStyle(
-                        color: seleccionado ? Colors.white : null,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      backgroundColor: Colors.grey[50], // Fondo limpio inactivo
+                      shadowColor: color.withOpacity(0.4),
                       checkmarkColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(
+                          // Borde temático o gris sutil
+                          color: seleccionado ? color : Colors.grey[300]!,
+                          width: seleccionado ? 1.5 : 1,
+                        ),
+                      ),
+                      labelStyle: TextStyle(
+                        // SOLUCIÓN AL BUG VISUAL: Fuerza color oscuro si no está seleccionado
+                        color: seleccionado ? Colors.white : Colors.black87,
+                        fontWeight:
+                            seleccionado ? FontWeight.bold : FontWeight.normal,
+                        fontSize: 13,
+                      ),
                     );
                   }).toList(),
                 ),
-                const SizedBox(height: 16),
-                const Text('Fecha de baja',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
+                const SizedBox(height: 20),
+                const Text(
+                  'Fecha de baja',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const SizedBox(height: 10),
                 InkWell(
                   onTap: () async {
                     final picked = await showDatePicker(
@@ -1180,50 +1256,86 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                       setDialogState(() => fechaSeleccionada = picked);
                     }
                   },
+                  borderRadius: BorderRadius.circular(12),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 12),
+                        horizontal: 14, vertical: 14),
                     decoration: BoxDecoration(
+                      color: Colors.white,
                       border: Border.all(color: Colors.grey[300]!),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.calendar_today, size: 18),
-                        const SizedBox(width: 8),
+                        Icon(Icons.calendar_today,
+                            size: 18, color: AppTheme.primary),
+                        const SizedBox(width: 10),
                         Text(
-                            DateFormat('dd/MM/yyyy').format(fechaSeleccionada)),
+                          DateFormat('dd/MM/yyyy').format(fechaSeleccionada),
+                          style: const TextStyle(
+                              fontSize: 14, color: Colors.black87),
+                        ),
+                        const Spacer(),
+                        Icon(Icons.arrow_drop_down, color: Colors.grey[400]),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
-                const Text('Notas (opcional)',
-                    style: TextStyle(fontWeight: FontWeight.w600)),
-                const SizedBox(height: 8),
+                const SizedBox(height: 20),
+                const Text(
+                  'Notas (opcional)',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                const SizedBox(height: 10),
                 TextField(
                   controller: notasCtrl,
-                  maxLines: 2,
+                  maxLines: 3,
+                  style: const TextStyle(fontSize: 14),
                   decoration: InputDecoration(
-                    hintText: 'Detalle adicional...',
+                    hintText: 'Detalle adicional sobre la baja...',
+                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+                    filled: true,
+                    fillColor: Colors.grey[50],
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
                     ),
-                    contentPadding: const EdgeInsets.all(10),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide:
+                          BorderSide(color: AppTheme.primary, width: 1.5),
+                    ),
+                    contentPadding: const EdgeInsets.all(12),
                   ),
                 ),
               ],
             ),
           ),
+          actionsPadding:
+              const EdgeInsets.only(bottom: 16, right: 16, left: 16),
           actions: [
             TextButton(
               onPressed: isLoading ? null : () => Navigator.pop(ctx),
-              child: const Text('Cancelar'),
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
             ),
+            const SizedBox(width: 4),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.error,
                 foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 1,
               ),
               onPressed: isLoading
                   ? null
@@ -1269,8 +1381,11 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white),
                     )
-                  : const Icon(Icons.check),
-              label: const Text('Confirmar baja'),
+                  : const Icon(Icons.check, size: 18),
+              label: const Text(
+                'Confirmar baja',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
@@ -1345,6 +1460,8 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       icon: Icons.info_outline,
       child: Column(
         children: [
+          _Row('Estado',
+              animal.estado[0].toUpperCase() + animal.estado.substring(1)),
           _Row('Número de Arete', animal.numeroArete),
           _Row('Nombre', animal.nombre ?? 'Sin nombre'),
           _Row('Raza', animal.raza ?? 'No especificada'),
@@ -1419,8 +1536,18 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
 
   String _monthName(int month) {
     const months = [
-      'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-      'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic',
+      'Ene',
+      'Feb',
+      'Mar',
+      'Abr',
+      'May',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dic',
     ];
     return months[month - 1];
   }
