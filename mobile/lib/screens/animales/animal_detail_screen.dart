@@ -598,7 +598,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
   }
 
   // ---------------------------------------------------------------------------
-  // Tab Genealogía - Árbol genealógico
+  // Tab Genealogía - Árbol genealógico completo
   // ---------------------------------------------------------------------------
   Widget _buildGenealogiaTab(Animal animal) {
     final animalesAsync = ref.watch(animalesNotifierProvider);
@@ -607,124 +607,62 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, _) => Center(child: Text('Error: $err')),
       data: (animales) {
-        final madre = animal.madreId != null
-            ? animales.where((a) => a.id == animal.madreId).firstOrNull
-            : null;
-        final padre = animal.padreId != null
-            ? animales.where((a) => a.id == animal.padreId).firstOrNull
-            : null;
-        final hermanos = animales
-            .where((a) =>
-                a.id != animal.id &&
-                (animal.madreId != null &&
-                        a.madreId == animal.madreId ||
-                    animal.padreId != null &&
-                        a.padreId == animal.padreId))
-            .toList();
-        final hijos = animales
-            .where((a) =>
-                a.madreId == animal.id || a.padreId == animal.id)
-            .toList();
+        final materna = _getLineage(animal.madreId, animales);
+        final paterna = _getLineage(animal.padreId, animales);
+        final descendientes = _getDescendants(animal.id, animales);
+        final hermanos = animales.where((a) =>
+            a.id != animal.id &&
+            (animal.madreId != null && a.madreId == animal.madreId ||
+             animal.padreId != null && a.padreId == animal.padreId)
+        ).toList();
+
+        final maxDepth = materna.length > paterna.length
+            ? materna.length : paterna.length;
+        final labels = [
+          'PADRES', 'ABUELOS', 'BISABUELOS', 'TATARABUELOS',
+        ];
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
-              // --- Padres ---
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildTreeParentCard(
-                      animal: madre,
-                      esMadre: true,
-                      label: 'Madre',
-                      animalId: animal.id,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _buildTreeParentCard(
-                      animal: padre,
-                      esMadre: false,
-                      label: 'Padre',
-                      animalId: animal.id,
-                    ),
-                  ),
-                ],
-              ).animate().fadeIn().slideY(begin: -0.2),
+              // --- Ancestros: desde el nivel más lejano hasta padres ---
+              for (int depth = maxDepth - 1; depth >= 0; depth--) ...[
+                if (depth < maxDepth - 1) _buildConnectorV(12),
+                _buildAncestorRow(
+                  label: depth < labels.length ? labels[depth] : 'ANTEPASADOS',
+                  isParentLevel: depth == 0,
+                  paternal: depth < paterna.length ? paterna[depth] : [],
+                  maternal: depth < materna.length ? materna[depth] : [],
+                  allAnimals: animales,
+                  currentId: animal.id,
+                ),
+              ],
 
-              // --- Conector ---
-              _buildConnector(),
-              const SizedBox(height: 8),
+              if (maxDepth > 0) _buildConnectorV(16),
 
               // --- Animal actual ---
-              GestureDetector(
-                onTap: () => _mostrarInfoAnimal(animal, animales),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.primaryGradient,
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [AppTheme.softShadow],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.pets, color: Colors.white, size: 20),
-                      const SizedBox(width: 8),
-                      Text(
-                        animal.numeroArete,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              _buildCurrentAnimalBadge(animal, animales),
 
               // --- Hermanos ---
               if (hermanos.isNotEmpty) ...[
-                const SizedBox(height: 24),
-                _buildFamilySection('Hermanos', hermanos, animales),
+                _buildConnectorV(12),
+                _buildSiblingsSection(hermanos, animales),
               ],
 
-              // --- Hijos ---
-              if (hijos.isNotEmpty) ...[
-                const SizedBox(height: 20),
-                _buildFamilySection('Hijos', hijos, animales),
-              ],
-
-              if (hermanos.isEmpty && hijos.isEmpty &&
-                  madre == null && padre == null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 40),
-                  child: Column(
-                    children: [
-                      Icon(Icons.family_restroom,
-                          size: 64, color: Colors.grey[300]),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Sin familia registrada',
-                        style: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: 16,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Asigna madre y padre desde arriba',
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 13,
-                        ),
-                      ),
-                    ],
-                  ),
+              // --- Descendientes ---
+              for (int i = 0; i < descendientes.length; i++) ...[
+                const SizedBox(height: 8),
+                _buildConnectorV(12),
+                _buildDescendantSection(
+                  label: i == 0 ? 'HIJOS' : i == 1 ? 'NIETOS' : i == 2 ? 'BISNIETOS' : 'TATARANETOS',
+                  members: descendientes[i],
+                  allAnimals: animales,
                 ),
+              ],
+
+              if (maxDepth == 0 && descendientes.isEmpty && hermanos.isEmpty)
+                _buildEmptyGenealogy(animal),
             ],
           ),
         );
@@ -732,109 +670,404 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
     );
   }
 
-  Widget _buildConnector() {
+  // --- Recursive tree builders ---
+
+  /// Returns levels from closest to farthest for one side.
+  /// e.g. maternal: level0=[Mother], level1=[MatGM, MatGF], level2=[...]
+  List<List<Animal?>> _getLineage(int? ancestorId, List<Animal> all) {
+    final levels = <List<Animal?>>[];
+    if (ancestorId == null) return levels;
+    final first = all.where((a) => a.id == ancestorId).firstOrNull;
+    if (first == null) return levels;
+    levels.add([first]);
+
+    List<Animal?> current = [first];
+    final visited = <int>{first.id};
+    for (int depth = 0; depth < 3; depth++) {
+      final next = <Animal?>[];
+      for (final a in current) {
+        if (a != null) {
+          final mother = a.madreId != null
+              ? all.where((x) => x.id == a.madreId).firstOrNull
+              : null;
+          final father = a.padreId != null
+              ? all.where((x) => x.id == a.padreId).firstOrNull
+              : null;
+          if (mother != null && visited.add(mother.id)) next.add(mother);
+          else next.add(null);
+          if (father != null && visited.add(father.id)) next.add(father);
+          else next.add(null);
+        } else {
+          next.addAll([null, null]);
+        }
+      }
+      if (next.every((a) => a == null)) break;
+      levels.add(next);
+      current = next;
+    }
+    return levels;
+  }
+
+  List<List<Animal>> _getDescendants(int animalId, List<Animal> all) {
+    final levels = <List<Animal>>[];
+    final visited = <int>{};
+    var current = all
+        .where((a) => a.madreId == animalId || a.padreId == animalId)
+        .toList();
+    if (current.isEmpty) return levels;
+    levels.add(current);
+    current.forEach((a) => visited.add(a.id));
+
+    for (int depth = 0; depth < 3; depth++) {
+      final ids = current.map((a) => a.id).toSet();
+      final next = <Animal>[];
+      for (final id in ids) {
+        for (final a in all) {
+          if ((a.madreId == id || a.padreId == id) && visited.add(a.id)) {
+            next.add(a);
+          }
+        }
+      }
+      if (next.isEmpty) break;
+      levels.add(next);
+      current = next;
+    }
+    return levels;
+  }
+
+  // --- UI builders ---
+
+  Widget _buildConnectorV(double height) {
+    return Center(
+      child: Container(
+        width: 2,
+        height: height,
+        color: AppTheme.primary.withOpacity(0.2),
+      ),
+    );
+  }
+
+  Widget _buildAncestorRow({
+    required String label,
+    required bool isParentLevel,
+    required List<Animal?> paternal,
+    required List<Animal?> maternal,
+    required List<Animal> allAnimals,
+    required int currentId,
+  }) {
     return Column(
       children: [
-        const SizedBox(height: 12),
         Center(
           child: Container(
-            width: 2,
-            height: 24,
-            color: AppTheme.primary.withOpacity(0.3),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 10,
+                color: AppTheme.primary.withOpacity(0.6),
+                letterSpacing: 1.5,
+              ),
+            ),
           ),
         ),
-        Center(
-          child: Container(
-            width: 60,
-            height: 2,
-            color: AppTheme.primary.withOpacity(0.3),
-          ),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            // Paternal side - left
+            Flexible(
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  ...paternal.map((a) => a != null
+                      ? _buildAncestorAvatar(a, allAnimals)
+                      : _buildAddSlot(isMother: false, currentId: currentId)),
+                ],
+              ),
+            ),
+            // Separator
+            Container(
+              width: 1,
+              height: 60,
+              color: Colors.grey.withOpacity(0.15),
+            ),
+            // Maternal side - right
+            Flexible(
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  ...maternal.map((a) => a != null
+                      ? _buildAncestorAvatar(a, allAnimals)
+                      : _buildAddSlot(isMother: true, currentId: currentId)),
+                ],
+              ),
+            ),
+          ],
         ),
-        Center(
-          child: Container(
-            width: 2,
-            height: 16,
-            color: AppTheme.primary.withOpacity(0.3),
+        // Side labels
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Text(
+                isParentLevel ? 'PADRE' : 'PATERNOS',
+                style: TextStyle(
+                  fontSize: isParentLevel ? 10 : 8,
+                  color: Colors.blue.withOpacity(0.5),
+                  letterSpacing: isParentLevel ? 1 : 1,
+                  fontWeight: isParentLevel ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+              Text(
+                isParentLevel ? 'MADRE' : 'MATERNOS',
+                style: TextStyle(
+                  fontSize: isParentLevel ? 10 : 8,
+                  color: Colors.pink.withOpacity(0.5),
+                  letterSpacing: isParentLevel ? 1 : 1,
+                  fontWeight: isParentLevel ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildTreeParentCard({
-    required Animal? animal,
-    required bool esMadre,
-    required String label,
-    required int animalId,
-  }) {
-    final color = esMadre ? Colors.pink : Colors.blue;
-    final icon = esMadre ? Icons.female : Icons.male;
-
+  Widget _buildAncestorAvatar(Animal animal, List<Animal> allAnimals) {
+    final esMacho = animal.sexo == 'M';
+    final color = esMacho ? Colors.blue : Colors.pink;
     return GestureDetector(
-      onTap: () {
-        if (animal != null) {
-          _mostrarInfoAnimal(animal, null);
-        } else {
-          _seleccionarPadre(context, esMadre, animalId);
-        }
-      },
+      onTap: () => _mostrarInfoAnimal(animal, allAnimals),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        width: 52,
+        padding: const EdgeInsets.symmetric(vertical: 6),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: color.withOpacity(0.3),
-            width: 2,
-          ),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withOpacity(0.25)),
           boxShadow: [AppTheme.softShadow],
         ),
         child: Column(
           children: [
             CircleAvatar(
-              radius: 28,
+              radius: 14,
               backgroundColor: color.withOpacity(0.15),
-              child: animal != null
-                  ? Text(
-                      animal.numeroArete[0].toUpperCase(),
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 22,
-                      ),
-                    )
-                  : Icon(icon, color: color.withOpacity(0.4), size: 28),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
+              child: Icon(
+                esMacho ? Icons.male : Icons.female,
+                size: 14,
                 color: color,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
-              animal?.numeroArete ?? 'Sin asignar',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight:
-                    animal != null ? FontWeight.w600 : FontWeight.normal,
-                color: animal != null ? Colors.black87 : Colors.grey,
-              ),
+              animal.numeroArete,
+              style: const TextStyle(fontSize: 8, fontWeight: FontWeight.w600),
               textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            if (animal != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  animal.nombre ?? '',
-                  style: TextStyle(fontSize: 10, color: Colors.grey[500]),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAddSlot({required bool isMother, required int currentId}) {
+    final color = isMother ? Colors.pink : Colors.blue;
+    return GestureDetector(
+      onTap: () => _seleccionarPadre(context, isMother, currentId),
+      child: Container(
+        width: 52,
+        height: 56,
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withOpacity(0.15), style: BorderStyle.solid),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add_circle_outline, size: 16, color: color.withOpacity(0.3)),
+            const SizedBox(height: 2),
+            Text('+', style: TextStyle(fontSize: 16, color: color.withOpacity(0.2))),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCurrentAnimalBadge(Animal animal, List<Animal> allAnimals) {
+    return Center(
+      child: GestureDetector(
+        onTap: () => _mostrarInfoAnimal(animal, allAnimals),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+          decoration: BoxDecoration(
+            gradient: AppTheme.primaryGradient,
+            borderRadius: BorderRadius.circular(30),
+            boxShadow: [AppTheme.softShadow],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.pets, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Text(
+                animal.numeroArete,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
                 ),
+              ),
+              if (animal.nombre != null) ...[
+                const SizedBox(width: 4),
+                Text(
+                  '· ${animal.nombre}',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSiblingsSection(List<Animal> siblings, List<Animal> allAnimals) {
+    return Column(
+      children: [
+        Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              'HERMANOS',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 10,
+                color: AppTheme.primary.withOpacity(0.6),
+                letterSpacing: 1.5,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 80,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: siblings.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final m = siblings[index];
+              return _buildRelativeCard(m, allAnimals);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDescendantSection({
+    required String label,
+    required List<Animal> members,
+    required List<Animal> allAnimals,
+  }) {
+    return Column(
+      children: [
+        Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppTheme.primary.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              label,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 10,
+                color: AppTheme.primary.withOpacity(0.6),
+                letterSpacing: 1.5,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SizedBox(
+          height: 80,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: members.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              return _buildRelativeCard(members[index], allAnimals);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRelativeCard(Animal animal, List<Animal> allAnimals) {
+    final esMacho = animal.sexo == 'M';
+    final color = esMacho ? Colors.blue : Colors.pink;
+    return GestureDetector(
+      onTap: () => _mostrarInfoAnimal(animal, allAnimals),
+      child: Container(
+        width: 72,
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: color.withOpacity(0.25)),
+          boxShadow: [AppTheme.softShadow],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 15,
+              backgroundColor: color.withOpacity(0.15),
+              child: Icon(
+                esMacho ? Icons.male : Icons.female,
+                size: 15,
+                color: color,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              animal.numeroArete,
+              style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w600),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (animal.nombre != null)
+              Text(
+                animal.nombre!,
+                style: TextStyle(fontSize: 7, color: Colors.grey[500]),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
           ],
         ),
@@ -842,96 +1075,24 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
     );
   }
 
-  Widget _buildFamilySection(
-      String title, List<Animal> miembros, List<Animal> todos) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Center(
-          child: Container(
-            width: 2,
-            height: 20,
-            color: AppTheme.primary.withOpacity(0.3),
+  Widget _buildEmptyGenealogy(Animal animal) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 40),
+      child: Column(
+        children: [
+          Icon(Icons.family_restroom, size: 64, color: Colors.grey[300]),
+          const SizedBox(height: 12),
+          Text(
+            'Sin familia registrada',
+            style: TextStyle(color: Colors.grey[500], fontSize: 16),
           ),
-        ),
-        Text(
-          title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-            color: AppTheme.primary,
+          const SizedBox(height: 4),
+          Text(
+            'Asigna madre y padre para ver el árbol',
+            style: TextStyle(color: Colors.grey[400], fontSize: 13),
           ),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          height: 100,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: miembros.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final m = miembros[index];
-              final esMacho = m.sexo == 'M';
-              return GestureDetector(
-                onTap: () => _mostrarInfoAnimal(m, todos),
-                child: Container(
-                  width: 90,
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: esMacho
-                          ? Colors.blue.withOpacity(0.3)
-                          : Colors.pink.withOpacity(0.3),
-                    ),
-                    boxShadow: [AppTheme.softShadow],
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: (esMacho
-                                ? Colors.blue
-                                : Colors.pink)
-                            .withOpacity(0.15),
-                        child: Icon(
-                          esMacho ? Icons.male : Icons.female,
-                          size: 18,
-                          color: esMacho ? Colors.blue : Colors.pink,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        m.numeroArete,
-                        style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      if (m.nombre != null)
-                        Text(
-                          m.nombre!,
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: Colors.grey[500],
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -963,39 +1124,43 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _infoRow('Arete', animal.numeroArete),
-            _infoRow('Nombre', animal.nombre ?? 'Sin nombre'),
-            _infoRow('Sexo', animal.sexo == 'M' ? 'Macho' : 'Hembra'),
-            _infoRow('Raza', animal.raza ?? 'No especificada'),
-            _infoRow('Color', animal.color ?? 'No especificado'),
-            _infoRow('Fecha Nac.',
-                animal.fechaNacimiento?.toString().split(' ')[0] ?? 'N/A'),
-            _infoRow('Estado', animal.estado),
-            if (todos != null) ...[
-              if (animal.madreId != null)
-                _infoRow(
-                  'Madre',
-                  todos
-                          .where((a) => a.id == animal.madreId)
-                          .firstOrNull
-                          ?.numeroArete ??
-                      '#${animal.madreId}',
-                ),
-              if (animal.padreId != null)
-                _infoRow(
-                  'Padre',
-                  todos
-                          .where((a) => a.id == animal.padreId)
-                          .firstOrNull
-                          ?.numeroArete ??
-                      '#${animal.padreId}',
-                ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _genealogyInfoRow('Arete', animal.numeroArete),
+              _genealogyInfoRow('Nombre', animal.nombre ?? 'Sin nombre'),
+              _genealogyInfoRow(
+                  'Sexo', animal.sexo == 'M' ? 'Macho' : 'Hembra'),
+              _genealogyInfoRow('Raza', animal.raza ?? 'No especificada'),
+              _genealogyInfoRow('Color', animal.color ?? 'No especificado'),
+              _genealogyInfoRow(
+                  'Fecha Nac.',
+                  animal.fechaNacimiento?.toString().split(' ')[0] ?? 'N/A'),
+              _genealogyInfoRow('Estado', animal.estado),
+              if (todos != null) ...[
+                if (animal.madreId != null)
+                  _genealogyInfoRow(
+                    'Madre',
+                    todos
+                            .where((a) => a.id == animal.madreId)
+                            .firstOrNull
+                            ?.numeroArete ??
+                        '#${animal.madreId}',
+                  ),
+                if (animal.padreId != null)
+                  _genealogyInfoRow(
+                    'Padre',
+                    todos
+                            .where((a) => a.id == animal.padreId)
+                            .firstOrNull
+                            ?.numeroArete ??
+                        '#${animal.padreId}',
+                  ),
+              ],
             ],
-          ],
+          ),
         ),
         actions: [
           TextButton(
@@ -1007,7 +1172,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
     );
   }
 
-  Widget _infoRow(String label, String value) {
+  Widget _genealogyInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -1035,8 +1200,8 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content:
-                Text('No hay animales ${esMadre ? "hembra" : "macho"} disponibles'),
+            content: Text(
+                'No hay animales ${esMadre ? "hembra" : "macho"} disponibles'),
           ),
         );
       }
