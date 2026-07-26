@@ -24,6 +24,7 @@ import '../screens/reproduccion/kpis_reproduccion_screen.dart';
 import '../screens/reproduccion/arbol_genealogico_screen.dart';
 import '../screens/reproduccion/calculadora_ia_screen.dart';
 import '../screens/reproduccion/temporadas_screen.dart';
+import '../screens/reproduccion/ciclo_form_screen.dart';
 import '../screens/alimentacion/calculadora_screen.dart';
 import '../screens/alimentacion/reporte_consumo_screen.dart';
 import '../screens/alimentacion/alertas_stock_screen.dart';
@@ -131,6 +132,18 @@ GoRoute(
         path: '/reproduccion/temporadas',
         name: 'temporadas',
         builder: (_, __) => const TemporadasScreen(),
+      ),
+      GoRoute(
+        path: '/reproduccion/ciclo/new',
+        name: 'ciclo-new',
+        builder: (_, __) => const CicloFormScreen(),
+      ),
+      GoRoute(
+        path: '/reproduccion/ciclo/:id/edit',
+        name: 'ciclo-edit',
+        builder: (context, state) => CicloFormScreen(
+          cicloId: state.pathParameters['id'],
+        ),
       ),
             ],
           ),

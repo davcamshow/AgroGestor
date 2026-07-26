@@ -5,7 +5,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import action
 from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth import authenticate
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Q
 import logging
 from django.db import transaction
 from rest_framework import status
@@ -435,6 +435,22 @@ class CicloReproductivoViewSet(viewsets.ModelViewSet):
             qs = qs.filter(estado=estado)
         return qs.select_related('animal')
 
+    @action(detail=True, methods=['post'], url_path='registrar-parto')
+    def registrar_parto(self, request, pk=None):
+        """Marca un ciclo como 'pario', establece fecha_parto_real = hoy, y auto-calcula fecha_destete."""
+        ciclo = self.get_object()
+        if ciclo.estado not in ('gestante', 'en_servicio'):
+            return Response(
+                {'error': f'No se puede registrar parto en un ciclo con estado "{ciclo.estado}". Debe ser gestante o en_servicio.'},
+                status=400,
+            )
+        from datetime import date
+        ciclo.fecha_parto_real = date.today()
+        ciclo.estado = 'pario'
+        ciclo.save()
+        serializer = self.get_serializer(ciclo)
+        return Response(serializer.data, status=200)
+
 
 class RegistroPesoViewSet(viewsets.ModelViewSet):
     serializer_class = RegistroPesoSerializer
@@ -504,7 +520,7 @@ def kpis_reproductivos(request):
     fecha_inicio = timezone.now() - timedelta(days=365)
     
     # Total animales hembras
-    total_hembras = Animal.objects.filter(usuario=usuario, sexo='M', estado='activo').count()
+    total_hembras = Animal.objects.filter(usuario=usuario, sexo='H', estado='activo').count()
     
     # Ciclos en el período
     ciclos_periodo = CicloReproductivo.objects.filter(
@@ -565,6 +581,172 @@ def kpis_reproductivos(request):
         'periodo_dias': 365,
     })
 
+
+# ==================== IA - Calculadora de Gestación ====================
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def calculadora_ia_gestacion(request):
+    """
+    Versión mejorada: analiza múltiples factores para predecir gestación.
+    Usa: raza, historial de ciclos, edad del animal, condición corporal.
+    """
+    from datetime import timedelta
+    from django.utils import timezone
+    from django.db.models import Avg, F
+    from django.db.models.functions import ExtractDay
+
+    usuario = request.user.perfil
+    animal_id = request.query_params.get('animal_id')
+
+    if not animal_id:
+        return Response({'error': 'animal_id es requerido'}, status=400)
+
+    try:
+        animal = Animal.objects.get(id=animal_id, usuario=usuario)
+    except Animal.DoesNotExist:
+        return Response({'error': 'Animal no encontrado'}, status=404)
+
+    if animal.sexo != 'H':
+        return Response({'error': 'Solo aplica a hembras'}, status=400)
+
+    GESTACION_BASE = 283
+    INVOLUCION_BASE = 60
+
+    historial = CicloReproductivo.objects.filter(
+        animal=animal,
+        estado='pario',
+        fecha_parto_real__isnull=False,
+        fecha_servicio__isnull=False,
+    ).order_by('-fecha_parto_real')
+
+    ajuste_raza = 0
+    razas_cortas = {'angus', 'hereford', 'shorthorn', 'aberdeen'}
+    razas_largas = {'charoles', 'simmental', 'brahman', 'nelore', 'gir', 'guzera', 'indobrasil'}
+
+    if animal.raza:
+        raza_lower = animal.raza.strip().lower()
+        if any(r in raza_lower for r in razas_cortas):
+            ajuste_raza = -3
+        elif any(r in raza_lower for r in razas_largas):
+            ajuste_raza = 5
+
+    gestacion_ajustada = GESTACION_BASE + ajuste_raza
+
+    if historial.exists():
+        stats = historial.aggregate(
+            duracion_promedio=Avg(
+                ExtractDay(F('fecha_parto_real') - F('fecha_servicio'))
+            ),
+        )
+
+        if stats.get('duracion_promedio'):
+            gestacion_ajustada = round(
+                (stats['duracion_promedio'] * 0.7) + (gestacion_ajustada * 0.3)
+            )
+
+        ultimo = historial.first()
+        partos_count = historial.count()
+        fecha_ia_optima = ultimo.fecha_parto_real + timedelta(days=INVOLUCION_BASE)
+        fecha_parto_estimada = fecha_ia_optima + timedelta(days=gestacion_ajustada)
+        confianza = 'alta' if partos_count >= 3 else ('media' if partos_count >= 1 else 'baja')
+
+        return Response({
+            'animal_id': animal.id,
+            'numero_arete': animal.numero_arete,
+            'nombre': animal.nombre,
+            'raza': animal.raza,
+            'edad_dias': (timezone.now().date() - animal.fecha_nacimiento).days if animal.fecha_nacimiento else None,
+            'partos_previos': partos_count,
+            'fecha_ultimo_parto': ultimo.fecha_parto_real,
+            'dias_involucion': INVOLUCION_BASE,
+            'dias_gestacion_calculados': gestacion_ajustada,
+            'fecha_ia_optima': fecha_ia_optima,
+            'fecha_parto_estimada': fecha_parto_estimada,
+            'confianza': confianza,
+            'factores': {
+                'gestacion_base': GESTACION_BASE,
+                'ajuste_raza': ajuste_raza,
+                'promedio_historial': round(stats.get('duracion_promedio', 0), 1) if stats.get('duracion_promedio') else None,
+            },
+        })
+
+    fecha_ia_optima = None
+    if animal.fecha_ultimo_parto:
+        fecha_ia_optima = animal.fecha_ultimo_parto + timedelta(days=INVOLUCION_BASE)
+
+    gestacion_final = GESTACION_BASE + ajuste_raza
+    fecha_parto_estimada = (fecha_ia_optima + timedelta(days=gestacion_final)) if fecha_ia_optima else None
+
+    return Response({
+        'animal_id': animal.id,
+        'numero_arete': animal.numero_arete,
+        'nombre': animal.nombre,
+        'raza': animal.raza,
+        'edad_dias': (timezone.now().date() - animal.fecha_nacimiento).days if animal.fecha_nacimiento else None,
+        'partos_previos': 0,
+        'fecha_ultimo_parto': animal.fecha_ultimo_parto,
+        'dias_involucion': INVOLUCION_BASE,
+        'dias_gestacion_calculados': gestacion_final,
+        'fecha_ia_optima': fecha_ia_optima,
+        'fecha_parto_estimada': fecha_parto_estimada,
+        'confianza': 'baja',
+        'factores': {
+            'gestacion_base': GESTACION_BASE,
+            'ajuste_raza': ajuste_raza,
+            'promedio_historial': None,
+        },
+    })
+
+
+# ==================== Temporadas Reproductivas ====================
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def temporadas_reproductivas(request):
+    from datetime import timedelta
+    from django.utils import timezone
+
+    usuario = request.user.perfil
+    temporada_nombre = request.query_params.get('temporada')
+
+    qs = CicloReproductivo.objects.filter(animal__usuario=usuario)
+    if temporada_nombre:
+        qs = qs.filter(temporada__iexact=temporada_nombre)
+
+    if not temporada_nombre:
+        temporadas_conteo = qs.exclude(temporada__isnull=True).exclude(temporada='').values('temporada').annotate(
+            total=Count('id', distinct=True),
+            gestantes=Count('id', filter=Q(estado='gestante'), distinct=True),
+            partos=Count('id', filter=Q(estado='pario'), distinct=True),
+        ).order_by('-temporada')
+
+        return Response([{
+            'temporada': t['temporada'],
+            'total_animales': t['total'],
+            'gestantes': t['gestantes'],
+            'partos': t['partos'],
+        } for t in temporadas_conteo])
+
+    animales = CicloReproductivo.objects.filter(
+        animal__usuario=usuario,
+        temporada__iexact=temporada_nombre,
+    ).select_related('animal').distinct()
+
+    from .serializer import AnimalSerializer
+    animales_data = []
+    for ciclo in animales:
+        animal = ciclo.animal
+        ser = AnimalSerializer(animal, context={'request': request})
+        data = ser.data
+        data['ciclo_estado'] = ciclo.estado
+        data['ciclo_tipo_servicio'] = ciclo.tipo_servicio
+        data['ciclo_fecha_servicio'] = ciclo.fecha_servicio
+        data['ciclo_fecha_estimada_parto'] = ciclo.fecha_estimada_parto
+        animales_data.append(data)
+
+    return Response({
+        'temporada': temporada_nombre,
+        'animales': animales_data,
+    })
 
 # ==================== Á rbol Genealógico ====================
 @api_view(['GET'])

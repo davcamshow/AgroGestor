@@ -46,6 +46,8 @@ class AuditoriaAnimal {
       'lote': 'Lote',
       'madre': 'Madre',
       'padre': 'Padre',
+      'notas_baja': 'Notas de Baja',
+      'movimiento_lote_detalles': 'Movimiento de Lote',
     };
     return etiquetas[campo] ?? campo;
   }

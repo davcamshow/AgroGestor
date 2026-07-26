@@ -1673,6 +1673,14 @@ class _AuditoriaTab extends ConsumerWidget {
       'raza' => Icons.pets,
       'lote' => Icons.group_outlined,
       'notas_baja' => Icons.note_outlined,
+      'movimiento_lote_detalles' => Icons.compare_arrows,
+      'madre' => Icons.female,
+      'padre' => Icons.male,
+      'numero_arete' => Icons.tag,
+      'sexo' => Icons.wc,
+      'color' => Icons.palette,
+      'fecha_nacimiento' => Icons.cake,
+      'peso_nacimiento_kg' => Icons.monitor_weight,
       _ => Icons.edit_outlined,
     };
     return CircleAvatar(
@@ -1693,6 +1701,9 @@ class _AuditoriaTab extends ConsumerWidget {
         'fecha_nacimiento' => 'Fecha de nacimiento',
         'peso_nacimiento_kg' => 'Peso nacimiento',
         'notas_baja' => 'Notas de baja',
+        'movimiento_lote_detalles' => 'Movimiento de lote',
+        'madre' => 'Madre',
+        'padre' => 'Padre',
         _ => campo,
       };
 }
