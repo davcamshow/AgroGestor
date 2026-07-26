@@ -2,36 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/auth/auth_state.dart';
-import '../core/theme/app_theme.dart';
 
 class AppShell extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
   const AppShell({required this.navigationShell, super.key});
 
-  String _getTitle(int index) {
-    switch (index) {
-      case 0:
-        return 'Inicio';
-      case 1:
-        return 'Animales';
-      case 2:
-        return 'Reproducción';
-      case 3:
-        return 'Alimentación';
-      case 4:
-        return 'Salud';
-      case 5:
-        return 'Suscripción';
-      default:
-        return '';
-    }
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authProvider);
-    final user = authState.user;
+    ref.watch(authProvider);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       body: navigationShell,
@@ -39,8 +20,8 @@ class AppShell extends ConsumerWidget {
         type: BottomNavigationBarType.fixed,
         currentIndex: navigationShell.currentIndex,
         onTap: navigationShell.goBranch,
-        selectedItemColor: AppTheme.primary,
-        unselectedItemColor: Colors.grey,
+        selectedItemColor: colorScheme.primary,
+        unselectedItemColor: colorScheme.onSurfaceVariant,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_rounded),

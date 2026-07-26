@@ -9,9 +9,10 @@ import '../../core/providers/animales_provider.dart';
 import '../../core/providers/registros_peso_provider.dart';
 import '../../core/services/bovino_recognition_service.dart';
 import '../../core/theme/app_theme.dart';
-//validaciones 
+//validaciones
 import 'package:flutter/services.dart'; // Añadir para FilteringTextInputFormatter
 import '../../core/utils/validators.dart'; // Añadir para acceder a AnimalValidator
+
 class AnimalFormSheet extends ConsumerStatefulWidget {
   final Animal? animalToEdit;
 
@@ -100,16 +101,17 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
     try {
       final recognitionService = BovinoRecognitionService();
       final result = await recognitionService.recognizeBovino(imageFile);
-      
+
       setState(() {
-        if (result['color_detectado'] != null && result['color_detectado'] != 'No determinado') {
+        if (result['color_detectado'] != null &&
+            result['color_detectado'] != 'No determinado') {
           _colorController.text = result['color_detectado']!;
         }
         if (result['raza_sugerida'] != null) {
           _razaController.text = result['raza_sugerida']!;
         }
       });
-      
+
       if (mounted && result.isNotEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -147,16 +149,22 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
     try {
       final data = {
         'numero_arete': _areteController.text,
-        'nombre': _nombreController.text.isNotEmpty ? _nombreController.text : null,
+        'nombre':
+            _nombreController.text.isNotEmpty ? _nombreController.text : null,
         'raza': _razaController.text.isNotEmpty ? _razaController.text : null,
-        'color': _colorController.text.isNotEmpty ? _colorController.text : null,
+        'color':
+            _colorController.text.isNotEmpty ? _colorController.text : null,
         'sexo': _sexoSeleccionado,
-        'peso_nacimiento_kg': _pesoController.text.isNotEmpty ? _pesoController.text : null,
+        'peso_nacimiento_kg':
+            _pesoController.text.isNotEmpty ? _pesoController.text : null,
         'fecha_nacimiento': _fechaNacimiento?.toIso8601String().split('T')[0],
         'estado': 'activo',
-        if (_fechaUltimoParto != null) 'fecha_ultimo_parto': _fechaUltimoParto!.toIso8601String().split('T')[0],
+        if (_fechaUltimoParto != null)
+          'fecha_ultimo_parto':
+              _fechaUltimoParto!.toIso8601String().split('T')[0],
         if (_partosCount > 0) 'partos_count': _partosCount,
-        if (_diasLactancia != null && _diasLactancia! > 0) 'dias_lactancia': _diasLactancia,
+        if (_diasLactancia != null && _diasLactancia! > 0)
+          'dias_lactancia': _diasLactancia,
         'madre': _madreId,
         'padre': _padreId,
       };
@@ -164,15 +172,20 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
       late final int animalId;
       if (_isEditing) {
         animalId = widget.animalToEdit!.id;
-        await ref.read(animalesNotifierProvider.notifier).updateAnimal(animalId, data);
+        await ref
+            .read(animalesNotifierProvider.notifier)
+            .updateAnimal(animalId, data);
         ref.invalidate(animalesNotifierProvider);
       } else {
-        animalId = await ref.read(animalesNotifierProvider.notifier).createAnimal(data);
+        animalId = await ref
+            .read(animalesNotifierProvider.notifier)
+            .createAnimal(data);
         ref.invalidate(animalesNotifierProvider);
         if (_pesoController.text.isNotEmpty) {
           await ref.read(registroPesoNotifierProvider.notifier).createRegistro({
             'animal': animalId,
-            'fecha_pesaje': _fechaNacimiento?.toIso8601String().split('T')[0] ?? DateTime.now().toIso8601String().split('T')[0],
+            'fecha_pesaje': _fechaNacimiento?.toIso8601String().split('T')[0] ??
+                DateTime.now().toIso8601String().split('T')[0],
             'peso_kg': _pesoController.text,
           });
           ref.invalidate(registrosPesoAnimalProvider(animalId));
@@ -181,7 +194,7 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
 
       if (mounted) {
         Navigator.pop(context);
-        
+
         if (!_isEditing) {
           final shouldNavigate = await showDialog<bool>(
             context: context,
@@ -194,7 +207,8 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                   Text('¡Animal guardado!'),
                 ],
               ),
-              content: const Text('¿Deseas ver los detalles del animal o seguir agregando más?'),
+              content: const Text(
+                  '¿Deseas ver los detalles del animal o seguir agregando más?'),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, false),
@@ -207,7 +221,7 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
               ],
             ),
           );
-          
+
           if (shouldNavigate == true && mounted) {
             context.push('/animales/$animalId');
           }
@@ -238,8 +252,8 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
       minChildSize: 0.5,
       builder: (context, scrollController) {
         return Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(24),
               topRight: Radius.circular(24),
@@ -253,7 +267,7 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -265,10 +279,7 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                     Text(
                       'Agregar Animal',
                       style: Theme.of(context).textTheme.headlineSmall,
-                    )
-                        .animate()
-                        .fadeIn()
-                        .slideY(begin: -0.2),
+                    ).animate().fadeIn().slideY(begin: -0.2),
                     const SizedBox(height: 20),
                     // Foto
                     _buildFotoSection()
@@ -288,16 +299,14 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                             label: 'Número de Arete *',
                             icon: Icons.tag,
                             hint: 'Ej: 001, A024, etc.',
-                            // bloquea físicamente el teclado 
+                            // bloquea físicamente el teclado
                             inputFormatters: [
-                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9\s]'))
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'[a-zA-Z0-9\s]'))
                             ],
                             // Aquí llamamos al nuevo validador con tu mensaje personalizado
                             validator: (v) => AnimalValidator.validateArete(v),
-                          )
-                              .animate()
-                              .fadeIn(delay: 200.ms)
-                              .slideX(begin: 0.3),
+                          ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.3),
                           const SizedBox(height: 16),
                           // Nombre
                           _buildTextField(
@@ -305,12 +314,13 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                             label: 'Nombre',
                             icon: Icons.pets,
                             hint: 'Ej: Negra, Blanca, etc.',
-                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]'))],
-                            validator: (v) => AnimalValidator.validateSoloLetras(v, 'nombre'),
-                          )
-                              .animate()
-                              .fadeIn(delay: 250.ms)
-                              .slideX(begin: 0.3),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]'))
+                            ],
+                            validator: (v) =>
+                                AnimalValidator.validateSoloLetras(v, 'nombre'),
+                          ).animate().fadeIn(delay: 250.ms).slideX(begin: 0.3),
                           const SizedBox(height: 16),
                           // Raza
                           _buildTextField(
@@ -318,12 +328,13 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                             label: 'Raza',
                             icon: Icons.info_outline,
                             hint: 'Ej: Angus, Hereford, etc.',
-                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]'))],
-                            validator: (v) => AnimalValidator.validateSoloLetras(v, 'raza'),
-                          )
-                              .animate()
-                              .fadeIn(delay: 300.ms)
-                              .slideX(begin: 0.3),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]'))
+                            ],
+                            validator: (v) =>
+                                AnimalValidator.validateSoloLetras(v, 'raza'),
+                          ).animate().fadeIn(delay: 300.ms).slideX(begin: 0.3),
                           const SizedBox(height: 16),
                           // Color
                           _buildTextField(
@@ -331,18 +342,20 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                             label: 'Color',
                             icon: Icons.palette,
                             hint: 'Ej: Negro, Blanco, Cafe, etc.',
-                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]'))],
-                            validator: (v) => AnimalValidator.validateSoloLetras(v, 'color'),
-                          )
-                              .animate()
-                              .fadeIn(delay: 320.ms)
-                              .slideX(begin: 0.3),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]'))
+                            ],
+                            validator: (v) =>
+                                AnimalValidator.validateSoloLetras(v, 'color'),
+                          ).animate().fadeIn(delay: 320.ms).slideX(begin: 0.3),
                           const SizedBox(height: 16),
                           // Sexo
                           Text(
                             'Sexo',
                             style: Theme.of(context)
-                                .textTheme.labelLarge
+                                .textTheme
+                                .labelLarge
                                 ?.copyWith(color: AppTheme.primary),
                           ),
                           const SizedBox(height: 8),
@@ -353,14 +366,10 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                               ),
                               const SizedBox(width: 12),
                               Expanded(
-                                child:
-                                    _buildSexoButton('H', 'Hembra'),
+                                child: _buildSexoButton('H', 'Hembra'),
                               ),
                             ],
-                          )
-                              .animate()
-                              .fadeIn(delay: 350.ms)
-                              .slideX(begin: 0.3),
+                          ).animate().fadeIn(delay: 350.ms).slideX(begin: 0.3),
                           const SizedBox(height: 16),
                           // Peso
                           _buildTextField(
@@ -368,20 +377,17 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                             label: 'Peso al Nacer (kg)',
                             icon: Icons.scale,
                             hint: 'Ej: 45.5',
-                            keyboardType:
-                                const TextInputType.numberWithOptions(
+                            keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
-                          )
-                              .animate()
-                              .fadeIn(delay: 400.ms)
-                              .slideX(begin: 0.3),
+                          ).animate().fadeIn(delay: 400.ms).slideX(begin: 0.3),
                           const SizedBox(height: 16),
                           // Fecha de Nacimiento
                           Text(
                             'Fecha de Nacimiento',
                             style: Theme.of(context)
-                                .textTheme.labelLarge
+                                .textTheme
+                                .labelLarge
                                 ?.copyWith(color: AppTheme.primary),
                           ),
                           const SizedBox(height: 8),
@@ -398,8 +404,7 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                               }
                             },
                             child: Container(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               decoration: BoxDecoration(
                                 border: Border.all(color: Colors.grey[300]!),
                                 borderRadius: BorderRadius.circular(8),
@@ -412,7 +417,9 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                                     padding: const EdgeInsets.only(left: 12),
                                     child: Text(
                                       _fechaNacimiento != null
-                                          ? _fechaNacimiento.toString().split(' ')[0]
+                                          ? _fechaNacimiento
+                                              .toString()
+                                              .split(' ')[0]
                                           : 'Seleccionar fecha',
                                       style: TextStyle(
                                         color: _fechaNacimiento != null
@@ -424,15 +431,14 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                                   Padding(
                                     padding: const EdgeInsets.only(right: 12),
                                     child: Icon(Icons.calendar_today,
-                                        color: Colors.grey[600]),
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant),
                                   ),
                                 ],
                               ),
                             ),
-                          )
-                              .animate()
-                              .fadeIn(delay: 450.ms)
-                              .slideX(begin: 0.3),
+                          ).animate().fadeIn(delay: 450.ms).slideX(begin: 0.3),
                           const SizedBox(height: 28),
                           // Sección Reproducción
                           if (_sexoSeleccionado == 'H') ...[
@@ -451,7 +457,8 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                               onTap: () async {
                                 final picked = await showDatePicker(
                                   context: context,
-                                  initialDate: _fechaUltimoParto ?? DateTime.now(),
+                                  initialDate:
+                                      _fechaUltimoParto ?? DateTime.now(),
                                   firstDate: DateTime(2020),
                                   lastDate: DateTime.now(),
                                 );
@@ -460,19 +467,26 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                                 }
                               },
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 16),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 16),
                                 decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey[300]!),
+                                  border: Border.all(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .outlineVariant),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Padding(
                                       padding: const EdgeInsets.only(left: 12),
                                       child: Text(
                                         _fechaUltimoParto != null
-                                            ? _fechaUltimoParto.toString().split(' ')[0]
+                                            ? _fechaUltimoParto
+                                                .toString()
+                                                .split(' ')[0]
                                             : 'Seleccionar fecha',
                                         style: TextStyle(
                                           color: _fechaUltimoParto != null
@@ -483,7 +497,10 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                                     ),
                                     Padding(
                                       padding: const EdgeInsets.only(right: 12),
-                                      child: Icon(Icons.calendar_today, color: Colors.grey[600]),
+                                      child: Icon(Icons.calendar_today,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant),
                                     ),
                                   ],
                                 ),
@@ -506,7 +523,9 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                                 ),
                                 Text(
                                   '$_partosCount',
-                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold),
                                 ),
                                 IconButton(
                                   onPressed: () {
@@ -558,9 +577,14 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      _madreArete ?? (_madreId != null ? 'Madre asignada' : 'Seleccionar madre'),
+                                      _madreArete ??
+                                          (_madreId != null
+                                              ? 'Madre asignada'
+                                              : 'Seleccionar madre'),
                                       style: TextStyle(
-                                        color: _madreId != null ? Colors.black : Colors.grey[600],
+                                        color: _madreId != null
+                                            ? Colors.black
+                                            : Colors.grey[600],
                                       ),
                                     ),
                                   ),
@@ -594,9 +618,14 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      _padreArete ?? (_padreId != null ? 'Padre asignado' : 'Seleccionar padre'),
+                                      _padreArete ??
+                                          (_padreId != null
+                                              ? 'Padre asignado'
+                                              : 'Seleccionar padre'),
                                       style: TextStyle(
-                                        color: _padreId != null ? Colors.black : Colors.grey[600],
+                                        color: _padreId != null
+                                            ? Colors.black
+                                            : Colors.grey[600],
                                       ),
                                     ),
                                   ),
@@ -632,10 +661,7 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                                     )
                                   : const Text('Guardar Animal'),
                             ),
-                          )
-                              .animate()
-                              .fadeIn(delay: 500.ms)
-                              .slideY(begin: 0.3),
+                          ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.3),
                         ],
                       ),
                     ),
@@ -656,7 +682,8 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
         Text(
           'Foto del Animal',
           style: Theme.of(context)
-              .textTheme.labelLarge
+              .textTheme
+              .labelLarge
               ?.copyWith(color: AppTheme.primary),
         ),
         const SizedBox(height: 12),
@@ -676,13 +703,13 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                 top: 8,
                 right: 8,
                 child: IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
+                  icon: Icon(Icons.close,
+                      color: Theme.of(context).colorScheme.onPrimary),
                   style: IconButton.styleFrom(
                     backgroundColor:
-                        Colors.black.withOpacity(0.5),
+                        Theme.of(context).colorScheme.scrim.withOpacity(0.5),
                   ),
-                  onPressed: () =>
-                      setState(() => _imagenSeleccionada = null),
+                  onPressed: () => setState(() => _imagenSeleccionada = null),
                 ),
               ),
             ],
@@ -692,10 +719,10 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
             width: double.infinity,
             height: 120,
             decoration: BoxDecoration(
-              color: Colors.grey[100],
+              color: Theme.of(context).colorScheme.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.grey[300]!,
+                color: Theme.of(context).colorScheme.outlineVariant,
                 width: 2,
               ),
             ),
@@ -703,7 +730,7 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
               child: Icon(
                 Icons.image_outlined,
                 size: 48,
-                color: Colors.grey[400],
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -747,7 +774,8 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
         Text(
           label,
           style: Theme.of(context)
-              .textTheme.labelLarge
+              .textTheme
+              .labelLarge
               ?.copyWith(color: AppTheme.primary),
         ),
         const SizedBox(height: 8),
@@ -760,7 +788,7 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
           keyboardType: keyboardType,
           validator: validator,
           maxLines: maxLines,
-          inputFormatters: inputFormatters, // aqui validadores 
+          inputFormatters: inputFormatters, // aqui validadores
         ),
       ],
     );
@@ -775,7 +803,7 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
         decoration: BoxDecoration(
           color: isSelected
               ? AppTheme.primary.withOpacity(0.2)
-              : Colors.grey[100],
+              : Theme.of(context).colorScheme.surfaceContainerLowest,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? AppTheme.primary : Colors.grey[300]!,
@@ -787,7 +815,9 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
             label,
             style: TextStyle(
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              color: isSelected ? AppTheme.primary : Colors.black54,
+              color: isSelected
+                  ? AppTheme.primary
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
         ),
@@ -798,12 +828,16 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
   Future<void> _seleccionarAnimal(BuildContext context, bool esMadre) async {
     final animales = await ref.read(animalesNotifierProvider.future);
     final sexosFiltrar = esMadre ? 'H' : 'M';
-    final disponibles = animales.where((a) => a.sexo == sexosFiltrar && a.id != widget.animalToEdit?.id).toList();
+    final disponibles = animales
+        .where((a) => a.sexo == sexosFiltrar && a.id != widget.animalToEdit?.id)
+        .toList();
 
     if (disponibles.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('No hay animales ${esMadre ? "hembra" : "macho"} disponibles')),
+          SnackBar(
+              content: Text(
+                  'No hay animales ${esMadre ? "hembra" : "macho"} disponibles')),
         );
       }
       return;
@@ -824,8 +858,10 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
               final animal = disponibles[index];
               return ListTile(
                 leading: CircleAvatar(
-                  backgroundColor: esMadre ? Colors.pink[100] : Colors.blue[100],
-                  child: Icon(esMadre ? Icons.female : Icons.male, color: esMadre ? Colors.pink : Colors.blue),
+                  backgroundColor:
+                      esMadre ? Colors.pink[100] : Colors.blue[100],
+                  child: Icon(esMadre ? Icons.female : Icons.male,
+                      color: esMadre ? Colors.pink : Colors.blue),
                 ),
                 title: Text(animal.numeroArete),
                 subtitle: Text(animal.nombre ?? animal.raza ?? ''),

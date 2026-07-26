@@ -175,8 +175,8 @@ class _AnimalEditSheetState extends ConsumerState<AnimalEditSheet> {
         expand: false,
         builder: (context, scrollController) {
           return Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: Column(
@@ -187,7 +187,8 @@ class _AnimalEditSheetState extends ConsumerState<AnimalEditSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -209,7 +210,10 @@ class _AnimalEditSheetState extends ConsumerState<AnimalEditSheet> {
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall
-                                  ?.copyWith(color: Colors.grey),
+                                  ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant),
                             ),
                           ],
                         ),
@@ -385,13 +389,19 @@ class _AnimalEditSheetState extends ConsumerState<AnimalEditSheet> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 16, vertical: 14),
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey[300]!),
+                              border: Border.all(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .outlineVariant),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
                               children: [
                                 Icon(Icons.calendar_today,
-                                    color: Colors.grey[600], size: 20),
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                    size: 20),
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Text(
@@ -412,7 +422,10 @@ class _AnimalEditSheetState extends ConsumerState<AnimalEditSheet> {
                                     onTap: () =>
                                         setState(() => _fechaNacimiento = null),
                                     child: Icon(Icons.close,
-                                        size: 16, color: Colors.grey[500]),
+                                        size: 16,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant),
                                   ),
                               ],
                             ),

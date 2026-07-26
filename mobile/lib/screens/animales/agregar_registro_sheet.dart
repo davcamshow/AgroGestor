@@ -52,8 +52,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -63,7 +63,7 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
             height: 4,
             margin: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -189,8 +189,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
                         n.toString(),
                         style: TextStyle(
                           color: _condicionCorporal == n
-                              ? Colors.white
-                              : Colors.black,
+                              ? Theme.of(context).colorScheme.onPrimary
+                              : Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
                         ),
@@ -209,8 +209,9 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
                   backgroundColor: AppTheme.primary,
                   padding: const EdgeInsets.all(16),
                 ),
-                child: const Text('Guardar Pesaje',
-                    style: TextStyle(color: Colors.white)),
+                child: Text('Guardar Pesaje',
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary)),
               ),
             ),
           ],
@@ -367,8 +368,9 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
                   backgroundColor: AppTheme.info,
                   padding: const EdgeInsets.all(16),
                 ),
-                child: const Text('Guardar Evento',
-                    style: TextStyle(color: Colors.white)),
+                child: Text('Guardar Evento',
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary)),
               ),
             ),
           ],
