@@ -225,7 +225,7 @@ class PlanesScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           _buildPlanFeature(Icons.pets, 'Hasta ${_formatearLimite(plan.limiteAnimales)} animales'),
-          _buildPlanFeature(Icons.people, '${_formatearLimite(plan.limiteUsuarios) == '∞' ? 'Usuarios ilimitados' : 'Hasta ${_formatearLimite(plan.limiteUsuarios)} usuarios'}'),
+          _buildPlanFeature(Icons.people, _formatearLimite(plan.limiteUsuarios) == '∞' ? 'Usuarios ilimitados' : 'Hasta ${_formatearLimite(plan.limiteUsuarios)} usuarios'),
           if (plan.incluyeModuloAnimales) _buildPlanFeature(Icons.check_circle, 'Módulo Animales'),
           if (plan.incluyeModuloLotes) _buildPlanFeature(Icons.check_circle, 'Módulo Lotes'),
           if (plan.incluyeModuloDietas) _buildPlanFeature(Icons.check_circle, 'Módulo Dietas'),

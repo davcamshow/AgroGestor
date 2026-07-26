@@ -165,7 +165,7 @@ class _ArbolGenealogicoScreenState extends ConsumerState<ArbolGenealogicoScreen>
           if (animal['raza'] != null)
             Text(
               animal['raza'],
-              style: TextStyle(color: Colors.grey),
+              style: const TextStyle(color: Colors.grey),
             ),
           Text(
             rol,

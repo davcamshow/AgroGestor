@@ -155,7 +155,7 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                value: _selectedStage,
+                initialValue: _selectedStage,
                 decoration: InputDecoration(
                   labelText: 'Etapa Productiva',
                   border: OutlineInputBorder(
@@ -178,7 +178,7 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
               const SizedBox(height: 16),
               dietasAsync.when(
                 data: (dietas) => DropdownButtonFormField<int?>(
-                  value: _selectedDiet,
+                  initialValue: _selectedDiet,
                   decoration: InputDecoration(
                     labelText: 'Dieta (opcional)',
                     border: OutlineInputBorder(

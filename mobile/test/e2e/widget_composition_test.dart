@@ -10,7 +10,7 @@ void main() {
   group('E2E: Composición de widgets en pantalla de dashboard', () {
     testWidgets('Escenario 1: Dashboard con KPI-style GradientCard y StatusBadge', (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
+        const MaterialApp(
           home: Scaffold(
             body: SingleChildScrollView(
               child: Column(
@@ -18,9 +18,9 @@ void main() {
                   GradientCard(
                     child: Column(
                       children: [
-                        const Text('Total Animales'),
-                        const Text('150'),
-                        const StatusBadge(status: 'activo'),
+                        Text('Total Animales'),
+                        Text('150'),
+                        StatusBadge(status: 'activo'),
                       ],
                     ),
                   ),
@@ -60,15 +60,15 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: ListView(
-              children: [
-                const GradientCard(
+              children: const [
+                GradientCard(
                   child: SizedBox(
                     height: 100,
                     child: Center(child: Text('Resumen')),
                   ),
                 ),
-                const SizedBox(height: 16),
-                const LoadingShimmerListItem(lines: 3),
+                SizedBox(height: 16),
+                LoadingShimmerListItem(lines: 3),
               ],
             ),
           ),

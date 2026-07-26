@@ -224,7 +224,7 @@ class _AnimalEditSheetState extends ConsumerState<AnimalEditSheet> {
                             border: Border.all(
                                 color: AppTheme.warning.withOpacity(0.5)),
                           ),
-                          child: Text(
+                          child: const Text(
                             'Sin guardar',
                             style: TextStyle(
                                 fontSize: 11,

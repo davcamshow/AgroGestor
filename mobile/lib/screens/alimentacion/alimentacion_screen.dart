@@ -62,7 +62,7 @@ class AlimentacionScreen extends ConsumerWidget {
             dietasAsync.when(
               loading: () => ListView.builder(
                 itemCount: 3,
-                itemBuilder: (_, i) => LoadingShimmerListItem(),
+                itemBuilder: (_, i) => const LoadingShimmerListItem(),
               ),
               error: (err, _) => Center(child: Text('Error: $err')),
               data: (dietas) {
@@ -99,7 +99,7 @@ class AlimentacionScreen extends ConsumerWidget {
                                       'Costo: ${dieta.costoEstimadoKg}/kg'),
                                 ],
                               ),
-                              trailing: Icon(Icons.check_circle,
+                              trailing: const Icon(Icons.check_circle,
                                   color: AppTheme.success),
                             ),
                           )

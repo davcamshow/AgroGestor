@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/auth/auth_state.dart';
@@ -18,17 +17,14 @@ import '../screens/reproduccion/reproduccion_screen.dart';
 import '../screens/salud/salud_screen.dart';
 import '../screens/alimentacion/alimentacion_screen.dart';
 import '../screens/alimentacion/calculadora_screen.dart';
-import '../screens/reproduccion/reproduccion_screen.dart';
 import '../screens/reproduccion/registro_nacimiento_screen.dart';
 import '../screens/reproduccion/kpis_reproduccion_screen.dart';
 import '../screens/reproduccion/arbol_genealogico_screen.dart';
 import '../screens/reproduccion/calculadora_ia_screen.dart';
 import '../screens/reproduccion/temporadas_screen.dart';
-import '../screens/alimentacion/calculadora_screen.dart';
 import '../screens/alimentacion/reporte_consumo_screen.dart';
 import '../screens/alimentacion/alertas_stock_screen.dart';
 import '../screens/planes/planes_screen.dart';
-import '../screens/salud/salud_screen.dart';
 import '../widgets/app_shell.dart';
 
 

@@ -293,7 +293,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                     color: AppTheme.primary,
                     shape: BoxShape.circle,
                   ),
-                  markerDecoration: BoxDecoration(
+                  markerDecoration: const BoxDecoration(
                     color: AppTheme.info,
                     shape: BoxShape.circle,
                   ),
@@ -884,7 +884,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
         ),
         Text(
           title,
-          style: TextStyle(
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 14,
             color: AppTheme.primary,
@@ -1151,11 +1151,11 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          title: Row(
+          title: const Row(
             children: [
               Icon(Icons.remove_circle_outline, color: AppTheme.error),
-              const SizedBox(width: 10),
-              const Text(
+              SizedBox(width: 10),
+              Text(
                 'Dar de baja',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
@@ -1267,7 +1267,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                     ),
                     child: Row(
                       children: [
-                        Icon(Icons.calendar_today,
+                        const Icon(Icons.calendar_today,
                             size: 18, color: AppTheme.primary),
                         const SizedBox(width: 10),
                         Text(
@@ -1307,7 +1307,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide:
-                          BorderSide(color: AppTheme.primary, width: 1.5),
+                          const BorderSide(color: AppTheme.primary, width: 1.5),
                     ),
                     contentPadding: const EdgeInsets.all(12),
                   ),
@@ -1644,7 +1644,7 @@ class _AuditoriaTab extends ConsumerWidget {
                         const TextSpan(text: '  →  '),
                         TextSpan(
                           text: despues.isEmpty ? '(vacío)' : despues,
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: AppTheme.success,
                             fontWeight: FontWeight.w600,
                           ),

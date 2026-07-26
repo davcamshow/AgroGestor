@@ -12,7 +12,7 @@ void main() {
     });
 
     test('authenticated() crea status authenticated con usuario', () {
-      final user = Usuario(
+      const user = Usuario(
         id: 1,
         nombre_completo: 'Juan Pérez',
         email: 'juan@ejemplo.com',
@@ -38,7 +38,7 @@ void main() {
     });
 
     test('usuario mantiene valores por defecto', () {
-      final user = Usuario(
+      const user = Usuario(
         id: 2,
         nombre_completo: 'María García',
         email: 'maria@ejemplo.com',

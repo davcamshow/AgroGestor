@@ -219,7 +219,7 @@ class _ServerConfigScreenState extends ConsumerState<ServerConfigScreen> {
                               ),
                               child: Column(
                                 children: [
-                                  Icon(
+                                  const Icon(
                                     Icons.check_circle,
                                     color: AppTheme.success,
                                     size: 48,
@@ -270,16 +270,16 @@ class _ServerConfigScreenState extends ConsumerState<ServerConfigScreen> {
                                 ),
                                 child: Text(
                                   _errorMessage!,
-                                  style: TextStyle(color: AppTheme.error),
+                                  style: const TextStyle(color: AppTheme.error),
                                 ),
                               ),
                             TextField(
                               controller: _urlController,
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 hintText:
                                     'ej: 192.168.1.100:8000 o servidor.local:8000',
                                 prefixIcon:
-                                    const Icon(Icons.dns_outlined),
+                                    Icon(Icons.dns_outlined),
                               ),
                             )
                                 .animate()

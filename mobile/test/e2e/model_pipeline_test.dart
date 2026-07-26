@@ -30,7 +30,7 @@ void main() {
     });
 
     test('Escenario 2: Pipeline de insumo con proveedor', () {
-      final proveedor = Proveedor(
+      const proveedor = Proveedor(
         id: 1,
         usuario: 1,
         nombre_empresa: 'AgroVet S.A.',

@@ -63,7 +63,7 @@ class ReproduccionScreen extends ConsumerWidget {
             ciclosAsync.when(
               loading: () => ListView.builder(
                 itemCount: 3,
-                itemBuilder: (_, i) => LoadingShimmerListItem(),
+                itemBuilder: (_, i) => const LoadingShimmerListItem(),
               ),
               error: (err, stack) => Center(
                 child: Text('Error: $err'),

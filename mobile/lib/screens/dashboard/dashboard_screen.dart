@@ -119,7 +119,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             ),
                             const SizedBox(width: 16),
                             Expanded(
-                              child: KpiCard(
+                              child: const KpiCard(
                                 title: 'Lotes',
                                 value: '0',
                                 icon: Icons.group,
@@ -420,7 +420,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
         return LineChart(
           LineChartData(
-            gridData: FlGridData(show: true),
+            gridData: const FlGridData(show: true),
             titlesData: FlTitlesData(
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
@@ -517,7 +517,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             if (evento.proximaAplicacion != null)
                               Text(
                                 'Próxima: ${_formatearFecha(evento.proximaAplicacion!)}',
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: AppTheme.info,
                                   fontWeight: FontWeight.w500,
                                 ),

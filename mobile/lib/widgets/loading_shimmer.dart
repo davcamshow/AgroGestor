@@ -50,7 +50,7 @@ class LoadingShimmerListItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          LoadingShimmer(height: 18, width: double.infinity),
+          const LoadingShimmer(height: 18, width: double.infinity),
           const SizedBox(height: 12),
           for (int i = 0; i < lines - 1; i++) ...[
             LoadingShimmer(

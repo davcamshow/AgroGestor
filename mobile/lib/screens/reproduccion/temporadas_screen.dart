@@ -33,8 +33,9 @@ class _TemporadasScreenState extends ConsumerState<TemporadasScreen> {
             if (a.fechaNacimiento == null) continue;
             final mes = a.fechaNacimiento!.month;
             String temporada;
-            if (mes >= 9 && mes <= 11) temporada = 'Primavera';
-            else if (mes == 12 || mes <= 2) temporada = 'Verano';
+            if (mes >= 9 && mes <= 11) {
+              temporada = 'Primavera';
+            } else if (mes == 12 || mes <= 2) temporada = 'Verano';
             else if (mes >= 3 && mes <= 5) temporada = 'Otono';
             else temporada = 'Invierno';
             grouped.putIfAbsent(temporada, () => []).add(a);

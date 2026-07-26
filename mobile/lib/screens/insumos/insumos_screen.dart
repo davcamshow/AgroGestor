@@ -23,7 +23,7 @@ class InsumosScreen extends ConsumerWidget {
         child: insumosAsync.when(
           data: (insumos) {
             if (insumos.isEmpty) {
-              return EmptyState(
+              return const EmptyState(
                 icon: Icons.inventory,
                 title: 'Sin insumos',
                 description: 'Agrega tu primer insumo',
