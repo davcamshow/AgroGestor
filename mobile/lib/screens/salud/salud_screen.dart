@@ -35,7 +35,7 @@ class SaludScreen extends ConsumerWidget {
                 color: AppTheme.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.construction,
                 size: 64,
                 color: AppTheme.primary,

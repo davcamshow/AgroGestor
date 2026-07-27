@@ -10,8 +10,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  provider: ^6.1.2
-  shared_preferences: ^2.2.2
 
   # HTTP client with interceptors for JWT
   dio: ^5.4.3

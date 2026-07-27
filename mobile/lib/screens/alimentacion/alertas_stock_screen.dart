@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/api/api_client.dart';
 import '../../core/providers/insumos_provider.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -33,18 +34,18 @@ class _AlertasStockScreenState extends ConsumerState<AlertasStockScreen> {
           }).toList();
 
           if (alertas.isEmpty) {
-            return const Center(
+            return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.check_circle, size: 64, color: AppTheme.success),
-                  SizedBox(height: 16),
-                  Text(
+                  const Icon(Icons.check_circle, size: 64, color: AppTheme.success),
+                  const SizedBox(height: 16),
+                  const Text(
                     '¡Todo en orden!',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
-                  SizedBox(height: 8),
-                  Text(
+                  const SizedBox(height: 8),
+                  const Text(
                     'No hay insumos con stock bajo',
                     style: TextStyle(color: Colors.grey),
                   ),

@@ -13,8 +13,8 @@ class CalculadoraIAScreen extends ConsumerStatefulWidget {
 
 class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
   DateTime? _fechaUltimoParto;
-  final int _diasGestacion = 283;
-  final int _diasInvolution = 60;
+  int _diasGestacion = 283;
+  int _diasInvolution = 60;
   int? _selectedAnimalId;
   Map<String, dynamic>? _animal;
 
@@ -68,7 +68,7 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
               data: (animales) {
                 final hembras = animales.where((a) => a.sexo == 'M').toList();
                 return DropdownButtonFormField<int>(
-                  initialValue: _selectedAnimalId,
+                  value: _selectedAnimalId,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     hintText: 'Seleccionar vaca',
@@ -146,7 +146,7 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '($_diasInvolution días involución + $_diasGestacion días gestión)',
+                        '(${_diasInvolution} días involución + ${_diasGestacion} días gestión)',
                         style: TextStyle(color: Colors.grey[600], fontSize: 12),
                       ),
                     ],

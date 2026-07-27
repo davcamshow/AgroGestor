@@ -172,7 +172,7 @@ class _CicloFormScreenState extends ConsumerState<CicloFormScreen> {
             const SizedBox(height: 8),
             animalesAsync.when(
               data: (animales) => DropdownButtonFormField<int?>(
-                initialValue: _selectedAnimal,
+                value: _selectedAnimal,
                 decoration: const InputDecoration(
                   labelText: 'Seleccionar Animal',
                   border: OutlineInputBorder(),
@@ -281,9 +281,9 @@ class _CicloFormScreenState extends ConsumerState<CicloFormScreen> {
             InkWell(
               onTap: () => _selectFecha(context, 'estimada'),
               child: InputDecorator(
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Fecha Estimada de Parto',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
                   prefixIcon: Icon(Icons.event),
                   hintText: 'Opcional',
                 ),
@@ -337,7 +337,7 @@ class _CicloFormScreenState extends ConsumerState<CicloFormScreen> {
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              initialValue: _estado,
+              value: _estado,
               decoration: const InputDecoration(
                 labelText: 'Estado del Ciclo',
                 border: OutlineInputBorder(),

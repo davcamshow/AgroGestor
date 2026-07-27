@@ -69,7 +69,7 @@ class ReportesScreen extends ConsumerWidget {
                         padding: const EdgeInsets.all(16),
                         child: LineChart(
                           LineChartData(
-                            gridData: const FlGridData(show: true),
+                            gridData: FlGridData(show: true),
                             titlesData: FlTitlesData(
                               bottomTitles: AxisTitles(
                                 sideTitles: SideTitles(

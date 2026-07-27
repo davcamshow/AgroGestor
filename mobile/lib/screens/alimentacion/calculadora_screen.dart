@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+import '../../core/providers/dietas_provider.dart';
 import '../../core/providers/lotes_provider.dart';
 import '../../core/providers/insumos_provider.dart';
 import '../../core/theme/app_theme.dart';
@@ -82,7 +84,7 @@ class _CalculadoraScreenState extends ConsumerState<CalculadoraScreen> {
                     const SizedBox(height: 16),
                     lotesAsync.when(
                       data: (lotes) => DropdownButtonFormField<int>(
-                        initialValue: _selectedLoteId,
+                        value: _selectedLoteId,
                         decoration: const InputDecoration(
                           labelText: 'Seleccionar Lote',
                           border: OutlineInputBorder(),
@@ -150,7 +152,7 @@ class _CalculadoraScreenState extends ConsumerState<CalculadoraScreen> {
                         const SizedBox(width: 12),
                         Expanded(
                           child: DropdownButtonFormField<String>(
-                            initialValue: _tipoFormulacion,
+                            value: _tipoFormulacion,
                             decoration: const InputDecoration(
                               labelText: 'Formato',
                               border: OutlineInputBorder(),

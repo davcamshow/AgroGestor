@@ -194,9 +194,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _nameController,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 hintText: 'Tu nombre completo',
-                                prefixIcon: Icon(Icons.person_outline),
+                                prefixIcon: const Icon(Icons.person_outline),
                               ),
                               validator: (value) =>
                                   FieldValidator.validateRequired(value, 'Nombre'),
@@ -210,9 +210,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _emailController,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 hintText: 'tu@email.com',
-                                prefixIcon: Icon(Icons.email_outlined),
+                                prefixIcon: const Icon(Icons.email_outlined),
                               ),
                               keyboardType: TextInputType.emailAddress,
                               validator: EmailValidator.validateEmail,
@@ -301,9 +301,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _phoneController,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 hintText: '+1 234 567 8900',
-                                prefixIcon: Icon(Icons.phone_outlined),
+                                prefixIcon: const Icon(Icons.phone_outlined),
                               ),
                               keyboardType: TextInputType.phone,
                             ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.5),
@@ -316,9 +316,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _roleController,
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 hintText: 'ej: Veterinario',
-                                prefixIcon: Icon(Icons.work_outline),
+                                prefixIcon: const Icon(Icons.work_outline),
                               ),
                             ).animate().fadeIn(delay: 550.ms).slideY(begin: 0.5),
                             const SizedBox(height: 32),

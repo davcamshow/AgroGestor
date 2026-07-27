@@ -97,12 +97,12 @@ class _MoverLoteSheetState extends ConsumerState<MoverLoteSheet> {
                 return DropdownButtonFormField<int>(
                   decoration: InputDecoration(
                     labelText: 'Seleccionar Lote Destino',
-                    prefixIcon: const Icon(Icons.group_work_outlined,
+                    prefixIcon: Icon(Icons.group_work_outlined,
                         color: AppTheme.primary),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
-                  initialValue: _loteDestinoId,
+                  value: _loteDestinoId,
                   items: destinosDisponibles.map((lote) {
                     return DropdownMenuItem<int>(
                       value: lote.id,
@@ -140,7 +140,7 @@ class _MoverLoteSheetState extends ConsumerState<MoverLoteSheet> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.calendar_today_outlined,
+                    Icon(Icons.calendar_today_outlined,
                         size: 18, color: AppTheme.primary),
                     const SizedBox(width: 10),
                     Text(DateFormat('dd/MM/yyyy').format(_fechaMovimiento),
@@ -219,8 +219,8 @@ class _MoverLoteSheetState extends ConsumerState<MoverLoteSheet> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
+          SnackBar(
+            content: const Text(
                 '✅ El animal ha sido movido de lote de manera exitosa.'),
             backgroundColor: AppTheme.success,
           ),

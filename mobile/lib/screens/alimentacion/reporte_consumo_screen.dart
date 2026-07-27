@@ -96,7 +96,7 @@ class _ReporteConsumoScreenState extends ConsumerState<ReporteConsumoScreen> {
                 const SizedBox(height: 8),
                 lotesAsync.when(
                   data: (lotes) => DropdownButtonFormField<int?>(
-                    initialValue: _loteId,
+                    value: _loteId,
                     decoration: InputDecoration(
                       filled: true,
                       fillColor: Colors.white,

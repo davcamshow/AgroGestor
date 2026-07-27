@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../core/models/registro_peso.dart';
+import '../../core/models/evento_sanitario.dart';
 import '../../core/providers/registros_peso_provider.dart';
 import '../../core/providers/eventos_sanitarios_provider.dart';
 import '../../core/providers/animales_provider.dart';
@@ -231,7 +233,7 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
                 style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              initialValue: _tipoEvento,
+              value: _tipoEvento,
               decoration: const InputDecoration(border: OutlineInputBorder()),
               items: const [
                 DropdownMenuItem(
@@ -252,9 +254,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
                 border: OutlineInputBorder(),
               ),
               validator: (value) {
-                if (value == null || value.isEmpty) {
+                if (value == null || value.isEmpty)
                   return 'Ingresa el producto';
-                }
                 return null;
               },
             ),

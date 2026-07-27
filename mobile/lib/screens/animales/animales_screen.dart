@@ -45,15 +45,15 @@ class AnimalesScreen extends ConsumerWidget {
       body: animalesAsync.when(
         loading: () => ListView.builder(
           itemCount: 5,
-          itemBuilder: (context, index) => const LoadingShimmerListItem(
-            padding: EdgeInsets.all(16),
+          itemBuilder: (context, index) => LoadingShimmerListItem(
+            padding: const EdgeInsets.all(16),
           ),
         ),
         error: (err, stack) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
+              Icon(Icons.error_outline, size: 48, color: AppTheme.error),
               const SizedBox(height: 16),
               Text('Error: ${err.toString()}'),
             ],
