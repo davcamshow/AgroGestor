@@ -25,20 +25,18 @@ class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _getColor();
-    final theme = Theme.of(context);
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.2),
-        border: Border.all(color: color.withOpacity(0.6)),
+        color: _getColor().withOpacity(0.2),
+        border: Border.all(color: _getColor()),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         status,
-        style: theme.textTheme.bodySmall?.copyWith(
-          color: color,
+        style: TextStyle(
+          color: _getColor(),
+          fontSize: 12,
           fontWeight: FontWeight.w600,
         ),
       ),

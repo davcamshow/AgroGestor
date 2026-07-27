@@ -18,15 +18,10 @@ class AnimalesScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Animales',
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(color: Theme.of(context).colorScheme.onPrimary)),
+        title: const Text('Animales', style: TextStyle(color: Colors.white)),
         backgroundColor: AppTheme.primary,
         elevation: 0,
-        iconTheme:
-            IconThemeData(color: Theme.of(context).colorScheme.onPrimary),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           // Toggle activos / todos
           Padding(
@@ -40,10 +35,8 @@ class AnimalesScreen extends ConsumerWidget {
           IconButton(
             icon: CircleAvatar(
               radius: 16,
-              backgroundColor:
-                  Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
-              child: Icon(Icons.person,
-                  color: Theme.of(context).colorScheme.onPrimary, size: 18),
+              backgroundColor: Colors.white.withOpacity(0.2),
+              child: const Icon(Icons.person, color: Colors.white, size: 18),
             ),
             onPressed: () => context.go('/configuracion'),
           ),
@@ -83,9 +76,7 @@ class AnimalesScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.pets,
-                      size: 64,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant),
+                  Icon(Icons.pets, size: 64, color: Colors.grey[300]),
                   const SizedBox(height: 16),
                   Text(
                     estadoFiltro == 'activo'
@@ -107,27 +98,24 @@ class AnimalesScreen extends ConsumerWidget {
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).scaffoldBackgroundColor,
+                  color: esInactivo ? Colors.grey[100] : Colors.white,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [AppTheme.softShadow],
                   border: esInactivo
-                      ? Border.all(
-                          color: Theme.of(context).colorScheme.outlineVariant,
-                          width: 1)
+                      ? Border.all(color: Colors.grey[300]!, width: 1)
                       : null,
                 ),
                 child: ListTile(
                   onTap: () => context.push('/animales/${animal.id}'),
                   leading: CircleAvatar(
                     backgroundColor: esInactivo
-                        ? Theme.of(context).colorScheme.surfaceContainerHighest
+                        ? Colors.grey[300]
                         : AppTheme.secondary.withOpacity(0.2),
                     child: Text(
                       animal.numeroArete[0].toUpperCase(),
                       style: TextStyle(
-                        color: esInactivo
-                            ? Theme.of(context).colorScheme.onSurfaceVariant
-                            : AppTheme.secondary,
+                        color:
+                            esInactivo ? Colors.grey[600] : AppTheme.secondary,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -135,9 +123,7 @@ class AnimalesScreen extends ConsumerWidget {
                   title: Text(
                     animal.nombre ?? animal.numeroArete,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: esInactivo
-                              ? Theme.of(context).colorScheme.onSurfaceVariant
-                              : null,
+                          color: esInactivo ? Colors.grey[600] : null,
                         ),
                   ),
                   subtitle: Text(
@@ -182,26 +168,28 @@ class _EstadoToggle extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
+          color: valor == 'todos'
+              ? Colors.white.withOpacity(0.25)
+              : Colors.white.withOpacity(0.10),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-              color: Theme.of(context).colorScheme.onPrimary.withOpacity(0.35)),
+          border: Border.all(color: Colors.white54),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               valor == 'todos' ? Icons.visibility : Icons.visibility_off,
-              color: Theme.of(context).colorScheme.onPrimary,
+              color: Colors.white,
               size: 15,
             ),
             const SizedBox(width: 4),
             Text(
               valor == 'todos' ? 'Todos' : 'Activos',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),
@@ -218,12 +206,12 @@ class _EstadoChip extends StatelessWidget {
 
   const _EstadoChip({required this.estado});
 
-  Color _colorFor(BuildContext context) => switch (estado) {
+  Color get _color => switch (estado) {
         'activo' => AppTheme.success,
         'vendido' => Colors.purple,
         'muerto' => AppTheme.error,
         'transferido' => Colors.orange,
-        _ => Theme.of(context).colorScheme.onSurfaceVariant,
+        _ => Colors.grey,
       };
 
   String get _label => switch (estado) {
@@ -236,19 +224,17 @@ class _EstadoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _colorFor(context);
-
     return Chip(
       label: Text(
         _label,
         style: TextStyle(
-          color: color,
+          color: _color,
           fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
       ),
-      backgroundColor: color.withOpacity(0.12),
-      side: BorderSide(color: color.withOpacity(0.3)),
+      backgroundColor: _color.withOpacity(0.12),
+      side: BorderSide(color: _color.withOpacity(0.3)),
       padding: const EdgeInsets.symmetric(horizontal: 4),
       materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
     );

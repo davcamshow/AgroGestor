@@ -6,16 +6,16 @@ class KpiCard extends StatefulWidget {
   final String value;
   final String? subtitle;
   final IconData icon;
-  final LinearGradient? gradient;
   final Color? color;
+  final LinearGradient? gradient;
 
   const KpiCard({
     required this.title,
     required this.value,
     required this.icon,
     this.subtitle,
-    this.gradient,
     this.color,
+    this.gradient,
     super.key,
   });
 
@@ -23,7 +23,8 @@ class KpiCard extends StatefulWidget {
   State<KpiCard> createState() => _KpiCardState();
 }
 
-class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
+class _KpiCardState extends State<KpiCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
 
@@ -48,43 +49,14 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isDarkMode = theme.brightness == Brightness.dark;
-
-    final LinearGradient cardGradient;
-    final Color textColor;
-
-    if (isDarkMode) {
-      cardGradient = LinearGradient(
-        colors: [
-          colorScheme.primaryContainer,
-          colorScheme.primary,
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      );
-      textColor = colorScheme.onPrimary;
-    } else if (widget.color != null) {
-      cardGradient = LinearGradient(
-        colors: [widget.color!, widget.color!.withValues(alpha: 0.82)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      );
-      textColor = colorScheme.onPrimary;
-    } else {
-      cardGradient = AppTheme.primaryGradient;
-      textColor = colorScheme.onPrimary;
-    }
-
-    final gradient = widget.gradient ?? cardGradient;
+    final gradient = widget.gradient ?? AppTheme.primaryGradient;
+    final color = widget.color ?? AppTheme.primary;
 
     return FadeTransition(
       opacity: _animation,
       child: SlideTransition(
         position: Tween<Offset>(begin: const Offset(0.3, 0), end: Offset.zero)
-            .animate(CurvedAnimation(
-                parent: _animationController, curve: Curves.easeOut)),
+            .animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOut)),
         child: Container(
           decoration: BoxDecoration(
             gradient: gradient,
@@ -102,8 +74,10 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
                     Expanded(
                       child: Text(
                         widget.title,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: textColor.withValues(alpha: 0.72),
+                        style: Theme.of(context)
+                            .textTheme.bodyMedium
+                            ?.copyWith(
+                              color: Colors.white70,
                               fontSize: 13,
                             ),
                       ),
@@ -111,12 +85,12 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: colorScheme.surface.withValues(alpha: 0.18),
+                        color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
                         widget.icon,
-                        color: textColor,
+                        color: Colors.white,
                         size: 20,
                       ),
                     ),
@@ -126,7 +100,7 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
                 Text(
                   widget.value,
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        color: textColor,
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                 ),
@@ -134,9 +108,9 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
                   const SizedBox(height: 8),
                   Text(
                     widget.subtitle!,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: textColor.withValues(alpha: 0.72),
-                        ),
+                    style: Theme.of(context)
+                        .textTheme.bodySmall
+                        ?.copyWith(color: Colors.white70),
                   ),
                 ],
               ],

@@ -21,40 +21,34 @@ class AlimentacionScreen extends ConsumerWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Alimentación'),
+          title: const Text('Alimentación', style: TextStyle(color: Colors.white)),
           backgroundColor: AppTheme.primary,
           elevation: 0,
-          iconTheme:
-              IconThemeData(color: Theme.of(context).colorScheme.onPrimary),
+          iconTheme: const IconThemeData(color: Colors.white),
           actions: [
             IconButton(
               icon: CircleAvatar(
                 radius: 16,
-                backgroundColor:
-                    Theme.of(context).colorScheme.onPrimary.withOpacity(0.2),
-                child: Icon(Icons.person,
-                    color: Theme.of(context).colorScheme.onPrimary, size: 18),
+                backgroundColor: Colors.white.withOpacity(0.2),
+                child: const Icon(Icons.person, color: Colors.white, size: 18),
               ),
               onPressed: () => context.go('/configuracion'),
             ),
             IconButton(
-              icon: Icon(Icons.bar_chart,
-                  color: Theme.of(context).colorScheme.onPrimary),
+              icon: const Icon(Icons.bar_chart, color: Colors.white),
               onPressed: () => context.push('/alimentacion/reporte'),
               tooltip: 'Reporte de Consumo',
             ),
             IconButton(
-              icon: Icon(Icons.warning_amber,
-                  color: Theme.of(context).colorScheme.onPrimary),
+              icon: const Icon(Icons.warning_amber, color: Colors.white),
               onPressed: () => context.push('/alimentacion/alertas'),
               tooltip: 'Alertas de Stock',
             ),
           ],
-          bottom: TabBar(
-            labelColor: Theme.of(context).colorScheme.onPrimary,
-            unselectedLabelColor:
-                Theme.of(context).colorScheme.onPrimary.withOpacity(0.7),
-            indicatorColor: Theme.of(context).colorScheme.onPrimary,
+          bottom: const TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
             tabs: [
               Tab(text: 'Dietas'),
               Tab(text: 'Lotes'),
@@ -84,7 +78,7 @@ class AlimentacionScreen extends ConsumerWidget {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surface,
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: AppTheme.secondary,
@@ -95,25 +89,33 @@ class AlimentacionScreen extends ConsumerWidget {
                             child: ListTile(
                               title: Text(dieta.nombre),
                               subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
                                 children: [
                                   const SizedBox(height: 4),
-                                  Text('Objetivo: ${dieta.objetivo}'),
-                                  Text('Costo: ${dieta.costoEstimadoKg}/kg'),
+                                  Text(
+                                      'Objetivo: ${dieta.objetivo}'),
+                                  Text(
+                                      'Costo: ${dieta.costoEstimadoKg}/kg'),
                                 ],
                               ),
                               trailing: const Icon(Icons.check_circle,
                                   color: AppTheme.success),
                             ),
-                          ).animate().fadeIn().slideX();
+                          )
+                              .animate()
+                              .fadeIn()
+                              .slideX();
                         },
                       );
               },
             ),
             // Tab 2: Lotes
             lotesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('Error: $err')),
+              loading: () => const Center(
+                  child: CircularProgressIndicator()),
+              error: (err, _) =>
+                  Center(child: Text('Error: $err')),
               data: (lotes) {
                 return lotes.isEmpty
                     ? const Center(child: Text('Sin lotes'))
@@ -126,33 +128,32 @@ class AlimentacionScreen extends ConsumerWidget {
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surface,
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                  color: Theme.of(context)
-                                      .colorScheme
-                                      .outlineVariant),
+                              border: Border.all(color: Colors.grey[300]!),
                             ),
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
                               children: [
                                 Text(lote.nombre,
-                                    style:
-                                        Theme.of(context).textTheme.labelLarge),
+                                    style: Theme.of(context)
+                                        .textTheme.labelLarge),
                                 const SizedBox(height: 8),
                                 Row(
                                   mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                      MainAxisAlignment
+                                          .spaceBetween,
                                   children: [
                                     Text(
                                       '${lote.cantidadCabezas} cabezas',
-                                      style:
-                                          Theme.of(context).textTheme.bodySmall,
+                                      style: Theme.of(context)
+                                          .textTheme.bodySmall,
                                     ),
                                     Chip(
                                       label: Text(lote.estado),
-                                      backgroundColor:
-                                          AppTheme.primary.withOpacity(0.2),
+                                      backgroundColor: AppTheme.primary
+                                          .withOpacity(0.2),
                                     ),
                                   ],
                                 ),
@@ -165,8 +166,10 @@ class AlimentacionScreen extends ConsumerWidget {
             ),
             // Tab 3: Insumos
             insumosAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('Error: $err')),
+              loading: () => const Center(
+                  child: CircularProgressIndicator()),
+              error: (err, _) =>
+                  Center(child: Text('Error: $err')),
               data: (insumos) {
                 return insumos.isEmpty
                     ? const Center(child: Text('Sin insumos'))
@@ -190,44 +193,43 @@ class AlimentacionScreen extends ConsumerWidget {
                             decoration: BoxDecoration(
                               color: alerta
                                   ? AppTheme.error.withOpacity(0.1)
-                                  : Theme.of(context).colorScheme.surface,
+                                  : Colors.white,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                 color: alerta
                                     ? AppTheme.error
-                                    : Theme.of(context)
-                                        .colorScheme
-                                        .outlineVariant,
+                                    : Colors.grey[300]!,
                               ),
                             ),
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
                               children: [
                                 Row(
                                   mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                      MainAxisAlignment
+                                          .spaceBetween,
                                   children: [
                                     Text(insumo.nombre,
                                         style: Theme.of(context)
-                                            .textTheme
-                                            .labelLarge),
+                                            .textTheme.labelLarge),
                                     if (alerta)
                                       Chip(
                                         label: const Text('Bajo stock'),
-                                        backgroundColor:
-                                            AppTheme.error.withOpacity(0.3),
+                                        backgroundColor: AppTheme.error
+                                            .withOpacity(0.3),
                                       ),
                                   ],
                                 ),
                                 const SizedBox(height: 8),
                                 ClipRRect(
-                                  borderRadius: BorderRadius.circular(4),
-                                  child: LinearProgressIndicator(
+                                  borderRadius:
+                                      BorderRadius.circular(4),
+                                  child:
+                                      LinearProgressIndicator(
                                     value: progreso,
                                     minHeight: 6,
-                                    backgroundColor: Theme.of(context)
-                                        .colorScheme
-                                        .surfaceContainerHighest,
+                                    backgroundColor: Colors.grey[300],
                                     valueColor: AlwaysStoppedAnimation(
                                       alerta
                                           ? AppTheme.error
@@ -238,7 +240,8 @@ class AlimentacionScreen extends ConsumerWidget {
                                 const SizedBox(height: 4),
                                 Text(
                                   '${actual.toStringAsFixed(1)}/${minimo.toStringAsFixed(1)} kg',
-                                  style: Theme.of(context).textTheme.bodySmall,
+                                  style: Theme.of(context)
+                                      .textTheme.bodySmall,
                                 ),
                               ],
                             ),

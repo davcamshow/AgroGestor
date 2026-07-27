@@ -27,23 +27,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final animalesAsync = ref.watch(animalesNotifierProvider);
     final ciclosAsync = ref.watch(ciclosNotifierProvider);
     final eventosAsync = ref.watch(eventosSanitariosNotifierProvider);
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Inicio',
-            style: theme.textTheme.titleLarge
-                ?.copyWith(color: colorScheme.onPrimary)),
+        title: const Text('Inicio', style: TextStyle(color: Colors.white)),
         backgroundColor: AppTheme.primary,
         elevation: 0,
-        iconTheme: IconThemeData(color: colorScheme.onPrimary),
+        iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             icon: CircleAvatar(
               radius: 16,
-              backgroundColor: colorScheme.onPrimary.withOpacity(0.2),
-              child: Icon(Icons.person, color: colorScheme.onPrimary, size: 18),
+              backgroundColor: Colors.white.withOpacity(0.2),
+              child: const Icon(Icons.person, color: Colors.white, size: 18),
             ),
             onPressed: () => context.go('/configuracion'),
           ),
@@ -71,18 +67,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   error: (err, _) => Center(child: Text('Error: $err')),
                   data: (eventos) {
                     final totalAnimales = animales.length;
-                    final gestantes =
-                        ciclos.where((c) => c.estado == 'gestante').length;
+                    final gestantes = ciclos.where((c) => c.estado == 'gestante').length;
                     print('DEBUG: Total eventos: ${eventos.length}');
                     final ahora = DateTime.now();
-                    final proximos = eventos.where((e) {
-                      if (e.proximaAplicacion == null) return false;
-                      final dias =
-                          e.proximaAplicacion!.difference(ahora).inDays;
-                      print(
-                          'DEBUG evento: ${e.producto}, proxima: ${e.proximaAplicacion}, dias: $dias');
-                      return dias >= 0 && dias <= 60;
-                    }).toList();
+                    final proximos = eventos
+                        .where((e) {
+                          if (e.proximaAplicacion == null) return false;
+                          final dias = e.proximaAplicacion!.difference(ahora).inDays;
+                          print('DEBUG evento: ${e.producto}, proxima: ${e.proximaAplicacion}, dias: $dias');
+                          return dias >= 0 && dias <= 60;
+                        })
+                        .toList();
                     print('DEBUG: Eventos proximos: ${proximos.length}');
 
                     return Column(
@@ -95,10 +90,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 value: totalAnimales.toString(),
                                 icon: Icons.pets,
                                 color: AppTheme.secondary,
-                              )
-                                  .animate()
-                                  .fadeIn(delay: 100.ms)
-                                  .slideX(begin: 0.3),
+                              ).animate().fadeIn(delay: 100.ms).slideX(begin: 0.3),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
@@ -107,10 +99,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 value: gestantes.toString(),
                                 icon: Icons.favorite,
                                 color: AppTheme.accent,
-                              )
-                                  .animate()
-                                  .fadeIn(delay: 200.ms)
-                                  .slideX(begin: 0.3),
+                              ).animate().fadeIn(delay: 200.ms).slideX(begin: 0.3),
                             ),
                           ],
                         ),
@@ -119,17 +108,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           children: [
                             Expanded(
                               child: GestureDetector(
-                                onTap: () => _mostrarEventosProximosModal(
-                                    context, proximos, animales),
+                                onTap: () => _mostrarEventosProximosModal(context, proximos, animales),
                                 child: KpiCard(
                                   title: 'Eventos Próximos',
                                   value: proximos.length.toString(),
                                   icon: Icons.event,
                                   color: AppTheme.info,
-                                )
-                                    .animate()
-                                    .fadeIn(delay: 300.ms)
-                                    .slideX(begin: 0.3),
+                                ).animate().fadeIn(delay: 300.ms).slideX(begin: 0.3),
                               ),
                             ),
                             const SizedBox(width: 16),
@@ -139,10 +124,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 value: '0',
                                 icon: Icons.group,
                                 color: AppTheme.warning,
-                              )
-                                  .animate()
-                                  .fadeIn(delay: 400.ms)
-                                  .slideX(begin: 0.3),
+                              ).animate().fadeIn(delay: 400.ms).slideX(begin: 0.3),
                             ),
                           ],
                         ),
@@ -157,7 +139,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               loading: () => Container(
                 height: 200,
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest,
+                  color: Colors.grey[200],
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
@@ -168,24 +150,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     height: 200,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: colorScheme.surface,
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [AppTheme.softShadow],
                     ),
-                    child: Center(
-                      child: Text(
-                        'Sin animales registrados',
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(color: colorScheme.onSurfaceVariant),
-                      ),
-                    ),
+                    child: const Center(child: Text('Sin animales registrados')),
                   );
                 }
                 return Container(
                   height: 280,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: colorScheme.surface,
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [AppTheme.softShadow],
                   ),
@@ -221,9 +197,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       ),
                       const SizedBox(height: 8),
                       if (_animalIdSeleccionado != null)
-                        Expanded(
-                            child: _buildAnimalWeightChart(
-                                context, _animalIdSeleccionado!)),
+                        Expanded(child: _buildAnimalWeightChart(_animalIdSeleccionado!)),
                     ],
                   ),
                 ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.3);
@@ -237,16 +211,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             const SizedBox(height: 12),
             animalesAsync.when(
               loading: () => Column(
-                children: List.generate(
-                    3,
-                    (_) => Container(
-                          height: 70,
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: colorScheme.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        )),
+                children: List.generate(3, (_) => Container(
+                  height: 70,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                )),
               ),
               error: (err, _) => Center(child: Text('Error: $err')),
               data: (animales) {
@@ -262,19 +234,17 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: colorScheme.surface,
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [AppTheme.softShadow],
                         ),
                         child: Row(
                           children: [
                             CircleAvatar(
-                              backgroundColor:
-                                  AppTheme.secondary.withOpacity(0.2),
+                              backgroundColor: AppTheme.secondary.withOpacity(0.2),
                               child: Text(
                                 animal.numeroArete[0].toUpperCase(),
-                                style:
-                                    const TextStyle(color: AppTheme.secondary),
+                                style: const TextStyle(color: AppTheme.secondary),
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -284,13 +254,11 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                 children: [
                                   Text(
                                     animal.numeroArete,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
+                                    style: const TextStyle(fontWeight: FontWeight.bold),
                                   ),
                                   Text(
                                     animal.raza ?? 'Sin raza',
-                                    style: theme.textTheme.bodySmall
-                                        ?.copyWith(fontSize: 12),
+                                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
                                   ),
                                 ],
                               ),
@@ -300,7 +268,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               style: TextStyle(
                                 color: animal.estado == 'activo'
                                     ? AppTheme.success
-                                    : colorScheme.onSurfaceVariant,
+                                    : Colors.grey,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -326,21 +294,19 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   return Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: colorScheme.surface,
+                      color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [AppTheme.softShadow],
                     ),
-                    child: Center(
-                      child: Text(
-                        'Sin eventos registrados',
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(color: colorScheme.onSurfaceVariant),
-                      ),
+                    child: const Center(
+                      child: Text('Sin eventos registrados',
+                          style: TextStyle(color: Colors.grey)),
                     ),
                   );
                 }
-                final recientes = [...eventos]..sort(
-                    (a, b) => b.fechaAplicacion.compareTo(a.fechaAplicacion));
+                final recientes = [...eventos]
+                  ..sort((a, b) =>
+                      b.fechaAplicacion.compareTo(a.fechaAplicacion));
                 final ultimos = recientes.take(5).toList();
                 return Column(
                   children: ultimos.map((evento) {
@@ -351,7 +317,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: colorScheme.surface,
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [AppTheme.softShadow],
                       ),
@@ -373,15 +339,14 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                               children: [
                                 Text(
                                   '${_getTipoLabel(evento.tipo)} - ${evento.producto}',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                  style: const TextStyle(
                                       fontWeight: FontWeight.w500,
                                       fontSize: 13),
                                 ),
                                 Text(
-                                  animal?.numeroArete ??
-                                      'Animal #${evento.animalId}',
+                                  animal?.numeroArete ?? 'Animal #${evento.animalId}',
                                   style: TextStyle(
-                                    color: colorScheme.onSurfaceVariant,
+                                    color: Colors.grey[600],
                                     fontSize: 11,
                                   ),
                                 ),
@@ -391,7 +356,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           Text(
                             _formatearFecha(evento.fechaAplicacion),
                             style: TextStyle(
-                              color: colorScheme.onSurfaceVariant,
+                              color: Colors.grey[500],
                               fontSize: 11,
                             ),
                           ),
@@ -412,15 +377,13 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return Container(
       height: 120,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        color: Colors.grey[200],
         borderRadius: BorderRadius.circular(16),
       ),
     );
   }
 
-  Widget _buildAnimalWeightChart(BuildContext context, int animalId) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+  Widget _buildAnimalWeightChart(int animalId) {
     ref.watch(animalesNotifierProvider);
     final registrosAsync = ref.watch(registrosPesoAnimalProvider(animalId));
 
@@ -433,27 +396,23 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.scale,
-                    size: 48, color: colorScheme.onSurfaceVariant),
+                Icon(Icons.scale, size: 48, color: Colors.grey[400]),
                 const SizedBox(height: 8),
                 Text(
                   'Sin pesajes registrados',
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: colorScheme.onSurfaceVariant),
+                  style: TextStyle(color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Agrega pesajes desde el detalle del animal',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant, fontSize: 12),
+                  style: TextStyle(color: Colors.grey[400], fontSize: 12),
                 ),
               ],
             ),
           );
         }
 
-        final sorted = List.from(registros)
-          ..sort((a, b) => a.fechaPesaje.compareTo(b.fechaPesaje));
+        final sorted = List.from(registros)..sort((a, b) => a.fechaPesaje.compareTo(b.fechaPesaje));
         final spots = sorted.asMap().entries.map((e) {
           final peso = double.tryParse(e.value.pesoKg) ?? 0;
           return FlSpot(e.key.toDouble(), peso);
@@ -495,10 +454,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   },
                 ),
               ),
-              topTitles:
-                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles:
-                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
             borderData: FlBorderData(show: false),
             lineBarsData: [
@@ -515,7 +472,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       radius: 4,
                       color: AppTheme.primary,
                       strokeWidth: 2,
-                      strokeColor: colorScheme.surface,
+                      strokeColor: Colors.white,
                     );
                   },
                 ),
@@ -531,8 +488,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     );
   }
 
-  void _mostrarEventosProximosModal(BuildContext context,
-      List<EventoSanitario> eventos, List<Animal> animales) {
+  void _mostrarEventosProximosModal(BuildContext context, List<EventoSanitario> eventos, List<Animal> animales) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -546,23 +502,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   itemCount: eventos.length,
                   itemBuilder: (context, index) {
                     final evento = eventos[index];
-                    final animal = animales
-                        .where((a) => a.id == evento.animalId)
-                        .firstOrNull;
+                    final animal = animales.where((a) => a.id == evento.animalId).firstOrNull;
                     return Card(
                       child: ListTile(
                         leading: CircleAvatar(
                           backgroundColor: AppTheme.info.withOpacity(0.2),
-                          child: Icon(_getTipoIcon(evento.tipo),
-                              color: AppTheme.info),
+                          child: Icon(_getTipoIcon(evento.tipo), color: AppTheme.info),
                         ),
-                        title: Text(animal?.numeroArete ??
-                            'Animal #${evento.animalId}'),
+                        title: Text(animal?.numeroArete ?? 'Animal #${evento.animalId}'),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                                '${_getTipoLabel(evento.tipo)} - ${evento.producto}'),
+                            Text('${_getTipoLabel(evento.tipo)} - ${evento.producto}'),
                             if (evento.proximaAplicacion != null)
                               Text(
                                 'Próxima: ${_formatearFecha(evento.proximaAplicacion!)}',
