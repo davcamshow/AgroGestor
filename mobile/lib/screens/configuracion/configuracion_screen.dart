@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_state.dart';
 import '../../core/auth/auth_repository.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/theme_toggle_button.dart';
 
 class ConfiguracionScreen extends ConsumerStatefulWidget {
   const ConfiguracionScreen({super.key});
 
   @override
-  ConsumerState<ConfiguracionScreen> createState() => _ConfiguracionScreenState();
+  ConsumerState<ConfiguracionScreen> createState() =>
+      _ConfiguracionScreenState();
 }
 
 class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
@@ -31,8 +32,7 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
     if (authState.user != null) {
       _nameController.text = authState.user!.nombre_completo;
       _phoneController.text = authState.user!.telefono ?? '';
-      _ranchNameController.text =
-          authState.user!.nombre_rancho ?? '';
+      _ranchNameController.text = authState.user!.nombre_rancho ?? '';
     }
   }
 
@@ -48,10 +48,10 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
     setState(() => _isLoading = true);
     try {
       await ref.read(authRepositoryProvider).updateProfile(
-        nombreCompleto: _nameController.text,
-        telefono: _phoneController.text,
-        nombreRancho: _ranchNameController.text,
-      );
+            nombreCompleto: _nameController.text,
+            telefono: _phoneController.text,
+            nombreRancho: _ranchNameController.text,
+          );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Perfil actualizado')),
@@ -108,28 +108,20 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
                         ),
                       ),
                     ),
-                  )
-                      .animate()
-                      .fadeIn(duration: 600.ms)
-                      .scale(),
+                  ).animate().fadeIn(duration: 600.ms).scale(),
                   const SizedBox(height: 12),
                   Text(
                     user?.nombre_completo ?? 'Usuario',
                     style: Theme.of(context).textTheme.headlineSmall,
-                  )
-                      .animate()
-                      .fadeIn(delay: 200.ms)
-                      .slideY(begin: 0.2),
+                  ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
                   const SizedBox(height: 4),
                   Text(
                     user?.email ?? 'email@example.com',
                     style: Theme.of(context)
-                        .textTheme.bodySmall
+                        .textTheme
+                        .bodySmall
                         ?.copyWith(color: Colors.grey),
-                  )
-                      .animate()
-                      .fadeIn(delay: 300.ms)
-                      .slideY(begin: 0.2),
+                  ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
                 ],
               ),
             ),
@@ -157,6 +149,26 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
               label: 'Nombre del Rancho',
               icon: Icons.business_outlined,
             ).animate().fadeIn(delay: 600.ms).slideX(begin: 0.3),
+
+            const SizedBox(height: 24),
+            // Sección Apariencia
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildSectionTitle(
+                    context, 'Apariencia', Icons.palette_outlined),
+                const ThemeToggleButton(),
+              ],
+            ).animate().fadeIn(delay: 650.ms).slideY(begin: 0.3),
+            const SizedBox(height: 4),
+            Text(
+              'Mantén presionado para seguir el tema del sistema',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: Colors.grey),
+            ).animate().fadeIn(delay: 700.ms),
+
             const SizedBox(height: 24),
             // Botón guardar
             ElevatedButton(
@@ -167,15 +179,11 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
                   : const Text('Guardar cambios'),
-            )
-                .animate()
-                .fadeIn(delay: 700.ms)
-                .slideY(begin: 0.3),
+            ).animate().fadeIn(delay: 750.ms).slideY(begin: 0.3),
             const SizedBox(height: 24),
             // Divider
             Container(height: 1, color: Colors.grey[300]),
@@ -199,27 +207,7 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
                   _buildInfoRow('ID Usuario', (user?.id ?? 'N/A').toString()),
                 ],
               ),
-            )
-                .animate()
-                .fadeIn(delay: 800.ms)
-                .slideY(begin: 0.3),
-            const SizedBox(height: 24),
-            // Sección Planes
-            _buildSectionTitle(context, 'Suscripción', Icons.credit_card),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ListTile(
-                leading: const Icon(Icons.workspace_premium, color: AppTheme.primary),
-                title: const Text('Planes y Precios'),
-                subtitle: const Text('Ver o cambiar tu plan'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push('/planes'),
-              ),
-            ).animate().fadeIn(delay: 750.ms).slideX(begin: 0.3),
+            ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.3),
             const SizedBox(height: 24),
             // Botón logout
             SizedBox(
@@ -235,10 +223,7 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
                 },
                 child: const Text('Cerrar sesión'),
               ),
-            )
-                .animate()
-                .fadeIn(delay: 900.ms)
-                .slideY(begin: 0.3),
+            ).animate().fadeIn(delay: 900.ms).slideY(begin: 0.3),
           ],
         ),
       ),
@@ -251,6 +236,7 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
     IconData icon,
   ) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, color: AppTheme.primary, size: 20),
         const SizedBox(width: 8),

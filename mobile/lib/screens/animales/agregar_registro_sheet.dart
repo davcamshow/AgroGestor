@@ -54,8 +54,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -65,7 +65,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
             height: 4,
             margin: const EdgeInsets.symmetric(vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              // Drag handle
+              color: Theme.of(context).colorScheme.outlineVariant,
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -86,10 +87,12 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
                 child: TextButton(
                   onPressed: () => setState(() => _selectedTab = 0),
                   style: TextButton.styleFrom(
-                    backgroundColor:
-                        _selectedTab == 0 ? AppTheme.primary : null,
-                    foregroundColor:
-                        _selectedTab == 0 ? Colors.white : AppTheme.primary,
+                    backgroundColor: _selectedTab == 0
+                        ? Theme.of(context).colorScheme.primary
+                        : null,
+                    foregroundColor: _selectedTab == 0
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : Theme.of(context).colorScheme.primary,
                   ),
                   child: const Text('Pesaje'),
                 ),
@@ -98,9 +101,12 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
                 child: TextButton(
                   onPressed: () => setState(() => _selectedTab = 1),
                   style: TextButton.styleFrom(
-                    backgroundColor: _selectedTab == 1 ? AppTheme.info : null,
-                    foregroundColor:
-                        _selectedTab == 1 ? Colors.white : AppTheme.info,
+                    backgroundColor: _selectedTab == 1
+                        ? AppTheme.info
+                        : null, // AppTheme.info is a custom color, not in ColorScheme
+                    foregroundColor: _selectedTab == 1
+                        ? Theme.of(context).colorScheme.onPrimary
+                        : AppTheme.info,
                   ),
                   child: const Text('Evento Sanitario'),
                 ),
@@ -141,7 +147,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
+                  border:
+                      Border.all(color: Theme.of(context).colorScheme.outline),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -182,8 +189,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
                     height: 50,
                     decoration: BoxDecoration(
                       color: _condicionCorporal == n
-                          ? AppTheme.primary
-                          : Colors.grey[200],
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.surfaceVariant,
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Center(
@@ -191,8 +198,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
                         n.toString(),
                         style: TextStyle(
                           color: _condicionCorporal == n
-                              ? Colors.white
-                              : Colors.black,
+                              ? Theme.of(context).colorScheme.onPrimary
+                              : Theme.of(context).colorScheme.onSurface,
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
                         ),
@@ -208,11 +215,12 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
               child: ElevatedButton(
                 onPressed: _guardarPesaje,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   padding: const EdgeInsets.all(16),
                 ),
-                child: const Text('Guardar Pesaje',
-                    style: TextStyle(color: Colors.white)),
+                child: Text('Guardar Pesaje',
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary)),
               ),
             ),
           ],
@@ -286,7 +294,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
+                  border:
+                      Border.all(color: Theme.of(context).colorScheme.outline),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -319,7 +328,8 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
+                  border:
+                      Border.all(color: Theme.of(context).colorScheme.outline),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -365,11 +375,13 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
               child: ElevatedButton(
                 onPressed: _guardarEvento,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.info,
+                  backgroundColor: AppTheme
+                      .info, // AppTheme.info is a custom color, not in ColorScheme
                   padding: const EdgeInsets.all(16),
                 ),
-                child: const Text('Guardar Evento',
-                    style: TextStyle(color: Colors.white)),
+                child: Text('Guardar Evento',
+                    style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary)),
               ),
             ),
           ],

@@ -38,9 +38,9 @@ class _MoverLoteSheetState extends ConsumerState<MoverLoteSheet> {
         left: 16,
         right: 16,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-      ),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      ), // Ajusta el padding para el teclado
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: SingleChildScrollView(
@@ -53,7 +53,7 @@ class _MoverLoteSheetState extends ConsumerState<MoverLoteSheet> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: Theme.of(context).colorScheme.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -63,7 +63,7 @@ class _MoverLoteSheetState extends ConsumerState<MoverLoteSheet> {
               'Mover de Lote',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.primary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
             ),
             const SizedBox(height: 4),
@@ -76,8 +76,9 @@ class _MoverLoteSheetState extends ConsumerState<MoverLoteSheet> {
             // Dropdown de Lotes con manejo de estados asíncronos
             lotesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Text('Error al cargar lotes: $err',
-                  style: const TextStyle(color: Colors.red)),
+              error: (err, _) => Text(
+                  'Error al cargar lotes: $err', // Considerar usar un TextTheme para esto
+                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
               data: (lotes) {
                 // Filtramos el listado para omitir el lote en el que ya se encuentra
                 final destinosDisponibles =
@@ -87,9 +88,11 @@ class _MoverLoteSheetState extends ConsumerState<MoverLoteSheet> {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8.0),
                     child: Text(
-                      'No hay otros lotes creados para elegir como destino.',
+                      'No hay otros lotes creados para elegir como destino.', // Considerar usar un TextTheme para esto
                       style: TextStyle(
-                          color: Colors.orange, fontWeight: FontWeight.w500),
+                          color: AppTheme.warning,
+                          fontWeight: FontWeight
+                              .w500), // Mantener AppTheme.warning para este caso específico
                     ),
                   );
                 }
@@ -98,7 +101,7 @@ class _MoverLoteSheetState extends ConsumerState<MoverLoteSheet> {
                   decoration: InputDecoration(
                     labelText: 'Seleccionar Lote Destino',
                     prefixIcon: Icon(Icons.group_work_outlined,
-                        color: AppTheme.primary),
+                        color: Theme.of(context).colorScheme.primary),
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12)),
                   ),
@@ -135,13 +138,14 @@ class _MoverLoteSheetState extends ConsumerState<MoverLoteSheet> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
+                  border:
+                      Border.all(color: Theme.of(context).colorScheme.outline),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
                     Icon(Icons.calendar_today_outlined,
-                        size: 18, color: AppTheme.primary),
+                        size: 18, color: Theme.of(context).colorScheme.primary),
                     const SizedBox(width: 10),
                     Text(DateFormat('dd/MM/yyyy').format(_fechaMovimiento),
                         style: const TextStyle(fontSize: 15)),
@@ -178,8 +182,8 @@ class _MoverLoteSheetState extends ConsumerState<MoverLoteSheet> {
                 const SizedBox(width: 12),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: Colors.white,
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),
                     padding: const EdgeInsets.symmetric(
@@ -189,11 +193,12 @@ class _MoverLoteSheetState extends ConsumerState<MoverLoteSheet> {
                       ? null
                       : _ejecutarMovimiento,
                   icon: _isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
+                              strokeWidth: 2,
+                              color: Theme.of(context).colorScheme.onPrimary),
                         )
                       : const Icon(Icons.swap_horiz),
                   label: const Text('Confirmar Cambio'),
@@ -221,19 +226,21 @@ class _MoverLoteSheetState extends ConsumerState<MoverLoteSheet> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text(
-                '✅ El animal ha sido movido de lote de manera exitosa.'),
+                '✅ El animal ha sido movido de lote de manera exitosa.'), // Considerar usar un TextTheme para esto
             backgroundColor: AppTheme.success,
           ),
         );
         Navigator.pop(context); // Cerrar Modal
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      setState(() =>
+          _isLoading = false); // Asegurarse de resetear el estado de carga
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al cambiar de lote: $e'),
-            backgroundColor: AppTheme.error,
+            content: Text(
+                'Error al cambiar de lote: $e'), // Considerar usar un TextTheme para esto
+            backgroundColor: Theme.of(context).colorScheme.error,
           ),
         );
       }
