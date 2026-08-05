@@ -1,6 +1,12 @@
-from rest_framework import serializers
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
+from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento, PlanSuscripcion, SuscripcionUsuario, UsuarioInvitado, AuditoriaAnimal
 from django.utils import timezone
@@ -9,7 +15,12 @@ from django.utils import timezone
 class RegisterSerializer(serializers.Serializer):
     email = serializers.EmailField(
         required=True,
-        validators=[UniqueValidator(queryset=AuthUser.objects.all())]
+        validators=[UniqueValidator(queryset=AuthUser.objects.all())],
+        error_messages={
+            'unique': 'Este correo ya existe.',
+            'invalid': 'Introduce un correo válido.',
+            'required': 'El correo es requerido.',
+        },
     )
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     nombre_completo = serializers.CharField(required=True)
@@ -27,7 +38,8 @@ class RegisterSerializer(serializers.Serializer):
         auth_user = AuthUser.objects.create_user(
             username=email,
             email=email,
-            password=password
+            password=password,
+            is_active=False,
         )
 
         # Create the linked profile
@@ -39,7 +51,33 @@ class RegisterSerializer(serializers.Serializer):
             rol_profesional=rol,
             password_hash=''
         )
+
+        self._send_activation_email(auth_user)
         return auth_user
+
+    def _send_activation_email(self, auth_user):
+        uid = urlsafe_base64_encode(force_bytes(auth_user.pk))
+        token = default_token_generator.make_token(auth_user)
+        activation_link = (
+            f"http://localhost:8000/api/auth/activate/"
+            f"?uidb64={uid}&token={token}"
+        )
+
+        subject = 'Activa tu cuenta en Bovion'
+        message = (
+            f'Hola {auth_user.email},\n\n'
+            'Gracias por registrarte en Bovion. Para activar tu cuenta, haz clic en el siguiente enlace:\n\n'
+            f'{activation_link}\n\n'
+            'Si no solicitaste esta cuenta, ignora este correo.\n'
+        )
+
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [auth_user.email],
+            fail_silently=False,
+        )
 
     def save(self):
         return self.create(self.validated_data)

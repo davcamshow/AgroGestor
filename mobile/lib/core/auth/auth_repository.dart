@@ -48,13 +48,21 @@ class AuthRepository {
 
   String _parseLoginError(DioException e) {
     if (e.response?.statusCode == 401) {
+      final detail = e.response?.data is Map ? e.response?.data['detail'] : null;
+      if (detail != null && detail.toString().contains('No active account')) {
+        return 'La cuenta no está confirmada. Revisa tu correo para activarla.';
+      }
       return 'Usuario o contraseña incorrectos';
     }
     if (e.response?.statusCode == 400) {
       final data = e.response?.data;
       if (data is Map) {
         if (data.containsKey('detail')) {
-          return data['detail'].toString();
+          final detail = data['detail']?.toString() ?? '';
+          if (detail.contains('No active account')) {
+            return 'La cuenta no está confirmada. Revisa tu correo para activarla.';
+          }
+          return detail;
         }
         if (data.containsKey('username')) {
           return data['username']?.toString() ?? 'Credenciales inválidas';
@@ -92,8 +100,23 @@ class AuthRepository {
           'rol_profesional': rolProfesional ?? '',
         },
       );
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      if (data is Map) {
+        if (data.containsKey('email')) {
+          final emailError = data['email'];
+          if (emailError is List && emailError.isNotEmpty) {
+            throw Exception(emailError.first.toString());
+          }
+          throw Exception(emailError.toString());
+        }
+        if (data.containsKey('detail')) {
+          throw Exception(data['detail'].toString());
+        }
+      }
+      throw Exception('Error al registrar: ${e.message}');
     } catch (e) {
-      throw Exception('Registration failed: $e');
+      throw Exception('Error al registrar: $e');
     }
   }
 

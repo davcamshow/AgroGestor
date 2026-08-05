@@ -36,7 +36,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _confirmPasswordController = TextEditingController();
     _phoneController = TextEditingController();
     _roleController = TextEditingController();
-    _passwordStrength = PasswordStrength(password: '');
+    _passwordStrength = PasswordStrength.from('');
     _passwordController.addListener(_updatePasswordStrength);
   }
 
@@ -54,7 +54,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   void _updatePasswordStrength() {
     setState(() {
-      _passwordStrength = PasswordStrength(password: _passwordController.text);
+      _passwordStrength = PasswordStrength.from(_passwordController.text);
     });
   }
 
@@ -64,7 +64,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: const Text('✅ ¡Registro Exitoso!'),
-        content: const Text('Tu cuenta ha sido creada correctamente.\nAhora inicia sesión con tus credenciales.'),
+        content: const Text(
+          'Tu cuenta ha sido creada correctamente.\nTe hemos enviado un correo para activar tu cuenta. ' 
+          'Solo podrás iniciar sesión después de confirmar el email.',
+        ),
         actions: [
           TextButton(
             onPressed: () {
@@ -240,6 +243,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                         _obscurePassword = !_obscurePassword);
                                   },
                                 ),
+                                errorMaxLines: 4, // Permite hasta 4 líneas mostrando errores de validación
                               ),
                               obscureText: _obscurePassword,
                               validator: PasswordValidator.validatePassword,
@@ -252,11 +256,34 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    // Barra de progreso
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: LinearProgressIndicator(
+                                            value: _passwordStrength.score / 9.0,
+                                            color: _strengthColor(_passwordStrength.score),
+                                            backgroundColor: Colors.grey.shade200,
+                                            minHeight: 8,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          '${_passwordStrength.score}/9',
+                                          style: const TextStyle(fontSize: 12),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
                                     _buildStrengthRow('Mayúscula', _passwordStrength.hasUppercase),
                                     _buildStrengthRow('Minúscula', _passwordStrength.hasLowercase),
                                     _buildStrengthRow('Número', _passwordStrength.hasNumber),
                                     _buildStrengthRow('Carácter especial', _passwordStrength.hasSpecialChar),
-                                    _buildStrengthRow('Mínimo 8 caracteres', _passwordStrength.hasMinLength),
+                                    _buildStrengthRow('Mínimo 10 caracteres', _passwordStrength.hasMinLength),
+                                    _buildStrengthRow('Sin espacios', _passwordStrength.hasNoSpaces),
+                                    _buildStrengthRow('No común', _passwordStrength.hasNoCommonPassword),
+                                    _buildStrengthRow('Sin repeticiones', _passwordStrength.hasNoRepeats),
+                                    _buildStrengthRow('Sin secuencias', _passwordStrength.hasNoSequence),
                                   ],
                                 ),
                               ).animate().fadeIn(),
@@ -377,5 +404,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         ],
       ),
     );
+  }
+
+  Color _strengthColor(int score) {
+    if (score >= 7) return AppTheme.success;
+    if (score >= 4) return Colors.orange;
+    return Colors.red;
   }
 }

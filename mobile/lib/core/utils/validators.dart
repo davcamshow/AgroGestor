@@ -1,33 +1,102 @@
 class PasswordValidator {
-  // Validar contraseña: mayúscula, minúscula, número, carácter especial
+  // Lista pequeña de contraseñas comunes que rechazamos
+  static const List<String> _commonPasswords = [
+    '123456', '1234567', '12345678', '123456789', '12345', '111111',
+    'password', 'password1', 'qwerty', 'admin', '1234'
+  ];
+
+  // Validar contraseña robusta para registro
+  // Reglas (ordenadas por prioridad):
+  // - No nula/vacía
+  // - Longitud mínima: 10
+  // - Sin espacios
+  // - Contiene mayúscula, minúscula, número y carácter especial
+  // - No secuencias ascendentes/descendentes de 4 caracteres
+  // - No 4 caracteres repetidos consecutivos
+  // - No estar en lista de contraseñas comunes
   static String? validatePassword(String? password) {
     if (password == null || password.isEmpty) {
       return 'La contraseña es requerida';
     }
-    if (password.length < 8) {
-      return 'Mínimo 8 caracteres';
+
+    final trimmed = password.trim();
+    if (trimmed.length != password.length) {
+      return 'La contraseña no debe empezar ni terminar con espacios';
     }
+
+    const minLen = 10;
+    if (password.length < minLen) {
+      return 'La contraseña debe tener al menos $minLen caracteres';
+    }
+
+    if (RegExp(r'\s').hasMatch(password)) {
+      return 'La contraseña no puede contener espacios';
+    }
+
     if (!RegExp(r'[A-Z]').hasMatch(password)) {
-      return 'Debe contener mayúscula';
+      return 'La contraseña debe contener al menos una letra mayúscula';
     }
     if (!RegExp(r'[a-z]').hasMatch(password)) {
-      return 'Debe contener minúscula';
+      return 'La contraseña debe contener al menos una letra minúscula';
     }
     if (!RegExp(r'[0-9]').hasMatch(password)) {
-      return 'Debe contener número';
+      return 'La contraseña debe contener al menos un número';
     }
-    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) {
-      return 'Debe contener carácter especial (!@#\$%^&*)';
+    if (!RegExp(r'[!@#\$%\^&\*(),.?":{}|<>\-_/\\\[\]~`+=;:]').hasMatch(password)) {
+      return 'La contraseña debe contener al menos un carácter especial (p. ej. !@#\$%)';
     }
+
+    if (_hasRepeatedChars(password, 4)) {
+      return 'La contraseña no puede contener 4 caracteres iguales seguidos';
+    }
+
+    if (_hasSequentialChars(password, 4)) {
+      return 'La contraseña no puede contener secuencias (ej. 1234 o abcd)';
+    }
+
+    if (_commonPasswords.contains(password.toLowerCase())) {
+      return 'La contraseña es demasiado común; elige otra más segura';
+    }
+
     return null;
   }
 
-  // Validar que las contraseñas coincidan
+  // Validar que las contraseñas coincidan y no estén vacías
   static String? validatePasswordMatch(String? password, String? confirm) {
+    if (password == null || password.isEmpty) {
+      return 'La contraseña es requerida';
+    }
+    if (confirm == null || confirm.isEmpty) {
+      return 'Confirma la contraseña';
+    }
     if (password != confirm) {
       return 'Las contraseñas no coinciden';
     }
     return null;
+  }
+
+  // Detecta si existe una repetición de `count` o más del mismo carácter
+  static bool _hasRepeatedChars(String s, int count) {
+    final re = RegExp(r'(.)\1{' + (count - 1).toString() + r',}');
+    return re.hasMatch(s);
+  }
+
+  // Detecta secuencias ascendentes o descendentes de longitud `len`
+  static bool _hasSequentialChars(String s, int len) {
+    if (s.length < len) return false;
+    final normalized = s.toLowerCase();
+    for (var i = 0; i <= normalized.length - len; i++) {
+      var asc = true;
+      var desc = true;
+      for (var j = 0; j < len - 1; j++) {
+        final a = normalized.codeUnitAt(i + j);
+        final b = normalized.codeUnitAt(i + j + 1);
+        if (b - a != 1) asc = false;
+        if (a - b != 1) desc = false;
+      }
+      if (asc || desc) return true;
+    }
+    return false;
   }
 }
 
@@ -64,22 +133,63 @@ class PasswordStrength {
   final bool hasNumber;
   final bool hasSpecialChar;
   final bool hasMinLength;
+  final bool hasNoSpaces;
+  final bool hasNoCommonPassword;
+  final bool hasNoRepeats;
+  final bool hasNoSequence;
 
-  bool get isValid =>
-      hasUppercase &&
-      hasLowercase &&
-      hasNumber &&
-      hasSpecialChar &&
-      hasMinLength;
+  int get score {
+    var s = 0;
+    if (hasMinLength) s++;
+    if (hasUppercase) s++;
+    if (hasLowercase) s++;
+    if (hasNumber) s++;
+    if (hasSpecialChar) s++;
+    if (hasNoSpaces) s++;
+    if (hasNoCommonPassword) s++;
+    if (hasNoRepeats) s++;
+    if (hasNoSequence) s++;
+    return s;
+  }
 
-  PasswordStrength({
-    required String password,
-  })  : hasUppercase = RegExp(r'[A-Z]').hasMatch(password),
-        hasLowercase = RegExp(r'[a-z]').hasMatch(password),
-        hasNumber = RegExp(r'[0-9]').hasMatch(password),
-        hasSpecialChar =
-            RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password),
-        hasMinLength = password.length >= 8;
+  // isValid: al menos 6 de 9 requisitos
+  bool get isValid => score >= 6;
+
+  PasswordStrength._({
+    required this.hasUppercase,
+    required this.hasLowercase,
+    required this.hasNumber,
+    required this.hasSpecialChar,
+    required this.hasMinLength,
+    required this.hasNoSpaces,
+    required this.hasNoCommonPassword,
+    required this.hasNoRepeats,
+    required this.hasNoSequence,
+  });
+
+  factory PasswordStrength.from(String password) {
+    final hasUppercase = RegExp(r'[A-Z]').hasMatch(password);
+    final hasLowercase = RegExp(r'[a-z]').hasMatch(password);
+    final hasNumber = RegExp(r'[0-9]').hasMatch(password);
+    final hasSpecialChar = RegExp(r'[!@#\$%\^&\*(),.?":{}|<>\-_/\\\[\]~`+=;:]').hasMatch(password);
+    final hasMinLength = password.length >= 10;
+    final hasNoSpaces = !RegExp(r'\s').hasMatch(password);
+    final hasNoCommonPassword = !PasswordValidator._commonPasswords.contains(password.toLowerCase());
+    final hasNoRepeats = !PasswordValidator._hasRepeatedChars(password, 4);
+    final hasNoSequence = !PasswordValidator._hasSequentialChars(password, 4);
+
+    return PasswordStrength._(
+      hasUppercase: hasUppercase,
+      hasLowercase: hasLowercase,
+      hasNumber: hasNumber,
+      hasSpecialChar: hasSpecialChar,
+      hasMinLength: hasMinLength,
+      hasNoSpaces: hasNoSpaces,
+      hasNoCommonPassword: hasNoCommonPassword,
+      hasNoRepeats: hasNoRepeats,
+      hasNoSequence: hasNoSequence,
+    );
+  }
 }
 
 

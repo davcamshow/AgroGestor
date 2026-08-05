@@ -5,6 +5,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import action
 from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth import authenticate
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.db.models import Sum, Count
 import logging
 from django.db import transaction
@@ -66,6 +71,35 @@ class RegisterView(generics.CreateAPIView):
         return ip
 
 
+@api_view(['GET', 'POST'])
+@permission_classes([AllowAny])
+def activate_user(request):
+    if request.method == 'POST':
+        uidb64 = request.data.get('uidb64')
+        token = request.data.get('token')
+    else:
+        uidb64 = request.GET.get('uidb64')
+        token = request.GET.get('token')
+
+    if not uidb64 or not token:
+        return Response({'detail': 'Faltan parámetros de activación.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        uid = force_str(urlsafe_base64_decode(uidb64))
+        user = AuthUser.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, AuthUser.DoesNotExist):
+        return Response({'detail': 'El enlace de activación es inválido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if default_token_generator.check_token(user, token):
+        if user.is_active:
+            return Response({'detail': 'La cuenta ya está activada.'})
+        user.is_active = True
+        user.save()
+        return Response({'detail': 'Cuenta activada correctamente.'})
+
+    return Response({'detail': 'El enlace de activación es inválido o caducado.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(['GET', 'PUT', 'PATCH'])
 @permission_classes([IsAuthenticated])
 def me_view(request):
@@ -84,7 +118,10 @@ def me_view(request):
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
-        return Response(serializer.errors, status=400)
+        else:
+            logger.error(serializer.errors)
+            print(serializer.errors)
+            return Response(serializer.errors, status=400)
 
 # ViewSets para cada modelo
 class ProveedorViewSet(viewsets.ModelViewSet):
