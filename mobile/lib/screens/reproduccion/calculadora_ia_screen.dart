@@ -8,7 +8,8 @@ class CalculadoraIAScreen extends ConsumerStatefulWidget {
   const CalculadoraIAScreen({super.key});
 
   @override
-  ConsumerState<CalculadoraIAScreen> createState() => _CalculadoraIAScreenState();
+  ConsumerState<CalculadoraIAScreen> createState() =>
+      _CalculadoraIAScreenState();
 }
 
 class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
@@ -21,11 +22,15 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
   @override
   Widget build(BuildContext context) {
     final animalesAsync = ref.watch(animalesNotifierProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Calculadora de IA', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppTheme.primary,
+        title: const Text('Calculadora de IA',
+            style: TextStyle(color: Colors.white)),
+        backgroundColor:
+            isDark ? theme.appBarTheme.backgroundColor : AppTheme.primary,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -37,12 +42,13 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
+                color:
+                    isDark ? AppTheme.info.withOpacity(0.15) : Colors.blue[50],
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
                 children: [
-                  const Icon(Icons.info, color: AppTheme.primary, size: 32),
+                  Icon(Icons.info, color: theme.colorScheme.primary, size: 32),
                   const SizedBox(height: 8),
                   const Text(
                     'La fecha óptima de IA se calcula sumando:',
@@ -73,10 +79,13 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
                     border: OutlineInputBorder(),
                     hintText: 'Seleccionar vaca',
                   ),
-                  items: hembras.map((a) => DropdownMenuItem(
-                    value: a.id,
-                    child: Text('${a.numeroArete} - ${a.nombre ?? a.raza ?? "Sin nombre"}'),
-                  )).toList(),
+                  items: hembras
+                      .map((a) => DropdownMenuItem(
+                            value: a.id,
+                            child: Text(
+                                '${a.numeroArete} - ${a.nombre ?? a.raza ?? "Sin nombre"}'),
+                          ))
+                      .toList(),
                   onChanged: (value) async {
                     if (value != null) {
                       final api = ref.read(apiClientProvider);
@@ -85,7 +94,8 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
                         _selectedAnimalId = value;
                         _animal = animalData;
                         if (animalData['fecha_ultimo_parto'] != null) {
-                          _fechaUltimoParto = DateTime.parse(animalData['fecha_ultimo_parto']);
+                          _fechaUltimoParto =
+                              DateTime.parse(animalData['fecha_ultimo_parto']);
                         }
                       });
                     }
@@ -98,9 +108,9 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.cardTheme.color,
                   borderRadius: BorderRadius.circular(12),
-                  boxShadow: [AppTheme.softShadow],
+                  boxShadow: [AppTheme.softShadowFor(theme.brightness)],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,7 +157,12 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
                       const SizedBox(height: 8),
                       Text(
                         '(${_diasInvolution} días involución + ${_diasGestacion} días gestión)',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                        style: TextStyle(
+                          color: isDark
+                              ? AppTheme.darkTextSecondary
+                              : Colors.grey[600],
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -156,7 +171,9 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.orange[50],
+                    color: isDark
+                        ? AppTheme.warning.withOpacity(0.15)
+                        : Colors.orange[50],
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -181,20 +198,31 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
+                    color:
+                        isDark ? AppTheme.darkSurfaceVariant : Colors.grey[200],
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
-                      Icon(Icons.warning, color: Colors.grey),
-                      SizedBox(height: 8),
+                      Icon(Icons.warning,
+                          color: isDark
+                              ? AppTheme.darkTextSecondary
+                              : Colors.grey),
+                      const SizedBox(height: 8),
                       Text(
                         'No hay registro de último parto',
-                        style: TextStyle(color: Colors.grey),
+                        style: TextStyle(
+                            color: isDark
+                                ? AppTheme.darkTextSecondary
+                                : Colors.grey),
                       ),
                       Text(
                         'No se puede calcular la fecha óptima',
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                        style: TextStyle(
+                          color:
+                              isDark ? AppTheme.darkTextSecondary : Colors.grey,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -204,7 +232,8 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color:
+                      isDark ? AppTheme.darkSurfaceVariant : Colors.grey[200],
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text(
@@ -224,6 +253,7 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
   }
 
   DateTime _calcularFechaParto() {
-    return _fechaUltimoParto!.add(Duration(days: _diasInvolution + _diasGestacion));
+    return _fechaUltimoParto!
+        .add(Duration(days: _diasInvolution + _diasGestacion));
   }
 }

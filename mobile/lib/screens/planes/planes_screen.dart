@@ -13,6 +13,7 @@ class PlanesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final planesAsync = ref.watch(planesProvider);
     final miPlanAsync = ref.watch(miPlanProvider);
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -21,7 +22,6 @@ class PlanesScreen extends ConsumerWidget {
           onPressed: () => context.go('/configuracion'),
         ),
         title: const Text('Planes de Suscripción'),
-        backgroundColor: AppTheme.primary,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -32,13 +32,13 @@ class PlanesScreen extends ConsumerWidget {
             miPlanAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, _) => Text('Error: $e'),
-              data: (miPlan) => _buildMiPlanCard(context, miPlan),
+              data: (miPlan) => _buildMiPlanCard(context, miPlan, theme),
             ),
             const SizedBox(height: 24),
             // Planes disponibles
             Text(
               'Planes Disponibles',
-              style: Theme.of(context).textTheme.titleLarge,
+              style: theme.textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
             planesAsync.when(
@@ -48,7 +48,7 @@ class PlanesScreen extends ConsumerWidget {
                 children: planes.map((plan) {
                   final miPlan = miPlanAsync.value;
                   final planActual = miPlan?.plan.codigo ?? 'basico';
-                  return _buildPlanCard(context, ref, plan, planActual);
+                  return _buildPlanCard(context, ref, plan, planActual, theme);
                 }).toList(),
               ),
             ),
@@ -58,11 +58,12 @@ class PlanesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildMiPlanCard(BuildContext context, InfoPlanUsuario miPlan) {
+  Widget _buildMiPlanCard(
+      BuildContext context, InfoPlanUsuario miPlan, ThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: AppTheme.primaryGradient,
+        gradient: AppTheme.primaryGradientFor(theme.brightness),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -73,32 +74,40 @@ class PlanesScreen extends ConsumerWidget {
             children: [
               Text(
                 'Mi Plan Actual',
-                style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
+                style: TextStyle(
+                    color: Colors.white.withOpacity(0.8), fontSize: 14),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   miPlan.plan.nombre,
-                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
           Text(
-            miPlan.plan.precioMxn == 0 ? 'Gratis' : '\$${miPlan.plan.precioMxn.toStringAsFixed(0)}/mes',
-            style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+            miPlan.plan.precioMxn == 0
+                ? 'Gratis'
+                : '\$${miPlan.plan.precioMxn.toStringAsFixed(0)}/mes',
+            style: const TextStyle(
+                color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),
           Row(
             children: [
-              _buildStatChip(Icons.pets, '${_formatearLimite(miPlan.limiteAnimales)} animales'),
+              _buildStatChip(Icons.pets,
+                  '${_formatearLimite(miPlan.limiteAnimales)} animales'),
               const SizedBox(width: 16),
-              _buildStatChip(Icons.people, '${_formatearLimite(miPlan.limiteUsuarios)} usuarios'),
+              _buildStatChip(Icons.people,
+                  '${_formatearLimite(miPlan.limiteUsuarios)} usuarios'),
             ],
           ),
           if (miPlan.plan.codigo != 'basico') ...[
@@ -106,9 +115,11 @@ class PlanesScreen extends ConsumerWidget {
             Wrap(
               spacing: 8,
               children: [
-                if (miPlan.incluyeReportesAvanzados) _buildFeatureChip('Reportes Avanzados'),
+                if (miPlan.incluyeReportesAvanzados)
+                  _buildFeatureChip('Reportes Avanzados'),
                 if (miPlan.incluyeApi) _buildFeatureChip('API'),
-                if (miPlan.soportePrioritario) _buildFeatureChip('Soporte Prioritario'),
+                if (miPlan.soportePrioritario)
+                  _buildFeatureChip('Soporte Prioritario'),
               ],
             ),
           ],
@@ -129,7 +140,8 @@ class PlanesScreen extends ConsumerWidget {
         children: [
           Icon(icon, color: Colors.white, size: 16),
           const SizedBox(width: 4),
-          Text(label, style: const TextStyle(color: Colors.white, fontSize: 12)),
+          Text(label,
+              style: const TextStyle(color: Colors.white, fontSize: 12)),
         ],
       ),
     );
@@ -142,7 +154,8 @@ class PlanesScreen extends ConsumerWidget {
         color: Colors.white.withOpacity(0.3),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 10)),
+      child: Text(label,
+          style: const TextStyle(color: Colors.white, fontSize: 10)),
     );
   }
 
@@ -151,19 +164,24 @@ class PlanesScreen extends ConsumerWidget {
     return limite.toString();
   }
 
-  Widget _buildPlanCard(BuildContext context, WidgetRef ref, plan, String planActualCodigo) {
+  Widget _buildPlanCard(BuildContext context, WidgetRef ref, plan,
+      String planActualCodigo, ThemeData theme) {
     final esPlanActual = plan.codigo == planActualCodigo;
     final esBasico = plan.codigo == 'basico';
     final esProductor = plan.codigo == 'productor';
-    
+    final isDark = theme.brightness == Brightness.dark;
+    final successColor = isDark ? AppTheme.darkSuccess : AppTheme.success;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(16),
-        border: esProductor ? Border.all(color: AppTheme.accent, width: 2) : null,
-        boxShadow: [AppTheme.softShadow],
+        border: esProductor
+            ? Border.all(color: theme.colorScheme.secondary, width: 2)
+            : null,
+        boxShadow: [AppTheme.softShadowFor(theme.brightness)],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,19 +196,26 @@ class PlanesScreen extends ConsumerWidget {
                     children: [
                       Text(
                         plan.nombre,
-                        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            fontSize: 20, fontWeight: FontWeight.bold),
                       ),
                       if (esProductor) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
-                            color: AppTheme.accent,
+                            color: theme.colorScheme.secondary,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Text(
+                          child: Text(
                             'POPULAR',
-                            style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                color: isDark
+                                    ? AppTheme.darkBackground
+                                    : Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
@@ -200,11 +225,15 @@ class PlanesScreen extends ConsumerWidget {
                   Row(
                     children: [
                       Text(
-                        plan.precioMxn == 0 ? 'Gratis' : '\$${plan.precioMxn.toStringAsFixed(0)}/mes',
+                        plan.precioMxn == 0
+                            ? 'Gratis'
+                            : '\$${plan.precioMxn.toStringAsFixed(0)}/mes',
                         style: TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
-                          color: esBasico ? Colors.grey : AppTheme.primary,
+                          color: esBasico
+                              ? theme.textTheme.bodySmall?.color
+                              : theme.colorScheme.primary,
                         ),
                       ),
                       if (plan.precioAnual > 0) ...[
@@ -213,7 +242,7 @@ class PlanesScreen extends ConsumerWidget {
                           '\$${plan.precioAnual.toStringAsFixed(0)}/año',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: theme.textTheme.bodySmall?.color,
                           ),
                         ),
                       ],
@@ -224,22 +253,47 @@ class PlanesScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
-          _buildPlanFeature(Icons.pets, 'Hasta ${_formatearLimite(plan.limiteAnimales)} animales'),
-          _buildPlanFeature(Icons.people, '${_formatearLimite(plan.limiteUsuarios) == '∞' ? 'Usuarios ilimitados' : 'Hasta ${_formatearLimite(plan.limiteUsuarios)} usuarios'}'),
-          if (plan.incluyeModuloAnimales) _buildPlanFeature(Icons.check_circle, 'Módulo Animales'),
-          if (plan.incluyeModuloLotes) _buildPlanFeature(Icons.check_circle, 'Módulo Lotes'),
-          if (plan.incluyeModuloDietas) _buildPlanFeature(Icons.check_circle, 'Módulo Dietas'),
-          if (plan.incluyeModuloSanitaria) _buildPlanFeature(Icons.check_circle, 'Módulo Sanitaria'),
-          if (plan.incluyeReportesAvanzados) _buildPlanFeature(Icons.analytics, 'Reportes Avanzados'),
-          if (plan.incluyeApi) _buildPlanFeature(Icons.api, 'API de Integración'),
-          if (plan.soportePrioritario) _buildPlanFeature(Icons.support_agent, 'Soporte Prioritario'),
+          _buildPlanFeature(
+              Icons.pets,
+              'Hasta ${_formatearLimite(plan.limiteAnimales)} animales',
+              successColor),
+          _buildPlanFeature(
+              Icons.people,
+              '${_formatearLimite(plan.limiteUsuarios) == '∞' ? 'Usuarios ilimitados' : 'Hasta ${_formatearLimite(plan.limiteUsuarios)} usuarios'}',
+              successColor),
+          if (plan.incluyeModuloAnimales)
+            _buildPlanFeature(
+                Icons.check_circle, 'Módulo Animales', successColor),
+          if (plan.incluyeModuloLotes)
+            _buildPlanFeature(Icons.check_circle, 'Módulo Lotes', successColor),
+          if (plan.incluyeModuloDietas)
+            _buildPlanFeature(
+                Icons.check_circle, 'Módulo Dietas', successColor),
+          if (plan.incluyeModuloSanitaria)
+            _buildPlanFeature(
+                Icons.check_circle, 'Módulo Sanitaria', successColor),
+          if (plan.incluyeReportesAvanzados)
+            _buildPlanFeature(
+                Icons.analytics, 'Reportes Avanzados', successColor),
+          if (plan.incluyeApi)
+            _buildPlanFeature(Icons.api, 'API de Integración', successColor),
+          if (plan.soportePrioritario)
+            _buildPlanFeature(
+                Icons.support_agent, 'Soporte Prioritario', successColor),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: esPlanActual ? null : () => _mostrarDialogoUpgrade(context, ref, plan.codigo),
+              onPressed: esPlanActual
+                  ? null
+                  : () => _mostrarDialogoUpgrade(context, ref, plan.codigo),
               style: ElevatedButton.styleFrom(
-                backgroundColor: esProductor ? AppTheme.accent : AppTheme.primary,
+                backgroundColor: esProductor
+                    ? theme.colorScheme.secondary
+                    : theme.colorScheme.primary,
+                foregroundColor: esProductor && isDark
+                    ? AppTheme.darkBackground
+                    : Colors.white,
               ),
               child: Text(esPlanActual ? 'Plan Actual' : 'Cambiar a este plan'),
             ),
@@ -249,12 +303,12 @@ class PlanesScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPlanFeature(IconData icon, String text) {
+  Widget _buildPlanFeature(IconData icon, String text, Color successColor) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: AppTheme.success),
+          Icon(icon, size: 18, color: successColor),
           const SizedBox(width: 8),
           Text(text, style: const TextStyle(fontSize: 14)),
         ],
@@ -262,12 +316,14 @@ class PlanesScreen extends ConsumerWidget {
     );
   }
 
-  void _mostrarDialogoUpgrade(BuildContext context, WidgetRef ref, String planCodigo) {
+  void _mostrarDialogoUpgrade(
+      BuildContext context, WidgetRef ref, String planCodigo) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Cambiar Plan'),
-        content: const Text('¿Estás seguro de que quieres cambiar a este plan?'),
+        content:
+            const Text('¿Estás seguro de que quieres cambiar a este plan?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -278,12 +334,14 @@ class PlanesScreen extends ConsumerWidget {
               Navigator.pop(context);
               try {
                 final client = ref.read(apiClientProvider);
-                await client.post('planes/cambiar/', data: {'plan_codigo': planCodigo});
+                await client
+                    .post('planes/cambiar/', data: {'plan_codigo': planCodigo});
                 ref.invalidate(miPlanProvider);
                 ref.invalidate(planesProvider);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Plan actualizado correctamente')),
+                    const SnackBar(
+                        content: Text('Plan actualizado correctamente')),
                   );
                 }
               } catch (e) {

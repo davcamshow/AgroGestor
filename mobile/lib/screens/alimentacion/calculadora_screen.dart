@@ -53,6 +53,8 @@ class _CalculadoraScreenState extends ConsumerState<CalculadoraScreen> {
   Widget build(BuildContext context) {
     final lotesAsync = ref.watch(lotesNotifierProvider);
     final insumosAsync = ref.watch(insumosProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     final animales = int.tryParse(_animalesController.text) ?? 0;
     final pesoProm = double.tryParse(_pesoController.text) ?? 0;
@@ -64,7 +66,6 @@ class _CalculadoraScreenState extends ConsumerState<CalculadoraScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Calculadora de Raciones'),
-        backgroundColor: AppTheme.primary,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -79,7 +80,7 @@ class _CalculadoraScreenState extends ConsumerState<CalculadoraScreen> {
                   children: [
                     Text(
                       'Datos del Lote',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: theme.textTheme.titleMedium,
                     ),
                     const SizedBox(height: 16),
                     lotesAsync.when(
@@ -87,17 +88,20 @@ class _CalculadoraScreenState extends ConsumerState<CalculadoraScreen> {
                         value: _selectedLoteId,
                         decoration: const InputDecoration(
                           labelText: 'Seleccionar Lote',
-                          border: OutlineInputBorder(),
                         ),
-                        items: lotes.map((l) => DropdownMenuItem(
-                          value: l.id,
-                          child: Text('${l.nombre} (${l.cantidadCabezas} cab)'),
-                        )).toList(),
+                        items: lotes
+                            .map((l) => DropdownMenuItem(
+                                  value: l.id,
+                                  child: Text(
+                                      '${l.nombre} (${l.cantidadCabezas} cab)'),
+                                ))
+                            .toList(),
                         onChanged: (v) {
                           setState(() {
                             _selectedLoteId = v;
                             final lote = lotes.firstWhere((l) => l.id == v);
-                            _animalesController.text = lote.cantidadCabezas.toString();
+                            _animalesController.text =
+                                lote.cantidadCabezas.toString();
                             if (lote.pesoPromedioActualKg.isNotEmpty) {
                               _pesoController.text = lote.pesoPromedioActualKg;
                             }
@@ -115,10 +119,10 @@ class _CalculadoraScreenState extends ConsumerState<CalculadoraScreen> {
                             controller: _animalesController,
                             decoration: const InputDecoration(
                               labelText: '# Animales',
-                              border: OutlineInputBorder(),
                             ),
                             keyboardType: TextInputType.number,
-                            onChanged: (_) => setState(() => _showResult = false),
+                            onChanged: (_) =>
+                                setState(() => _showResult = false),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -127,10 +131,10 @@ class _CalculadoraScreenState extends ConsumerState<CalculadoraScreen> {
                             controller: _pesoController,
                             decoration: const InputDecoration(
                               labelText: 'Peso Prom (kg)',
-                              border: OutlineInputBorder(),
                             ),
                             keyboardType: TextInputType.number,
-                            onChanged: (_) => setState(() => _showResult = false),
+                            onChanged: (_) =>
+                                setState(() => _showResult = false),
                           ),
                         ),
                       ],
@@ -143,10 +147,10 @@ class _CalculadoraScreenState extends ConsumerState<CalculadoraScreen> {
                             controller: _diasController,
                             decoration: const InputDecoration(
                               labelText: 'Días',
-                              border: OutlineInputBorder(),
                             ),
                             keyboardType: TextInputType.number,
-                            onChanged: (_) => setState(() => _showResult = false),
+                            onChanged: (_) =>
+                                setState(() => _showResult = false),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -155,11 +159,13 @@ class _CalculadoraScreenState extends ConsumerState<CalculadoraScreen> {
                             value: _tipoFormulacion,
                             decoration: const InputDecoration(
                               labelText: 'Formato',
-                              border: OutlineInputBorder(),
                             ),
                             items: const [
-                              DropdownMenuItem(value: 'porcentaje', child: Text('% Porcentaje')),
-                              DropdownMenuItem(value: 'tabla_kg', child: Text('Tabla kg')),
+                              DropdownMenuItem(
+                                  value: 'porcentaje',
+                                  child: Text('% Porcentaje')),
+                              DropdownMenuItem(
+                                  value: 'tabla_kg', child: Text('Tabla kg')),
                             ],
                             onChanged: (v) => setState(() {
                               _tipoFormulacion = v ?? 'porcentaje';
@@ -176,7 +182,8 @@ class _CalculadoraScreenState extends ConsumerState<CalculadoraScreen> {
             const SizedBox(height: 16),
             if (_showResult) ...[
               Card(
-                color: AppTheme.primary.withOpacity(0.1),
+                color:
+                    theme.colorScheme.primary.withOpacity(isDark ? 0.2 : 0.1),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -184,16 +191,20 @@ class _CalculadoraScreenState extends ConsumerState<CalculadoraScreen> {
                     children: [
                       Text(
                         'Resultado',
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: AppTheme.primary,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.colorScheme.primary,
                         ),
                       ),
                       const Divider(),
                       const SizedBox(height: 8),
-                      _buildResultadoRow('Consumo diario por animal', '${(consumoDiario / animales).toStringAsFixed(2)} kg'),
-                      _buildResultadoRow('Consumo diario total', '${consumoDiario.toStringAsFixed(2)} kg'),
-                      _buildResultadoRow('Consumo total ($dias días)', '${consumoTotal.toStringAsFixed(2)} kg'),
-                      _buildResultadoRow('Costo estimado', '\$${(consumoTotal * 2.5).toStringAsFixed(2)}'),
+                      _buildResultadoRow('Consumo diario por animal',
+                          '${(consumoDiario / animales).toStringAsFixed(2)} kg'),
+                      _buildResultadoRow('Consumo diario total',
+                          '${consumoDiario.toStringAsFixed(2)} kg'),
+                      _buildResultadoRow('Consumo total ($dias días)',
+                          '${consumoTotal.toStringAsFixed(2)} kg'),
+                      _buildResultadoRow('Costo estimado',
+                          '\$${(consumoTotal * 2.5).toStringAsFixed(2)}'),
                     ],
                   ),
                 ),
@@ -207,7 +218,7 @@ class _CalculadoraScreenState extends ConsumerState<CalculadoraScreen> {
                     children: [
                       Text(
                         'Desglose por Insumo',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: theme.textTheme.titleMedium,
                       ),
                       const SizedBox(height: 12),
                       insumosAsync.when(
@@ -218,9 +229,11 @@ class _CalculadoraScreenState extends ConsumerState<CalculadoraScreen> {
                               final pct = 100 / insumosMostrar.length;
                               final kg = (consumoTotal * pct / 100);
                               return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 4),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 4),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(insumo.nombre),
                                     Text('${kg.toStringAsFixed(2)} kg'),
@@ -241,12 +254,8 @@ class _CalculadoraScreenState extends ConsumerState<CalculadoraScreen> {
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: _calcular,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
               icon: const Icon(Icons.calculate),
-              label: const Text('Calcular', style: TextStyle(color: Colors.white)),
+              label: const Text('Calcular'),
             ),
           ],
         ),

@@ -13,13 +13,17 @@ class ReproduccionScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ciclosAsync = ref.watch(ciclosNotifierProvider);
+    final theme = Theme.of(context);
 
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Reproducción', style: TextStyle(color: Colors.white)),
-          backgroundColor: AppTheme.primary,
+          title:
+              const Text('Reproducción', style: TextStyle(color: Colors.white)),
+          backgroundColor: theme.brightness == Brightness.dark
+              ? theme.appBarTheme.backgroundColor
+              : AppTheme.primary,
           elevation: 0,
           iconTheme: const IconThemeData(color: Colors.white),
           actions: [
@@ -41,7 +45,7 @@ class ReproduccionScreen extends ConsumerWidget {
             IconButton(
               icon: CircleAvatar(
                 radius: 16,
-                backgroundColor: Colors.white.withOpacity(0.2),
+                backgroundColor: theme.colorScheme.surfaceVariant,
                 child: const Icon(Icons.person, color: Colors.white, size: 18),
               ),
               onPressed: () => context.go('/configuracion'),
@@ -77,11 +81,13 @@ class ReproduccionScreen extends ConsumerWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.favorite_outline,
-                                size: 64, color: Colors.grey[300]),
+                                size: 64,
+                                color: theme.brightness == Brightness.dark
+                                    ? AppTheme.darkTextSecondary
+                                    : Colors.grey[300]),
                             const SizedBox(height: 16),
                             Text('Sin gestaciones activas',
-                                style:
-                                    Theme.of(context).textTheme.bodyMedium),
+                                style: Theme.of(context).textTheme.bodyMedium),
                           ],
                         ),
                       )
@@ -96,9 +102,11 @@ class ReproduccionScreen extends ConsumerWidget {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: theme.cardTheme.color,
                               borderRadius: BorderRadius.circular(12),
-                              boxShadow: [AppTheme.softShadow],
+                              boxShadow: [
+                                AppTheme.softShadowFor(theme.brightness)
+                              ],
                             ),
                             padding: const EdgeInsets.all(16),
                             child: Column(
@@ -110,7 +118,8 @@ class ReproduccionScreen extends ConsumerWidget {
                                   children: [
                                     Text('Animal #${ciclo.animal}',
                                         style: Theme.of(context)
-                                            .textTheme.titleMedium),
+                                            .textTheme
+                                            .titleMedium),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
                                         horizontal: 12,
@@ -124,8 +133,7 @@ class ReproduccionScreen extends ConsumerWidget {
                                                     .withOpacity(0.2)
                                                 : AppTheme.success
                                                     .withOpacity(0.2),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
                                         '$diasRestantes días',
@@ -144,8 +152,7 @@ class ReproduccionScreen extends ConsumerWidget {
                                 const SizedBox(height: 12),
                                 Text(
                                   'Tipo: ${ciclo.tipoServicio == 'natural' ? 'Monta Natural' : 'Inseminación Artificial'}',
-                                  style: Theme.of(context)
-                                      .textTheme.bodySmall,
+                                  style: Theme.of(context).textTheme.bodySmall,
                                 ),
                                 const SizedBox(height: 12),
                                 // Progress bar
@@ -154,7 +161,7 @@ class ReproduccionScreen extends ConsumerWidget {
                                   child: LinearProgressIndicator(
                                     value: progreso.clamp(0, 1),
                                     minHeight: 8,
-                                    backgroundColor: Colors.grey[300],
+                                    backgroundColor: theme.dividerColor,
                                     valueColor: AlwaysStoppedAnimation(
                                       diasRestantes < 15
                                           ? AppTheme.error
@@ -165,8 +172,7 @@ class ReproduccionScreen extends ConsumerWidget {
                                 const SizedBox(height: 8),
                                 Text(
                                   'Parto estimado: ${ciclo.fechaEstimadaParto != null ? DateFormat('dd/MM/yyyy').format(ciclo.fechaEstimadaParto!) : 'N/A'}',
-                                  style: Theme.of(context)
-                                      .textTheme.bodySmall,
+                                  style: Theme.of(context).textTheme.bodySmall,
                                 ),
                               ],
                             ),
@@ -177,21 +183,17 @@ class ReproduccionScreen extends ConsumerWidget {
             ),
             // Tab 2: Historial
             ciclosAsync.when(
-              loading: () => const Center(
-                  child: CircularProgressIndicator()),
-              error: (err, stack) =>
-                  Center(child: Text('Error: $err')),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Center(child: Text('Error: $err')),
               data: (ciclos) {
                 final historial = ciclos
                     .where((c) =>
-                        c.estado != 'gestante' &&
-                        c.estado != 'en_servicio')
+                        c.estado != 'gestante' && c.estado != 'en_servicio')
                     .toList();
                 return historial.isEmpty
                     ? Center(
                         child: Text('Sin historial',
-                            style:
-                                Theme.of(context).textTheme.bodyMedium),
+                            style: Theme.of(context).textTheme.bodyMedium),
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.all(16),
@@ -202,19 +204,20 @@ class ReproduccionScreen extends ConsumerWidget {
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.grey[100],
+                              color: theme.brightness == Brightness.dark
+                                  ? AppTheme.darkSurfaceVariant
+                                  : Colors.grey[100],
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: ListTile(
                               title: Text('Animal #${ciclo.animal}',
-                                  style: Theme.of(context)
-                                      .textTheme.labelLarge),
+                                  style:
+                                      Theme.of(context).textTheme.labelLarge),
                               subtitle: Text(ciclo.estado),
                               trailing: Text(
                                 DateFormat('dd/MM/yyyy')
                                     .format(ciclo.fechaServicio),
-                                style: Theme.of(context)
-                                    .textTheme.bodySmall,
+                                style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ),
                           );

@@ -72,6 +72,7 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final user = authState.user;
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -80,7 +81,6 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
           onPressed: () => context.go('/dashboard'),
         ),
         title: const Text('Configuración'),
-        elevation: 0,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -95,14 +95,15 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      gradient: AppTheme.primaryGradient,
+                      gradient: AppTheme.primaryGradientFor(theme.brightness),
                       borderRadius: BorderRadius.circular(40),
                     ),
                     child: Center(
                       child: Text(
                         user?.nombre_completo[0].toUpperCase() ?? 'B',
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Colors
+                              .white, // El gradiente es oscuro en ambos temas
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
                         ),
@@ -112,22 +113,21 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
                   const SizedBox(height: 12),
                   Text(
                     user?.nombre_completo ?? 'Usuario',
-                    style: Theme.of(context).textTheme.headlineSmall,
+                    style: theme.textTheme.headlineSmall,
                   ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2),
                   const SizedBox(height: 4),
                   Text(
                     user?.email ?? 'email@example.com',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: Colors.grey),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.textTheme.bodySmall?.color,
+                    ),
                   ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.2),
                 ],
               ),
             ),
             const SizedBox(height: 32),
             // Sección Perfil
-            _buildSectionTitle(context, 'Perfil', Icons.person),
+            _buildSectionTitle(context, 'Perfil', Icons.person, theme),
             const SizedBox(height: 12),
             _buildTextField(
               controller: _nameController,
@@ -142,7 +142,7 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
             ).animate().fadeIn(delay: 500.ms).slideX(begin: 0.3),
             const SizedBox(height: 24),
             // Sección Rancho
-            _buildSectionTitle(context, 'Mi Rancho', Icons.agriculture),
+            _buildSectionTitle(context, 'Mi Rancho', Icons.agriculture, theme),
             const SizedBox(height: 12),
             _buildTextField(
               controller: _ranchNameController,
@@ -156,17 +156,16 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildSectionTitle(
-                    context, 'Apariencia', Icons.palette_outlined),
+                    context, 'Apariencia', Icons.palette_outlined, theme),
                 const ThemeToggleButton(),
               ],
             ).animate().fadeIn(delay: 650.ms).slideY(begin: 0.3),
             const SizedBox(height: 4),
             Text(
               'Mantén presionado para seguir el tema del sistema',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: Colors.grey),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.textTheme.bodySmall?.color,
+              ),
             ).animate().fadeIn(delay: 700.ms),
 
             const SizedBox(height: 24),
@@ -174,37 +173,41 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
             ElevatedButton(
               onPressed: _isLoading ? null : _handleSave,
               child: _isLoading
-                  ? const SizedBox(
+                  ? SizedBox(
                       height: 20,
                       width: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          theme.colorScheme.onPrimary,
+                        ),
                       ),
                     )
                   : const Text('Guardar cambios'),
             ).animate().fadeIn(delay: 750.ms).slideY(begin: 0.3),
             const SizedBox(height: 24),
             // Divider
-            Container(height: 1, color: Colors.grey[300]),
+            Container(height: 1, color: theme.dividerColor),
             const SizedBox(height: 24),
             // Sección Información
-            _buildSectionTitle(context, 'Información', Icons.info),
+            _buildSectionTitle(context, 'Información', Icons.info, theme),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: theme.cardTheme.color,
                 borderRadius: BorderRadius.circular(8),
+                boxShadow: [AppTheme.softShadowFor(theme.brightness)],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfoRow('Versión', 'Bovion 1.0.0'),
+                  _buildInfoRow('Versión', 'Bovion 1.0.0', theme),
                   const SizedBox(height: 12),
-                  _buildInfoRow('Backend', '192.168.0.104:8000'),
+                  _buildInfoRow('Backend', '192.168.0.104:8000', theme),
                   const SizedBox(height: 12),
-                  _buildInfoRow('ID Usuario', (user?.id ?? 'N/A').toString()),
+                  _buildInfoRow(
+                      'ID Usuario', (user?.id ?? 'N/A').toString(), theme),
                 ],
               ),
             ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.3),
@@ -214,8 +217,8 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
               width: double.infinity,
               child: OutlinedButton(
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppTheme.error, width: 2),
-                  foregroundColor: AppTheme.error,
+                  side: BorderSide(color: theme.colorScheme.error, width: 2),
+                  foregroundColor: theme.colorScheme.error,
                 ),
                 onPressed: () {
                   ref.read(authProvider.notifier).logout();
@@ -234,15 +237,16 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
     BuildContext context,
     String title,
     IconData icon,
+    ThemeData theme,
   ) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, color: AppTheme.primary, size: 20),
+        Icon(icon, color: theme.colorScheme.primary, size: 20),
         const SizedBox(width: 8),
         Text(
           title,
-          style: Theme.of(context).textTheme.titleMedium,
+          style: theme.textTheme.titleMedium,
         ),
       ],
     );
@@ -262,11 +266,11 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, ThemeData theme) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(color: Colors.grey)),
+        Text(label, style: TextStyle(color: theme.textTheme.bodySmall?.color)),
         Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
       ],
     );
