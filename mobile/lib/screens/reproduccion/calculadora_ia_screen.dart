@@ -9,7 +9,8 @@ class CalculadoraIAScreen extends ConsumerStatefulWidget {
   const CalculadoraIAScreen({super.key});
 
   @override
-  ConsumerState<CalculadoraIAScreen> createState() => _CalculadoraIAScreenState();
+  ConsumerState<CalculadoraIAScreen> createState() =>
+      _CalculadoraIAScreenState();
 }
 
 class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
@@ -17,6 +18,10 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
   Map<String, dynamic>? _resultado;
   bool _isLoading = false;
   String? _error;
+  dynamic _animal;
+  DateTime? _fechaUltimoParto;
+  int _diasInvolution = 45;
+  int _diasGestacion = 283;
 
   Future<void> _calcularConIA(int animalId) async {
     setState(() {
@@ -26,7 +31,8 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
     });
     try {
       final api = ref.read(apiClientProvider);
-      final response = await api.get('ia/calculadora-gestacion/?animal_id=$animalId');
+      final response =
+          await api.get('ia/calculadora-gestacion/?animal_id=$animalId');
       setState(() {
         _resultado = response;
         _isLoading = false;
@@ -51,11 +57,15 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
   @override
   Widget build(BuildContext context) {
     final animalesAsync = ref.watch(animalesNotifierProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Calculadora de IA', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppTheme.primary,
+        title: const Text('Calculadora de IA',
+            style: TextStyle(color: Colors.white)),
+        backgroundColor:
+            isDark ? theme.appBarTheme.backgroundColor : AppTheme.primary,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -67,14 +77,19 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient,
+                color:
+                    isDark ? AppTheme.info.withOpacity(0.15) : Colors.blue[50],
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Column(
+              child: Column(
                 children: [
-                  Icon(Icons.auto_awesome, color: Colors.white, size: 32),
-                  SizedBox(height: 8),
-                  Text(
+                  Icon(Icons.info, color: theme.colorScheme.primary, size: 32),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'La fecha óptima de IA se calcula sumando:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const Text(
                     'Calculadora de Gestación con IA',
                     style: TextStyle(
                       color: Colors.white,
@@ -82,8 +97,8 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
                       fontSize: 16,
                     ),
                   ),
-                  SizedBox(height: 4),
-                  Text(
+                  const SizedBox(height: 4),
+                  const Text(
                     'Analiza el historial del animal, raza y ciclos previos\npara calcular la fecha óptima de IA',
                     style: TextStyle(color: Colors.white70, fontSize: 12),
                     textAlign: TextAlign.center,
@@ -101,37 +116,48 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
               loading: () => const CircularProgressIndicator(),
               error: (err, _) => Text('Error: $err'),
               data: (animales) {
-                final hembras = animales.where((a) => a.sexo == 'H' && a.estado == 'activo').toList();
+                final hembras = animales
+                    .where((a) => a.sexo == 'H' && a.estado == 'activo')
+                    .toList();
                 return DropdownButtonFormField<int>(
                   value: _selectedAnimalId,
                   decoration: const InputDecoration(
                     border: OutlineInputBorder(),
                     hintText: 'Seleccionar vaca',
                   ),
-                  items: hembras.map((a) => DropdownMenuItem(
-                    value: a.id,
-                    child: Text('${a.numeroArete} - ${a.nombre ?? a.raza ?? "Sin nombre"}'),
-                  )).toList(),
-                  onChanged: (value) {
+                  items: hembras
+                      .map((a) => DropdownMenuItem(
+                            value: a.id,
+                            child: Text(
+                                '${a.numeroArete} - ${a.nombre ?? a.raza ?? "Sin nombre"}'),
+                          ))
+                      .toList(),
+                  onChanged: (value) async {
                     if (value != null) {
-                      setState(() => _selectedAnimalId = value);
-                      _calcularConIA(value);
+                      final api = ref.read(apiClientProvider);
+                      final animalData = await api.get('/animales/$value/');
+                      setState(() {
+                        _selectedAnimalId = value;
+                        _animal = animalData;
+                        if (animalData['fecha_ultimo_parto'] != null) {
+                          _fechaUltimoParto =
+                              DateTime.parse(animalData['fecha_ultimo_parto']);
+                        }
+                      });
                     }
                   },
                 );
               },
             ),
             const SizedBox(height: 24),
-
-            if (_isLoading)
-              const Center(child: CircularProgressIndicator()),
-
+            if (_isLoading) const Center(child: CircularProgressIndicator()),
             if (_error != null)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.error.withOpacity(0.1),
+                  color: theme.cardTheme.color,
                   borderRadius: BorderRadius.circular(12),
+                  boxShadow: [AppTheme.softShadowFor(theme.brightness)],
                 ),
                 child: Row(
                   children: [
@@ -141,7 +167,6 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
                   ],
                 ),
               ),
-
             if (_resultado != null && !_isLoading) ...[
               if (_resultado!['fecha_ia_optima'] != null) ...[
                 Container(
@@ -168,20 +193,14 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
                           color: AppTheme.success,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppTheme.success.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'Confianza: ${_resultado!['confianza'] ?? 'baja'}',
-                          style: const TextStyle(
-                            color: AppTheme.success,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '(${_diasInvolution} días involución + ${_diasGestacion} días gestión)',
+                        style: TextStyle(
+                          color: isDark
+                              ? AppTheme.darkTextSecondary
+                              : Colors.grey[600],
+                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -191,7 +210,9 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.orange[50],
+                    color: isDark
+                        ? AppTheme.warning.withOpacity(0.15)
+                        : Colors.orange[50],
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(color: Colors.orange),
                   ),
@@ -217,21 +238,31 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.grey[200],
+                    color:
+                        isDark ? AppTheme.darkSurfaceVariant : Colors.grey[200],
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Column(
+                  child: Column(
                     children: [
-                      Icon(Icons.warning, color: Colors.grey, size: 36),
-                      SizedBox(height: 8),
+                      Icon(Icons.warning,
+                          color: isDark
+                              ? AppTheme.darkTextSecondary
+                              : Colors.grey),
+                      const SizedBox(height: 8),
                       Text(
                         'No hay registro de último parto',
-                        style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            color: isDark
+                                ? AppTheme.darkTextSecondary
+                                : Colors.grey),
                       ),
                       Text(
-                        'No se puede calcular la fecha óptima sin un parto previo registrado',
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
-                        textAlign: TextAlign.center,
+                        'No se puede calcular la fecha óptima',
+                        style: TextStyle(
+                          color:
+                              isDark ? AppTheme.darkTextSecondary : Colors.grey,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -252,19 +283,29 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    _buildDetailRow('Animal', '${_resultado!['numero_arete']} - ${_resultado!['nombre'] ?? ''}'),
+                    _buildDetailRow('Animal',
+                        '${_resultado!['numero_arete']} - ${_resultado!['nombre'] ?? ''}'),
                     _buildDetailRow('Raza', _resultado!['raza'] ?? 'N/A'),
-                    _buildDetailRow('Partos previos', '${_resultado!['partos_previos'] ?? 0}'),
-                    _buildDetailRow('Último parto', _formatFecha(_resultado!['fecha_ultimo_parto'])),
-                    _buildDetailRow('Días gestación', '${_resultado!['dias_gestacion_calculados']}'),
-                    _buildDetailRow('Días involución', '${_resultado!['dias_involucion']}'),
+                    _buildDetailRow('Partos previos',
+                        '${_resultado!['partos_previos'] ?? 0}'),
+                    _buildDetailRow('Último parto',
+                        _formatFecha(_resultado!['fecha_ultimo_parto'])),
+                    _buildDetailRow('Días gestación',
+                        '${_resultado!['dias_gestacion_calculados']}'),
+                    _buildDetailRow(
+                        'Días involución', '${_resultado!['dias_involucion']}'),
                     if (_resultado!['factores'] != null) ...[
                       const Divider(height: 16),
-                      const Text('Factores considerados:', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
-                      _buildDetailRow('Gestación base', '${_resultado!['factores']['gestacion_base']} días'),
-                      _buildDetailRow('Ajuste por raza', '${_resultado!['factores']['ajuste_raza']} días'),
+                      const Text('Factores considerados:',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 12)),
+                      _buildDetailRow('Gestación base',
+                          '${_resultado!['factores']['gestacion_base']} días'),
+                      _buildDetailRow('Ajuste por raza',
+                          '${_resultado!['factores']['ajuste_raza']} días'),
                       if (_resultado!['factores']['promedio_historial'] != null)
-                        _buildDetailRow('Promedio historial', '${_resultado!['factores']['promedio_historial']} días'),
+                        _buildDetailRow('Promedio historial',
+                            '${_resultado!['factores']['promedio_historial']} días'),
                     ],
                   ],
                 ),
@@ -273,7 +314,8 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color:
+                      isDark ? AppTheme.darkSurfaceVariant : Colors.grey[200],
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Column(
@@ -302,9 +344,16 @@ class _CalculadoraIAScreenState extends ConsumerState<CalculadoraIAScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
-          Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+          Text(value,
+              style:
+                  const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
         ],
       ),
     );
+  }
+
+  DateTime _calcularFechaParto() {
+    return _fechaUltimoParto!
+        .add(Duration(days: _diasInvolution + _diasGestacion));
   }
 }

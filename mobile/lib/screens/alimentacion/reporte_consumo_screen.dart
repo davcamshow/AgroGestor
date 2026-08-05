@@ -8,7 +8,8 @@ class ReporteConsumoScreen extends ConsumerStatefulWidget {
   const ReporteConsumoScreen({super.key});
 
   @override
-  ConsumerState<ReporteConsumoScreen> createState() => _ReporteConsumoScreenState();
+  ConsumerState<ReporteConsumoScreen> createState() =>
+      _ReporteConsumoScreenState();
 }
 
 class _ReporteConsumoScreenState extends ConsumerState<ReporteConsumoScreen> {
@@ -55,43 +56,49 @@ class _ReporteConsumoScreenState extends ConsumerState<ReporteConsumoScreen> {
   @override
   Widget build(BuildContext context) {
     final lotesAsync = ref.watch(lotesNotifierProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final successColor = isDark ? AppTheme.darkSuccess : AppTheme.success;
+    final primaryColor = theme.colorScheme.primary;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Reporte de Consumo', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppTheme.primary,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('Reporte de Consumo'),
       ),
       body: Column(
         children: [
           Container(
-            color: AppTheme.primary,
+            color: theme.appBarTheme.backgroundColor,
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Período',
-                  style: TextStyle(color: Colors.white70),
+                  style: TextStyle(
+                      color:
+                          theme.appBarTheme.foregroundColor?.withOpacity(0.7)),
                 ),
                 const SizedBox(height: 8),
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildPeriodoChip(7, '7 días'),
-                      _buildPeriodoChip(15, '15 días'),
-                      _buildPeriodoChip(30, '30 días'),
-                      _buildPeriodoChip(60, '60 días'),
-                      _buildPeriodoChip(90, '90 días'),
+                      _buildPeriodoChip(7, '7 días', theme),
+                      _buildPeriodoChip(15, '15 días', theme),
+                      _buildPeriodoChip(30, '30 días', theme),
+                      _buildPeriodoChip(60, '60 días', theme),
+                      _buildPeriodoChip(90, '90 días', theme),
                     ],
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
+                Text(
                   'Filtrar por Lote',
-                  style: TextStyle(color: Colors.white70),
+                  style: TextStyle(
+                      color:
+                          theme.appBarTheme.foregroundColor?.withOpacity(0.7)),
                 ),
                 const SizedBox(height: 8),
                 lotesAsync.when(
@@ -99,11 +106,7 @@ class _ReporteConsumoScreenState extends ConsumerState<ReporteConsumoScreen> {
                     value: _loteId,
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      fillColor: theme.colorScheme.surface,
                     ),
                     hint: const Text('Todos los lotes'),
                     items: [
@@ -112,9 +115,9 @@ class _ReporteConsumoScreenState extends ConsumerState<ReporteConsumoScreen> {
                         child: Text('Todos los lotes'),
                       ),
                       ...lotes.map((l) => DropdownMenuItem(
-                        value: l.id,
-                        child: Text('${l.nombre} (${l.cantidadCabezas})'),
-                      )),
+                            value: l.id,
+                            child: Text('${l.nombre} (${l.cantidadCabezas})'),
+                          )),
                     ],
                     onChanged: (value) {
                       setState(() {
@@ -124,8 +127,12 @@ class _ReporteConsumoScreenState extends ConsumerState<ReporteConsumoScreen> {
                       _loadReporte();
                     },
                   ),
-                  loading: () => const Text('Cargando...', style: TextStyle(color: Colors.white)),
-                  error: (_, __) => const Text('Error', style: TextStyle(color: Colors.white)),
+                  loading: () => Text('Cargando...',
+                      style:
+                          TextStyle(color: theme.appBarTheme.foregroundColor)),
+                  error: (_, __) => Text('Error',
+                      style:
+                          TextStyle(color: theme.appBarTheme.foregroundColor)),
                 ),
               ],
             ),
@@ -147,35 +154,40 @@ class _ReporteConsumoScreenState extends ConsumerState<ReporteConsumoScreen> {
                                 'Total kg Suministrados',
                                 '${_reporte?['total_kg']?.toStringAsFixed(1) ?? 0} kg',
                                 Icons.scale,
-                                AppTheme.primary,
+                                primaryColor,
+                                theme,
                               ),
                               const SizedBox(height: 12),
                               _buildMetricaCard(
                                 'Costo Total',
                                 '\$${_reporte?['costo_total']?.toStringAsFixed(2) ?? 0}',
                                 Icons.attach_money,
-                                AppTheme.success,
+                                successColor,
+                                theme,
                               ),
                               const SizedBox(height: 12),
                               _buildMetricaCard(
                                 'Animales Atendidos',
                                 '${_reporte?['animales_atendidos'] ?? 0}',
                                 Icons.pets,
-                                AppTheme.secondary,
+                                theme.colorScheme.secondary,
+                                theme,
                               ),
                               const SizedBox(height: 12),
                               _buildMetricaCard(
                                 'kg por Animal',
                                 '${_reporte?['kg_por_animal']?.toStringAsFixed(1) ?? 0} kg',
                                 Icons.analytics,
-                                Colors.orange,
+                                isDark ? Colors.orange[300]! : Colors.orange,
+                                theme,
                               ),
                               const SizedBox(height: 12),
                               _buildMetricaCard(
                                 'Costo por Animal',
                                 '\$${_reporte?['costo_por_animal']?.toStringAsFixed(2) ?? 0}',
                                 Icons.monetization_on,
-                                Colors.purple,
+                                isDark ? Colors.purple[300]! : Colors.purple,
+                                theme,
                               ),
                               const SizedBox(height: 24),
                               ElevatedButton.icon(
@@ -193,7 +205,7 @@ class _ReporteConsumoScreenState extends ConsumerState<ReporteConsumoScreen> {
     );
   }
 
-  Widget _buildPeriodoChip(int dias, String label) {
+  Widget _buildPeriodoChip(int dias, String label, ThemeData theme) {
     final selected = _dias == dias;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
@@ -201,23 +213,26 @@ class _ReporteConsumoScreenState extends ConsumerState<ReporteConsumoScreen> {
         label: Text(label),
         selected: selected,
         onSelected: (_) => _cambiarPeriodo(dias),
-        selectedColor: Colors.white,
-        checkmarkColor: AppTheme.primary,
+        selectedColor: theme.colorScheme.primary,
+        checkmarkColor: theme.colorScheme.onPrimary,
         labelStyle: TextStyle(
-          color: selected ? AppTheme.primary : Colors.white,
+          color: selected
+              ? theme.colorScheme.onPrimary
+              : theme.appBarTheme.foregroundColor,
           fontWeight: selected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
     );
   }
 
-  Widget _buildMetricaCard(String titulo, String valor, IconData icono, Color color) {
+  Widget _buildMetricaCard(String titulo, String valor, IconData icono,
+      Color color, ThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [AppTheme.softShadow],
+        boxShadow: [AppTheme.softShadowFor(theme.brightness)],
       ),
       child: Row(
         children: [
@@ -238,7 +253,7 @@ class _ReporteConsumoScreenState extends ConsumerState<ReporteConsumoScreen> {
                   titulo,
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[600],
+                    color: theme.textTheme.bodySmall?.color,
                   ),
                 ),
                 Text(

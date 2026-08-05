@@ -7,10 +7,12 @@ class KPIsReproduccionScreen extends ConsumerStatefulWidget {
   const KPIsReproduccionScreen({super.key});
 
   @override
-  ConsumerState<KPIsReproduccionScreen> createState() => _KPIsReproduccionScreenState();
+  ConsumerState<KPIsReproduccionScreen> createState() =>
+      _KPIsReproduccionScreenState();
 }
 
-class _KPIsReproduccionScreenState extends ConsumerState<KPIsReproduccionScreen> {
+class _KPIsReproduccionScreenState
+    extends ConsumerState<KPIsReproduccionScreen> {
   Map<String, dynamic>? _kpis;
   bool _isLoading = true;
   String? _error;
@@ -39,10 +41,15 @@ class _KPIsReproduccionScreenState extends ConsumerState<KPIsReproduccionScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('KPIs Reproductivos', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppTheme.primary,
+        title: const Text('KPIs Reproductivos',
+            style: TextStyle(color: Colors.white)),
+        backgroundColor:
+            isDark ? theme.appBarTheme.backgroundColor : AppTheme.primary,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
       ),
@@ -53,7 +60,8 @@ class _KPIsReproduccionScreenState extends ConsumerState<KPIsReproduccionScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, size: 48, color: AppTheme.error),
+                      const Icon(Icons.error_outline,
+                          size: 48, color: AppTheme.error),
                       const SizedBox(height: 16),
                       Text('Error: $_error'),
                       const SizedBox(height: 16),
@@ -126,13 +134,16 @@ class _KPIsReproduccionScreenState extends ConsumerState<KPIsReproduccionScreen>
     );
   }
 
-  Widget _buildCard(String titulo, String valor, String descripcion, IconData icono, Color color) {
+  Widget _buildCard(String titulo, String valor, String descripcion,
+      IconData icono, Color color) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.cardTheme.color,
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [AppTheme.softShadow],
+        boxShadow: [AppTheme.softShadowFor(theme.brightness)],
       ),
       child: Row(
         children: [
@@ -151,9 +162,9 @@ class _KPIsReproduccionScreenState extends ConsumerState<KPIsReproduccionScreen>
               children: [
                 Text(
                   titulo,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey,
+                    color: isDark ? AppTheme.darkTextSecondary : Colors.grey,
                   ),
                 ),
                 Text(
@@ -168,7 +179,8 @@ class _KPIsReproduccionScreenState extends ConsumerState<KPIsReproduccionScreen>
                   descripcion,
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey[600],
+                    color:
+                        isDark ? AppTheme.darkTextSecondary : Colors.grey[600],
                   ),
                 ),
               ],
@@ -180,11 +192,13 @@ class _KPIsReproduccionScreenState extends ConsumerState<KPIsReproduccionScreen>
   }
 
   Widget _buildResumenRow() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final nacimientos = _kpis?['nacimientos'] ?? {};
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: isDark ? AppTheme.darkSurfaceVariant : Colors.grey[100],
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(

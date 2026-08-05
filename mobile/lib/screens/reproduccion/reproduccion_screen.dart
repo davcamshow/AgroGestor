@@ -22,10 +22,15 @@ class _ReproduccionScreenState extends ConsumerState<ReproduccionScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Registrar Parto'),
-        content: const Text('¿Confirmas que el parto ocurrió hoy? Se marcará como "Parió" y se registrará la fecha de parto real.'),
+        content: const Text(
+            '¿Confirmas que el parto ocurrió hoy? Se marcará como "Parió" y se registrará la fecha de parto real.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Confirmar')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancelar')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Confirmar')),
         ],
       ),
     );
@@ -35,7 +40,9 @@ class _ReproduccionScreenState extends ConsumerState<ReproduccionScreen> {
       await ref.read(ciclosNotifierProvider.notifier).registrarParto(cicloId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Parto registrado exitosamente'), backgroundColor: Colors.green),
+          const SnackBar(
+              content: Text('Parto registrado exitosamente'),
+              backgroundColor: Colors.green),
         );
       }
     } catch (e) {
@@ -52,13 +59,17 @@ class _ReproduccionScreenState extends ConsumerState<ReproduccionScreen> {
   @override
   Widget build(BuildContext context) {
     final ciclosAsync = ref.watch(ciclosNotifierProvider);
+    final theme = Theme.of(context);
 
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Reproducción', style: TextStyle(color: Colors.white)),
-          backgroundColor: AppTheme.primary,
+          title:
+              const Text('Reproducción', style: TextStyle(color: Colors.white)),
+          backgroundColor: theme.brightness == Brightness.dark
+              ? theme.appBarTheme.backgroundColor
+              : AppTheme.primary,
           elevation: 0,
           iconTheme: const IconThemeData(color: Colors.white),
           actions: [
@@ -80,7 +91,7 @@ class _ReproduccionScreenState extends ConsumerState<ReproduccionScreen> {
             IconButton(
               icon: CircleAvatar(
                 radius: 16,
-                backgroundColor: Colors.white.withValues(alpha: 0.2),
+                backgroundColor: theme.colorScheme.surfaceVariant,
                 child: const Icon(Icons.person, color: Colors.white, size: 18),
               ),
               onPressed: () => context.go('/configuracion'),
@@ -121,11 +132,13 @@ class _ReproduccionScreenState extends ConsumerState<ReproduccionScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.favorite_outline,
-                                size: 64, color: Colors.grey[300]),
+                                size: 64,
+                                color: theme.brightness == Brightness.dark
+                                    ? AppTheme.darkTextSecondary
+                                    : Colors.grey[300]),
                             const SizedBox(height: 16),
                             Text('Sin gestaciones activas',
-                                style:
-                                    Theme.of(context).textTheme.bodyMedium),
+                                style: Theme.of(context).textTheme.bodyMedium),
                           ],
                         ),
                       )
@@ -143,107 +156,117 @@ class _ReproduccionScreenState extends ConsumerState<ReproduccionScreen> {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: theme.cardTheme.color,
                               borderRadius: BorderRadius.circular(12),
-                              boxShadow: [AppTheme.softShadow],
+                              boxShadow: [
+                                AppTheme.softShadowFor(theme.brightness)
+                              ],
                             ),
                             child: InkWell(
                               borderRadius: BorderRadius.circular(12),
-                              onTap: () => context.push(
-                                  '/animales/${ciclo.animal}'),
+                              onTap: () =>
+                                  context.push('/animales/${ciclo.animal}'),
                               child: Padding(
                                 padding: const EdgeInsets.all(16),
                                 child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text('Animal #${ciclo.animal}',
-                                        style: Theme.of(context)
-                                            .textTheme.titleMedium),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: diasRestantes < 15
-                                            ? AppTheme.error.withValues(alpha: 0.2)
-                                            : diasRestantes < 30
-                                                ? AppTheme.warning
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text('Animal #${ciclo.animal}',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .titleMedium),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: diasRestantes < 15
+                                                ? AppTheme.error
                                                     .withValues(alpha: 0.2)
-                                                : AppTheme.success
-                                                    .withValues(alpha: 0.2),
-                                        borderRadius:
-                                            BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        '$diasRestantes días',
-                                        style: TextStyle(
-                                          color: diasRestantes < 15
+                                                : diasRestantes < 30
+                                                    ? AppTheme.warning
+                                                        .withValues(alpha: 0.2)
+                                                    : AppTheme.success
+                                                        .withOpacity(0.2),
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            '$diasRestantes días',
+                                            style: TextStyle(
+                                              color: diasRestantes < 15
+                                                  ? AppTheme.error
+                                                  : diasRestantes < 30
+                                                      ? AppTheme.warning
+                                                      : AppTheme.success,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      'Tipo: ${ciclo.tipoServicio == 'natural' ? 'Monta Natural' : 'Inseminación Artificial'}',
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    // Progress bar
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: LinearProgressIndicator(
+                                        value: progreso.clamp(0, 1),
+                                        minHeight: 8,
+                                        backgroundColor: theme.dividerColor,
+                                        valueColor: AlwaysStoppedAnimation(
+                                          diasRestantes < 15
                                               ? AppTheme.error
-                                              : diasRestantes < 30
-                                                  ? AppTheme.warning
-                                                  : AppTheme.success,
-                                          fontWeight: FontWeight.bold,
+                                              : AppTheme.secondary,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Parto estimado: ${ciclo.fechaEstimadaParto != null ? DateFormat('dd/MM/yyyy').format(ciclo.fechaEstimadaParto!) : 'N/A'}',
+                                      style:
+                                          Theme.of(context).textTheme.bodySmall,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton.icon(
+                                        onPressed: _registrando
+                                                .contains(ciclo.id)
+                                            ? null
+                                            : () => _confirmarParto(ciclo.id),
+                                        icon: _registrando.contains(ciclo.id)
+                                            ? const SizedBox(
+                                                width: 18,
+                                                height: 18,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                        strokeWidth: 2),
+                                              )
+                                            : const Icon(Icons.check_circle,
+                                                size: 20),
+                                        label: const Text(
+                                            'Listo — Registrar Parto'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppTheme.success,
+                                          foregroundColor: Colors.white,
                                         ),
                                       ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'Tipo: ${ciclo.tipoServicio == 'natural' ? 'Monta Natural' : 'Inseminación Artificial'}',
-                                  style: Theme.of(context)
-                                      .textTheme.bodySmall,
-                                ),
-                                const SizedBox(height: 12),
-                                // Progress bar
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: LinearProgressIndicator(
-                                    value: progreso.clamp(0, 1),
-                                    minHeight: 8,
-                                    backgroundColor: Colors.grey[300],
-                                    valueColor: AlwaysStoppedAnimation(
-                                      diasRestantes < 15
-                                          ? AppTheme.error
-                                          : AppTheme.secondary,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Parto estimado: ${ciclo.fechaEstimadaParto != null ? DateFormat('dd/MM/yyyy').format(ciclo.fechaEstimadaParto!) : 'N/A'}',
-                                  style: Theme.of(context)
-                                      .textTheme.bodySmall,
-                                ),
-                                const SizedBox(height: 12),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton.icon(
-                                    onPressed: _registrando.contains(ciclo.id)
-                                        ? null
-                                        : () => _confirmarParto(ciclo.id),
-                                    icon: _registrando.contains(ciclo.id)
-                                        ? const SizedBox(
-                                            width: 18, height: 18,
-                                            child: CircularProgressIndicator(strokeWidth: 2),
-                                          )
-                                        : const Icon(Icons.check_circle, size: 20),
-                                    label: const Text('Listo — Registrar Parto'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: AppTheme.success,
-                                      foregroundColor: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
-                          ),
-                          ),
                           ).animate().fadeIn().slideX();
                         },
                       );
@@ -251,21 +274,17 @@ class _ReproduccionScreenState extends ConsumerState<ReproduccionScreen> {
             ),
             // Tab 2: Historial
             ciclosAsync.when(
-              loading: () => const Center(
-                  child: CircularProgressIndicator()),
-              error: (err, stack) =>
-                  Center(child: Text('Error: $err')),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Center(child: Text('Error: $err')),
               data: (ciclos) {
                 final historial = ciclos
                     .where((c) =>
-                        c.estado != 'gestante' &&
-                        c.estado != 'en_servicio')
+                        c.estado != 'gestante' && c.estado != 'en_servicio')
                     .toList();
                 return historial.isEmpty
                     ? Center(
                         child: Text('Sin historial',
-                            style:
-                                Theme.of(context).textTheme.bodyMedium),
+                            style: Theme.of(context).textTheme.bodyMedium),
                       )
                     : ListView.builder(
                         padding: const EdgeInsets.all(16),
@@ -288,101 +307,20 @@ class _ReproduccionScreenState extends ConsumerState<ReproduccionScreen> {
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [AppTheme.softShadow],
+                              color: theme.brightness == Brightness.dark
+                                  ? AppTheme.darkSurfaceVariant
+                                  : Colors.grey[100],
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(12),
-                              onTap: () => context.push(
-                                  '/reproduccion/ciclo/${ciclo.id}/edit'),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8),
-                                child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text('Animal #${ciclo.animal}',
-                                            style: Theme.of(context)
-                                                .textTheme.titleSmall),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8,
-                                            vertical: 4,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: estadoColor
-                                                .withValues(alpha: 0.2),
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            estadoLabel,
-                                            style: TextStyle(
-                                              color: estadoColor,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Servicio: ${DateFormat('dd/MM/yyyy').format(ciclo.fechaServicio)}',
-                                      style: Theme.of(context)
-                                          .textTheme.bodySmall,
-                                    ),
-                                    if (ciclo.fechaPartoReal != null)
-                                      Text(
-                                        'Parto real: ${DateFormat('dd/MM/yyyy').format(ciclo.fechaPartoReal!)}',
-                                        style: Theme.of(context)
-                                            .textTheme.bodySmall,
-                                      ),
-                                    if (ciclo.fechaEstimadaParto != null)
-                                      Text(
-                                        'Parto estimado: ${DateFormat('dd/MM/yyyy').format(ciclo.fechaEstimadaParto!)}',
-                                        style: Theme.of(context)
-                                            .textTheme.bodySmall,
-                                      ),
-                                    const SizedBox(height: 4),
-                                    Row(
-                                      children: [
-                                        Icon(Icons.favorite_border,
-                                            size: 14,
-                                            color: Colors.grey[500]),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          ciclo.tipoServicio == 'natural' ? 'Monta Natural' : 'Inseminación Artificial',
-                                          style: TextStyle(
-                                            color: Colors.grey[500],
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                        if (ciclo.formato != null) ...[
-                                          const SizedBox(width: 12),
-                                          Icon(Icons.event,
-                                              size: 14,
-                                              color: Colors.grey[500]),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            ciclo.formato == 'temporada'
-                                                ? 'Temporada'
-                                                : 'Continuo',
-                                            style: TextStyle(
-                                              color: Colors.grey[500],
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ],
-                                ),
+                            child: ListTile(
+                              title: Text('Animal #${ciclo.animal}',
+                                  style:
+                                      Theme.of(context).textTheme.labelLarge),
+                              subtitle: Text(ciclo.estado),
+                              trailing: Text(
+                                DateFormat('dd/MM/yyyy')
+                                    .format(ciclo.fechaServicio),
+                                style: Theme.of(context).textTheme.bodySmall,
                               ),
                             ),
                           );

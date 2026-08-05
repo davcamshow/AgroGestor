@@ -15,13 +15,16 @@ class _AlertasStockScreenState extends ConsumerState<AlertasStockScreen> {
   @override
   Widget build(BuildContext context) {
     final insumosAsync = ref.watch(insumosNotifierProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final successColor = isDark ? AppTheme.darkSuccess : AppTheme.success;
+    final warningColor = isDark ? AppTheme.darkWarning : AppTheme.warning;
+    final errorColor = theme.colorScheme.error;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Alertas de Inventario', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppTheme.primary,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('Alertas de Inventario'),
       ),
       body: insumosAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -38,16 +41,16 @@ class _AlertasStockScreenState extends ConsumerState<AlertasStockScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.check_circle, size: 64, color: AppTheme.success),
+                  Icon(Icons.check_circle, size: 64, color: successColor),
                   const SizedBox(height: 16),
                   const Text(
                     '¡Todo en orden!',
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'No hay insumos con stock bajo',
-                    style: TextStyle(color: Colors.grey),
+                    style: TextStyle(color: theme.textTheme.bodySmall?.color),
                   ),
                 ],
               ),
@@ -59,19 +62,23 @@ class _AlertasStockScreenState extends ConsumerState<AlertasStockScreen> {
             itemCount: alertas.length,
             itemBuilder: (context, index) {
               final insumo = alertas[index];
-              final actual = double.tryParse(insumo.cantidadActualKg ?? '0') ?? 0;
+              final actual =
+                  double.tryParse(insumo.cantidadActualKg ?? '0') ?? 0;
               final minimo = double.tryParse(insumo.stockMinimoKg ?? '0') ?? 0;
               final porcentaje = minimo > 0 ? (actual / minimo * 100) : 0;
+
+              final isCritical = porcentaje < 50;
+              final statusColor = isCritical ? errorColor : warningColor;
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: theme.cardTheme.color,
                   borderRadius: BorderRadius.circular(12),
-                  boxShadow: [AppTheme.softShadow],
+                  boxShadow: [AppTheme.softShadowFor(theme.brightness)],
                   border: Border.all(
-                    color: porcentaje < 50 ? AppTheme.error : AppTheme.warning,
+                    color: statusColor,
                     width: 2,
                   ),
                 ),
@@ -80,10 +87,7 @@ class _AlertasStockScreenState extends ConsumerState<AlertasStockScreen> {
                   children: [
                     Row(
                       children: [
-                        Icon(
-                          Icons.warning,
-                          color: porcentaje < 50 ? AppTheme.error : AppTheme.warning,
-                        ),
+                        Icon(Icons.warning, color: statusColor),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -95,15 +99,17 @@ class _AlertasStockScreenState extends ConsumerState<AlertasStockScreen> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: porcentaje < 50 ? AppTheme.error : AppTheme.warning,
+                            color: statusColor,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             '${porcentaje.round()}%',
                             style: const TextStyle(
-                              color: Colors.white,
+                              color: Colors
+                                  .white, // Mantenemos texto blanco para buen contraste sobre error/warning
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -113,10 +119,8 @@ class _AlertasStockScreenState extends ConsumerState<AlertasStockScreen> {
                     const SizedBox(height: 12),
                     LinearProgressIndicator(
                       value: (porcentaje / 100).clamp(0, 1),
-                      backgroundColor: Colors.grey[200],
-                      valueColor: AlwaysStoppedAnimation(
-                        porcentaje < 50 ? AppTheme.error : AppTheme.warning,
-                      ),
+                      backgroundColor: theme.dividerColor,
+                      valueColor: AlwaysStoppedAnimation(statusColor),
                     ),
                     const SizedBox(height: 8),
                     Row(
