@@ -30,13 +30,11 @@ class InsumosScreen extends ConsumerWidget {
               );
             }
 
-            final criticalCount = insumos
-                .where((i) {
-                  final actual = double.tryParse(i.cantidadActualKg) ?? 0;
-                  final minimo = double.tryParse(i.stockMinimoKg) ?? 0;
-                  return actual <= minimo;
-                })
-                .length;
+            final criticalCount = insumos.where((i) {
+              final actual = double.tryParse(i.cantidadActualKg) ?? 0;
+              final minimo = double.tryParse(i.stockMinimoKg) ?? 0;
+              return actual <= minimo;
+            }).length;
 
             final totalValue = insumos.fold<double>(0, (sum, insumo) {
               final cantidad = double.tryParse(insumo.cantidadActualKg) ?? 0;
@@ -62,11 +60,14 @@ class InsumosScreen extends ConsumerWidget {
                                 children: [
                                   Text(
                                     'Total Insumos',
-                                    style: Theme.of(context).textTheme.bodySmall,
+                                    style:
+                                        Theme.of(context).textTheme.bodySmall,
                                   ),
                                   Text(
                                     insumos.length.toString(),
-                                    style: Theme.of(context).textTheme.headlineSmall,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall,
                                   ),
                                 ],
                               ),
@@ -83,13 +84,19 @@ class InsumosScreen extends ConsumerWidget {
                                 children: [
                                   Text(
                                     'Críticos',
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
                                           color: Colors.red,
                                         ),
                                   ),
                                   Text(
                                     criticalCount.toString(),
-                                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(
                                           color: Colors.red,
                                         ),
                                   ),
@@ -122,7 +129,8 @@ class InsumosScreen extends ConsumerWidget {
                     const SizedBox(height: 24),
                     // Insumos List
                     ...insumos.map((insumo) {
-                      final actual = double.tryParse(insumo.cantidadActualKg) ?? 0;
+                      final actual =
+                          double.tryParse(insumo.cantidadActualKg) ?? 0;
                       final minimo = double.tryParse(insumo.stockMinimoKg) ?? 0;
                       final isCritical = actual <= minimo;
 
@@ -134,7 +142,8 @@ class InsumosScreen extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const SizedBox(height: 4),
-                              Text('Stock: ${insumo.cantidadActualKg} / ${insumo.stockMinimoKg} kg'),
+                              Text(
+                                  'Stock: ${insumo.cantidadActualKg} / ${insumo.stockMinimoKg} kg'),
                               const SizedBox(height: 4),
                               LinearProgressIndicator(
                                 value: (actual / (minimo * 2)).clamp(0.0, 1.0),
