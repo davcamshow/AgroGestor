@@ -18,6 +18,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   late final TextEditingController _passwordController;
   bool _isLoading = false;
   bool _obscurePassword = true;
+  String? _errorMessage;
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -34,31 +35,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(Icons.error_outline, color: Colors.red[700]),
-            const SizedBox(width: 8),
-            const Text('Error'),
-          ],
-        ),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Aceptar'),
-          ),
-        ],
-      ),
-    );
+  void _setErrorMessage(String message) {
+    setState(() {
+      _errorMessage = message;
+    });
+  }
+
+  void _clearErrorMessage() {
+    if (_errorMessage != null) {
+      setState(() {
+        _errorMessage = null;
+      });
+    }
   }
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
+    _clearErrorMessage();
     setState(() => _isLoading = true);
 
     try {
@@ -79,13 +73,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         // Login falló
         print('[LOGIN] Login falló - credenciales incorrectas');
         if (mounted) {
-          _showErrorDialog('Usuario o contraseña incorrectos');
+            final msg = authState.errorMessage ?? 'Usuario o contraseña incorrectos';
+            _setErrorMessage(msg.replaceFirst('Exception: ', ''));
         }
       }
     } catch (e) {
       print('[LOGIN] Error: $e');
       if (mounted) {
-        _showErrorDialog('Usuario o contraseña incorrectos');
+          final msg = e.toString();
+          _setErrorMessage(msg.replaceFirst('Exception: ', ''));
       }
     } finally {
       if (mounted) {
@@ -190,7 +186,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   ? 'La contraseña es requerida'
                                   : null,
                             ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.5),
-                            const SizedBox(height: 24),
+                            const SizedBox(height: 16),
+                            if (_errorMessage != null)
+                              Text(
+                                _errorMessage!,
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                            if (_errorMessage != null) const SizedBox(height: 16),
                             // Login button
                             ElevatedButton(
                               onPressed: _isLoading ? null : _handleLogin,
@@ -217,7 +222,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   await ref.read(authProvider.notifier).loginWithGoogle();
                                   if (mounted) context.go('/dashboard');
                                 } catch (e) {
-                                  _showErrorDialog('Error con Google: $e');
+                                  _setErrorMessage('Error con Google: $e');
                                 } finally {
                                   if (mounted) setState(() => _isLoading = false);
                                 }

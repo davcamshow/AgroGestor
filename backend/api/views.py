@@ -8,6 +8,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.conf import settings
+from django.shortcuts import render
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.db.models import Sum, Count
@@ -28,6 +29,20 @@ def health_check(request):
         'message': '¡AgroGestor backend funcionando!'
     })
 
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def user_exists(request):
+    """Simple endpoint to verify if a user with the given email/username exists.
+
+    Query params: ?email=...  Returns JSON {"exists": true|false}
+    """
+    email = request.GET.get('email') or request.query_params.get('email')
+    if not email:
+        return Response({'detail': 'email parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    exists = AuthUser.objects.filter(username=email).exists() or AuthUser.objects.filter(email=email).exists()
+    return Response({'exists': exists})
 # Auth views
 class RegisterView(generics.CreateAPIView):
     queryset = AuthUser.objects.all()
@@ -82,22 +97,37 @@ def activate_user(request):
         token = request.GET.get('token')
 
     if not uidb64 or not token:
+        if request.method == 'GET':
+            return render(request, 'activation_result.html', context={
+                'email': None,
+                'message': 'Faltan parámetros de activación en el enlace.',
+            })
         return Response({'detail': 'Faltan parámetros de activación.'}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
         uid = force_str(urlsafe_base64_decode(uidb64))
         user = AuthUser.objects.get(pk=uid)
     except (TypeError, ValueError, OverflowError, AuthUser.DoesNotExist):
+        if request.method == 'GET':
+            return render(request, 'activation_result.html', context={
+                'email': None,
+                'message': 'El enlace de activación es inválido o caducado.',
+            })
         return Response({'detail': 'El enlace de activación es inválido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    context = {'email': user.email}
 
     if default_token_generator.check_token(user, token):
         if user.is_active:
-            return Response({'detail': 'La cuenta ya está activada.'})
+            context['message'] = 'La cuenta ya está activada.'
+            return render(request, 'activation_result.html', context=context)
         user.is_active = True
         user.save()
-        return Response({'detail': 'Cuenta activada correctamente.'})
+        context['message'] = 'Cuenta activada correctamente. Regrese a la aplicación para iniciar sesión.'
+        return render(request, 'activation_result.html', context=context)
 
-    return Response({'detail': 'El enlace de activación es inválido o caducado.'}, status=status.HTTP_400_BAD_REQUEST)
+    context['message'] = 'El enlace de activación es inválido o caducado.'
+    return render(request, 'activation_result.html', context=context)
 
 
 @api_view(['GET', 'PUT', 'PATCH'])

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/auth/auth_state.dart';
@@ -15,15 +14,12 @@ import '../screens/configuracion/configuracion_screen.dart';
 import '../screens/animales/animales_screen.dart';
 import '../screens/animales/animal_detail_screen.dart';
 import '../screens/reproduccion/reproduccion_screen.dart';
-import '../screens/salud/salud_screen.dart';
-import '../screens/alimentacion/alimentacion_screen.dart';
-import '../screens/alimentacion/calculadora_screen.dart';
-import '../screens/reproduccion/reproduccion_screen.dart';
 import '../screens/reproduccion/registro_nacimiento_screen.dart';
 import '../screens/reproduccion/kpis_reproduccion_screen.dart';
 import '../screens/reproduccion/arbol_genealogico_screen.dart';
 import '../screens/reproduccion/calculadora_ia_screen.dart';
 import '../screens/reproduccion/temporadas_screen.dart';
+import '../screens/alimentacion/alimentacion_screen.dart';
 import '../screens/alimentacion/calculadora_screen.dart';
 import '../screens/alimentacion/reporte_consumo_screen.dart';
 import '../screens/alimentacion/alertas_stock_screen.dart';
@@ -33,17 +29,17 @@ import '../widgets/app_shell.dart';
 
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
+  final authStatus = ref.watch(authProvider.select((AuthState state) => state.status));
 
   return GoRouter(
     initialLocation: '/login',
     redirect: (context, state) {
-      final isAuth = authState.status == AuthStatus.authenticated;
+      final isAuth = authStatus == AuthStatus.authenticated;
       final isAuthRoute = state.matchedLocation.startsWith('/login') ||
           state.matchedLocation.startsWith('/register');
 
       // Still loading
-      if (authState.status == AuthStatus.unknown) return null;
+      if (authStatus == AuthStatus.unknown) return null;
 
       // Not authenticated
       if (!isAuth && !isAuthRoute) return '/login';

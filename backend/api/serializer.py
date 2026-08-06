@@ -3,7 +3,10 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
+import os
+from email.mime.image import MIMEImage
+from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework import serializers
@@ -58,26 +61,68 @@ class RegisterSerializer(serializers.Serializer):
     def _send_activation_email(self, auth_user):
         uid = urlsafe_base64_encode(force_bytes(auth_user.pk))
         token = default_token_generator.make_token(auth_user)
+
+        backend_base = getattr(settings, 'BACKEND_URL', 'http://localhost:8000').rstrip('/')
         activation_link = (
-            f"http://localhost:8000/api/auth/activate/"
-            f"?uidb64={uid}&token={token}"
+            f"{backend_base}/api/auth/activate/?uidb64={uid}&token={token}"
         )
 
         subject = 'Activa tu cuenta en Bovion'
-        message = (
+
+        # Intentar usar logo local en static/images como CID inline
+        base_dir = getattr(settings, 'BASE_DIR', None)
+        static_logo_path = None
+        logo_cid = None
+        if base_dir:
+            static_logo_path = os.path.join(str(base_dir), 'static', 'images', 'bovion-logo.png')
+
+        # URL pública como fallback (configurable)
+        logo_url = getattr(
+            settings,
+            'LOGO_URL',
+            'https://vcxdtkekiweomnemfwdk.supabase.co/storage/v1/object/public/imagenes/bovion-logo.png'
+        )
+
+        if static_logo_path and os.path.exists(static_logo_path):
+            logo_cid = 'bovion_logo'
+
+        # Renderizar HTML indicando si usaremos CID
+        html_content = render_to_string('emails/activation_email.html', {
+            'email': auth_user.email,
+            'activation_link': activation_link,
+            'logo_url': logo_url,
+            'logo_cid': logo_cid,
+        })
+
+        text_content = (
             f'Hola {auth_user.email},\n\n'
-            'Gracias por registrarte en Bovion. Para activar tu cuenta, haz clic en el siguiente enlace:\n\n'
+            'Gracias por registrarte en Bovion. Usa el enlace de activación a continuación:\n\n'
             f'{activation_link}\n\n'
             'Si no solicitaste esta cuenta, ignora este correo.\n'
         )
 
-        send_mail(
+        email_message = EmailMultiAlternatives(
             subject,
-            message,
+            text_content,
             settings.DEFAULT_FROM_EMAIL,
             [auth_user.email],
-            fail_silently=False,
         )
+        email_message.attach_alternative(html_content, 'text/html')
+
+        # Adjuntar inline si encontramos el logo local
+        if logo_cid and static_logo_path and os.path.exists(static_logo_path):
+            try:
+                with open(static_logo_path, 'rb') as f:
+                    img_data = f.read()
+                image = MIMEImage(img_data)
+                image.add_header('Content-ID', f'<{logo_cid}>')
+                image.add_header('Content-Disposition', 'inline')
+                image.add_header('X-Attachment-Id', logo_cid)
+                email_message.attach(image)
+            except Exception:
+                pass
+
+        email_message.send(fail_silently=False)
 
     def save(self):
         return self.create(self.validated_data)

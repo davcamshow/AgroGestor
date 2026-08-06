@@ -14,6 +14,7 @@ from pathlib import Path
 import os
 from datetime import timedelta
 from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 
 # Cargar variables de entorno
 load_dotenv()
@@ -37,6 +38,11 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']  # Aceptar desde cualquier IP (desarrollo)
 
+# Define la URL del backend para envio de correos de verificación y otros propósitos
+BACKEND_URL = os.getenv(
+    "BACKEND_URL",
+    "http://localhost:8000"
+)
 
 # Application definition
 
@@ -51,6 +57,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'corsheaders',
     'drf_spectacular',  # Para documentación de la API automatizada
+    'anymail',
     'api',  # Tu app de API
 ]
 
@@ -204,6 +211,36 @@ EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'False').lower() in ('true', '1', 'ye
 EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'False').lower() in ('true', '1', 'yes')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@bovion.com')
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+
+# Optional AnyMail (SendGrid/Mailgun) configuration for easier, secure delivery
+# Set USE_ANYMAIL=True and the provider-specific API key in environment variables.
+USE_ANYMAIL = os.getenv('USE_ANYMAIL', 'False').lower() in ('true', '1', 'yes')
+if USE_ANYMAIL:
+    # Prefer AnyMail backends (API-based) for reliability and metrics
+    # Example: AnyMail + SendGrid
+    EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'anymail.backends.sendgrid.EmailBackend')
+    ANYMAIL = {
+        'SENDGRID_API_KEY': os.getenv('SENDGRID_API_KEY', ''),
+        # 'MAILGUN_API_KEY': os.getenv('MAILGUN_API_KEY', ''),
+        # Add other provider keys as needed
+    }
+else:
+    # Allow traditional SMTP backend via env vars (configured above)
+    EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', EMAIL_BACKEND)
+
+# Basic validation: in production require sensible email settings
+if not DEBUG:
+    missing = []
+    if EMAIL_BACKEND and 'smtp' in EMAIL_BACKEND and not EMAIL_HOST:
+        missing.append('EMAIL_HOST')
+    if EMAIL_BACKEND and 'smtp' in EMAIL_BACKEND and not EMAIL_HOST_USER:
+        missing.append('EMAIL_HOST_USER')
+    if EMAIL_BACKEND and 'smtp' in EMAIL_BACKEND and not EMAIL_HOST_PASSWORD:
+        missing.append('EMAIL_HOST_PASSWORD')
+    if USE_ANYMAIL and not any(ANYMAIL.values()):
+        missing.append('ANYMAIL provider API key (e.g. SENDGRID_API_KEY)')
+    if missing:
+        raise ImproperlyConfigured('Missing required email configuration for production: ' + ', '.join(missing))
 
 # Logging
 import logging.handlers

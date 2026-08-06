@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+{% load static %}
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Activación de cuenta</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #0f2d22 0%, #1B4332 45%, #2d6a4f 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.25;
+    }
+
+    body::before {
+      width: 420px;
+      height: 420px;
+      background: #52b788;
+      top: -120px;
+      left: -120px;
+    }
+
+    body::after {
+      width: 380px;
+      height: 380px;
+      background: #95d5b2;
+      bottom: -120px;
+      right: -120px;
+    }
+
+    .card {
+      position: relative;
+      z-index: 1;
+      background: rgba(255, 255, 255, 0.97);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-radius: 24px;
+      box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.18),
+        0 8px 20px rgba(27, 67, 50, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      max-width: 560px;
+      width: 100%;
+      padding: 36px;
+      text-align: center;
+    }
+
+    .card h1 {
+      margin-top: 0;
+      color: #111827;
+      font-size: 2rem;
+    }
+
+    .logo {
+      display: block;
+      width: 88px;
+      height: 88px;
+      margin: 0 auto 24px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #f8fafc;
+      padding: 12px;
+      box-shadow: 0 8px 20px rgba(27, 67, 50, 0.15);
+    }
+
+    .card p {
+      margin: 16px 0;
+      line-height: 1.7;
+      color: #4b5563;
+    }
+
+    .button {
+      display: inline-block;
+      margin-top: 24px;
+      padding: 14px 28px;
+      border-radius: 999px;
+      background: #1B4332;
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      transition: background 0.2s ease, transform 0.2s ease;
+    }
+
+    .button:hover {
+      background: #24553f;
+      transform: translateY(-2px);
+    }
+
+    .subtext {
+      margin-top: 28px;
+      font-size: 0.9rem;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img src="{% static 'images/bovion-logo.png' %}" alt="Bovion logo" class="logo" />
+    <h1>Activación de cuenta</h1>
+    <p>{{ message }}</p>
+    <p>Usuario: <strong>{{ email }}</strong></p>
+    <a href="{{ request.build_absolute_uri }}" class="button">Reintentar</a>
+    <p class="subtext">Si no reconoces este email, ignora este mensaje.</p>
+  </div>
+</body>
+</html>

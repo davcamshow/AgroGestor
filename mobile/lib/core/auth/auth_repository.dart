@@ -37,7 +37,7 @@ class AuthRepository {
 
       return await getProfile();
     } on DioException catch (e) {
-      final errorMsg = _parseLoginError(e);
+      final errorMsg = await _parseLoginError(e, email);
       print('[AUTH] Error de login: $errorMsg');
       throw Exception(errorMsg);
     } catch (e) {
@@ -46,8 +46,19 @@ class AuthRepository {
     }
   }
 
-  String _parseLoginError(DioException e) {
+  Future<String> _parseLoginError(DioException e, String email) async {
     if (e.response?.statusCode == 401) {
+      // Try to determine if the user exists to provide a clearer message.
+      try {
+        final existsResp = await _apiClient.dio.get('auth/user_exists/', queryParameters: {'email': email});
+        if (existsResp.statusCode == 200 && existsResp.data is Map) {
+          final exists = existsResp.data['exists'] as bool? ?? false;
+          if (!exists) return 'El usuario no existe';
+        }
+      } catch (_) {
+        // ignore failures of the helper check and fall back to generic message
+      }
+
       final detail = e.response?.data is Map ? e.response?.data['detail'] : null;
       if (detail != null && detail.toString().contains('No active account')) {
         return 'La cuenta no está confirmada. Revisa tu correo para activarla.';

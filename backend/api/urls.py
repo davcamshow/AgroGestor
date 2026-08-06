@@ -31,6 +31,7 @@ urlpatterns = [
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('auth/register/', views.RegisterView.as_view(), name='register'),
     path('auth/activate/', views.activate_user, name='activate'),
+    path('auth/user_exists/', views.user_exists, name='user_exists'),
     path('auth/me/', views.me_view, name='me'),
     path('auth/google/', GoogleAuthView.as_view(), name='google-auth'),
     # KPIs y Reports
