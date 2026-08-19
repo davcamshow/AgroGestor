@@ -12,6 +12,7 @@ import '../../core/providers/eventos_sanitarios_provider.dart';
 import '../../core/providers/registros_peso_provider.dart';
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/blurred_modal_backdrop.dart';
 import 'animal_form_sheet.dart';
 import 'mover_lote_sheet.dart';
 import 'agregar_registro_sheet.dart';
@@ -573,9 +574,11 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => AgregarRegistroSheet(
-        animalId: animal.id,
-        animalArete: animal.numeroArete,
+      builder: (_) => BlurredModalBackdrop(
+        child: AgregarRegistroSheet(
+          animalId: animal.id,
+          animalArete: animal.numeroArete,
+        ),
       ),
     );
   }
@@ -1548,7 +1551,9 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => AnimalBajaSheet(animal: animal),
+      builder: (_) => BlurredModalBackdrop(
+        child: AnimalBajaSheet(animal: animal),
+      ),
     );
   }
 
@@ -1557,7 +1562,9 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => AnimalFormSheet(animalToEdit: animal),
+      builder: (_) => BlurredModalBackdrop(
+        child: AnimalFormSheet(animalToEdit: animal),
+      ),
     );
   }
 
@@ -1566,7 +1573,9 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => MoverLoteSheet(animal: animal),
+      builder: (_) => BlurredModalBackdrop(
+        child: MoverLoteSheet(animal: animal),
+      ),
     );
   }
 
