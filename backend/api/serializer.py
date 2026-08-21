@@ -13,6 +13,54 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento, PlanSuscripcion, SuscripcionUsuario, UsuarioInvitado, AuditoriaAnimal
 from django.utils import timezone
+from decimal import Decimal, InvalidOperation
+import math
+
+
+class FiniteCoordinateField(serializers.DecimalField):
+    """Decimal estricto que rechaza booleanos, NaN e infinitos."""
+
+    def to_internal_value(self, data):
+        if isinstance(data, bool):
+            self.fail('invalid')
+        if isinstance(data, float) and not math.isfinite(data):
+            self.fail('invalid')
+        try:
+            value = Decimal(str(data))
+        except (InvalidOperation, TypeError, ValueError):
+            self.fail('invalid')
+        if not value.is_finite():
+            self.fail('invalid')
+        try:
+            # Los mapas entregan doubles que pueden serializar residuos como
+            # 19.432608000000002. Normalizamos a la precisión persistida.
+            value = value.quantize(Decimal('0.000001'))
+        except InvalidOperation:
+            self.fail('invalid')
+        return super().to_internal_value(format(value, 'f'))
+
+
+class UbicacionClimaSerializer(serializers.Serializer):
+    latitud = FiniteCoordinateField(
+        max_digits=9,
+        decimal_places=6,
+        min_value=Decimal('-90'),
+        max_value=Decimal('90'),
+    )
+    longitud = FiniteCoordinateField(
+        max_digits=9,
+        decimal_places=6,
+        min_value=Decimal('-180'),
+        max_value=Decimal('180'),
+    )
+
+    def validate(self, attrs):
+        unexpected = set(self.initial_data) - {'latitud', 'longitud'}
+        if unexpected:
+            raise serializers.ValidationError(
+                {'non_field_errors': ['La solicitud contiene campos no permitidos.']}
+            )
+        return attrs
 
 # Auth Serializers
 class RegisterSerializer(serializers.Serializer):

@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/auth/auth_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/validators.dart';
+import '../../widgets/password_strength_indicator.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -149,7 +150,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: const Icon(Icons.arrow_back,
@@ -190,42 +191,36 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             // Nombre
-                            Text('Nombre Completo *',
-                                style: Theme.of(context)
-                                    .textTheme.labelLarge
-                                    ?.copyWith(color: AppTheme.primary)),
+                            const Text('Nombre Completo *',
+                                style: TextStyle(color: AppTheme.primary)),
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _nameController,
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 hintText: 'Tu nombre completo',
-                                prefixIcon: const Icon(Icons.person_outline),
+                                prefixIcon: Icon(Icons.person_outline),
                               ),
                               validator: (value) =>
                                   FieldValidator.validateRequired(value, 'Nombre'),
                             ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.5),
                             const SizedBox(height: 16),
                             // Email
-                            Text('Email *',
-                                style: Theme.of(context)
-                                    .textTheme.labelLarge
-                                    ?.copyWith(color: AppTheme.primary)),
+                            const Text('Email *',
+                                style: TextStyle(color: AppTheme.primary)),
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _emailController,
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 hintText: 'tu@email.com',
-                                prefixIcon: const Icon(Icons.email_outlined),
+                                prefixIcon: Icon(Icons.email_outlined),
                               ),
                               keyboardType: TextInputType.emailAddress,
                               validator: EmailValidator.validateEmail,
                             ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.5),
                             const SizedBox(height: 16),
                             // Contraseña
-                            Text('Contraseña *',
-                                style: Theme.of(context)
-                                    .textTheme.labelLarge
-                                    ?.copyWith(color: AppTheme.primary)),
+                            const Text('Contraseña *',
+                                style: TextStyle(color: AppTheme.primary)),
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _passwordController,
@@ -251,49 +246,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
                             // Indicador de fortaleza
                             if (_passwordController.text.isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    // Barra de progreso
-                                    Row(
-                                      children: [
-                                        Expanded(
-                                          child: LinearProgressIndicator(
-                                            value: _passwordStrength.score / 9.0,
-                                            color: _strengthColor(_passwordStrength.score),
-                                            backgroundColor: Colors.grey.shade200,
-                                            minHeight: 8,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(
-                                          '${_passwordStrength.score}/9',
-                                          style: const TextStyle(fontSize: 12),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 8),
-                                    _buildStrengthRow('Mayúscula', _passwordStrength.hasUppercase),
-                                    _buildStrengthRow('Minúscula', _passwordStrength.hasLowercase),
-                                    _buildStrengthRow('Número', _passwordStrength.hasNumber),
-                                    _buildStrengthRow('Carácter especial', _passwordStrength.hasSpecialChar),
-                                    _buildStrengthRow('Mínimo 10 caracteres', _passwordStrength.hasMinLength),
-                                    _buildStrengthRow('Sin espacios', _passwordStrength.hasNoSpaces),
-                                    _buildStrengthRow('No común', _passwordStrength.hasNoCommonPassword),
-                                    _buildStrengthRow('Sin repeticiones', _passwordStrength.hasNoRepeats),
-                                    _buildStrengthRow('Sin secuencias', _passwordStrength.hasNoSequence),
-                                  ],
-                                ),
-                              ).animate().fadeIn(),
+                              PasswordStrengthIndicator(passwordStrength: _passwordStrength)
+                                  .animate()
+                                  .fadeIn(),
 
                             const SizedBox(height: 16),
                             // Repetir Contraseña
-                            Text('Repetir Contraseña *',
-                                style: Theme.of(context)
-                                    .textTheme.labelLarge
-                                    ?.copyWith(color: AppTheme.primary)),
+                            const Text('Repetir Contraseña *',
+                                style: TextStyle(color: AppTheme.primary)),
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _confirmPasswordController,
@@ -321,10 +281,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.5),
                             const SizedBox(height: 16),
                             // Teléfono (opcional)
-                            Text('Teléfono (opcional)',
-                                style: Theme.of(context)
-                                    .textTheme.labelLarge
-                                    ?.copyWith(color: AppTheme.primary)),
+                            const Text('Teléfono (opcional)',
+                                style: TextStyle(color: AppTheme.primary)),
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _phoneController,
@@ -336,16 +294,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.5),
                             const SizedBox(height: 16),
                             // Rol (opcional)
-                            Text('Rol Profesional (opcional)',
-                                style: Theme.of(context)
-                                    .textTheme.labelLarge
-                                    ?.copyWith(color: AppTheme.primary)),
+                            const Text('Rol Profesional (opcional)',
+                                style: TextStyle(color: AppTheme.primary)),
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _roleController,
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 hintText: 'ej: Veterinario',
-                                prefixIcon: const Icon(Icons.work_outline),
+                                prefixIcon: Icon(Icons.work_outline),
                               ),
                             ).animate().fadeIn(delay: 550.ms).slideY(begin: 0.5),
                             const SizedBox(height: 32),
@@ -382,33 +338,4 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     );
   }
 
-  Widget _buildStrengthRow(String label, bool isValid) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Icon(
-            isValid ? Icons.check_circle : Icons.circle_outlined,
-            size: 18,
-            color: isValid ? AppTheme.success : Colors.grey,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: isValid ? AppTheme.success : Colors.grey,
-              fontWeight: isValid ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _strengthColor(int score) {
-    if (score >= 7) return AppTheme.success;
-    if (score >= 4) return Colors.orange;
-    return Colors.red;
-  }
 }

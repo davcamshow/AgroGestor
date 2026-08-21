@@ -4,9 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../auth/token_storage.dart';
 
-
 String get _baseUrl => dotenv.env['BASE_URL'] ?? 'http://localhost:8000/api/';
-
 
 final apiClientProvider = Provider<ApiClient>((ref) {
   final tokenStorage = ref.read(tokenStorageProvider);
@@ -16,6 +14,7 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 class ApiClient {
   late final Dio _dio;
   final TokenStorage _tokenStorage;
+  final CacheStore _cacheStore = MemCacheStore();
   bool _isRefreshing = false;
 
   ApiClient(this._tokenStorage) {
@@ -32,7 +31,7 @@ class ApiClient {
   Interceptor _cacheInterceptor() {
     return DioCacheInterceptor(
       options: CacheOptions(
-        store: MemCacheStore(),
+        store: _cacheStore,
         policy: CachePolicy.request,
         hitCacheOnErrorExcept: [401, 403, 404],
         maxStale: const Duration(minutes: 5),
@@ -98,8 +97,16 @@ class ApiClient {
 
   Dio get dio => _dio;
 
-  Future<dynamic> get(String path) async {
-    final response = await _dio.get(path);
+  Future<dynamic> get(String path, {bool forceRefresh = false}) async {
+    final response = await _dio.get(
+      path,
+      options: forceRefresh
+          ? CacheOptions(
+              store: _cacheStore,
+              policy: CachePolicy.refresh,
+            ).toOptions()
+          : null,
+    );
     return response.data;
   }
 

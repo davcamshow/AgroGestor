@@ -44,6 +44,24 @@ BACKEND_URL = os.getenv(
     "http://localhost:8000"
 )
 
+# Identificación requerida por OpenStreetMap/Nominatim. Debe apuntar a un
+# contacto operativo en producción.
+BOVION_EXTERNAL_USER_AGENT = os.getenv(
+    'BOVION_EXTERNAL_USER_AGENT',
+    'Bovion/1.0 (contacto@bovion.com)',
+)
+WEATHER_HTTP_TIMEOUT_SECONDS = float(os.getenv('WEATHER_HTTP_TIMEOUT_SECONDS', '8'))
+
+CACHES = {
+    'default': {
+        'BACKEND': os.getenv(
+            'DJANGO_CACHE_BACKEND',
+            'django.core.cache.backends.locmem.LocMemCache',
+        ),
+        'LOCATION': os.getenv('DJANGO_CACHE_LOCATION', 'bovion-cache'),
+    }
+}
+
 # Application definition
 
 INSTALLED_APPS = [

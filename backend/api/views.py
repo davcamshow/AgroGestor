@@ -5,21 +5,34 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import action
 from django.contrib.auth.models import User as AuthUser
 from django.contrib.auth import authenticate
+from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
-from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
 from django.shortcuts import render
+from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.db.models import Sum, Count
+from django.utils import timezone
+from datetime import timedelta
+import hashlib
 import logging
+import random
 from django.db import transaction
 from rest_framework import status
 logger = logging.getLogger(__name__)
 
 #Importaciones para los viewsets en /api/
-from .serializer import UsuarioSerializer, ProveedorSerializer, CategoriaInsumoSerializer, InsumoSerializer, MovimientoInventarioSerializer, DietaSerializer, DietaInsumoSerializer, LoteSerializer, PesajeLoteSerializer, AlimentacionDiariaSerializer, RegisterSerializer, UserProfileSerializer, AnimalSerializer, CicloReproductivoSerializer, RegistroPesoSerializer, EventoSanitarioSerializer, AuditoriaLoginSerializer, RegistroNacimientoSerializer, PlanSuscripcionSerializer, UsuarioInvitadoSerializer, AuditoriaAnimalSerializer
-from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento, PlanSuscripcion, SuscripcionUsuario, UsuarioInvitado, AuditoriaAnimal
+from .serializer import UsuarioSerializer, ProveedorSerializer, CategoriaInsumoSerializer, InsumoSerializer, MovimientoInventarioSerializer, DietaSerializer, DietaInsumoSerializer, LoteSerializer, PesajeLoteSerializer, AlimentacionDiariaSerializer, RegisterSerializer, UserProfileSerializer, AnimalSerializer, CicloReproductivoSerializer, RegistroPesoSerializer, EventoSanitarioSerializer, AuditoriaLoginSerializer, RegistroNacimientoSerializer, PlanSuscripcionSerializer, UsuarioInvitadoSerializer, AuditoriaAnimalSerializer, UbicacionClimaSerializer
+from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaLogin, RegistroNacimiento, PlanSuscripcion, SuscripcionUsuario, UsuarioInvitado, AuditoriaAnimal, PasswordResetOtp
+from .email_utils import send_html_email
+from .services.account_owner import get_account_owner
+from .services.weather_service import (
+    WeatherProviderError,
+    get_current_weather,
+    reverse_geocode,
+)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -43,6 +56,138 @@ def user_exists(request):
 
     exists = AuthUser.objects.filter(username=email).exists() or AuthUser.objects.filter(email=email).exists()
     return Response({'exists': exists})
+
+
+def _hash_code(code):
+    return hashlib.sha256(code.encode('utf-8')).hexdigest()
+
+
+def _send_password_reset_otp_email(user, code):
+    subject = 'Tu código de verificación en Bovion'
+    text_content = (
+        f'Hola {user.email},\n\n'
+        f'Tu código de verificación es: {code}\n\n'
+        'Este código expira en 10 minutos y solo puede usarse una vez.'
+    )
+    send_html_email(
+        subject,
+        user.email,
+        'emails/password_reset_otp_email.html',
+        {'code': code},
+        text_content,
+    )
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def request_password_reset(request):
+    email = (request.data.get('email') or '').strip().lower()
+    if not email:
+        return Response({'detail': 'El correo es requerido.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = AuthUser.objects.filter(email=email).first() or AuthUser.objects.filter(username=email).first()
+    if user is None:
+        return Response({'detail': 'No existe una cuenta con ese correo.'}, status=status.HTTP_404_NOT_FOUND)
+
+    PasswordResetOtp.objects.filter(user=user, is_active=True).update(is_active=False)
+
+    code = f'{random.randint(100000, 999999)}'
+    PasswordResetOtp.objects.create(
+        user=user,
+        code_hash=_hash_code(code),
+        expires_at=timezone.now() + timedelta(minutes=10),
+        attempts=0,
+        is_active=True,
+    )
+    _send_password_reset_otp_email(user, code)
+
+    return Response({'detail': 'Se ha enviado un código de verificación a tu correo.'})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def verify_password_reset_otp(request):
+    email = (request.data.get('email') or '').strip().lower()
+    code = (request.data.get('code') or '').strip()
+
+    if not email or not code:
+        return Response({'detail': 'El correo y el código son requeridos.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = AuthUser.objects.filter(email=email).first() or AuthUser.objects.filter(username=email).first()
+    if user is None:
+        return Response({'detail': 'No existe una cuenta con ese correo.'}, status=status.HTTP_404_NOT_FOUND)
+
+    otp = PasswordResetOtp.objects.filter(user=user, is_active=True).order_by('-created_at').first()
+    if otp is None:
+        return Response({'detail': 'No hay un código de verificación activo.'}, status=status.HTTP_404_NOT_FOUND)
+    if otp.used_at is not None or not otp.is_valid():
+        otp.is_active = False
+        otp.save(update_fields=['is_active'])
+        return Response({'detail': 'El código ha expirado o ya fue usado.'}, status=status.HTTP_400_BAD_REQUEST)
+    if otp.attempts >= 5:
+        otp.is_active = False
+        otp.save(update_fields=['is_active'])
+        return Response({'detail': 'Demasiados intentos. Solicita un nuevo código.'}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    if _hash_code(code) != otp.code_hash:
+        otp.attempts += 1
+        otp.save(update_fields=['attempts'])
+        if otp.attempts >= 5:
+            otp.is_active = False
+            otp.save(update_fields=['is_active'])
+            return Response({'detail': 'Demasiados intentos. Solicita un nuevo código.'}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+        return Response({'detail': 'El código es incorrecto.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({'detail': 'Código verificado correctamente.'})
+
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def confirm_password_reset(request):
+    email = (request.data.get('email') or '').strip().lower()
+    code = (request.data.get('code') or '').strip()
+    password = request.data.get('password') or ''
+    password_confirm = request.data.get('password_confirm') or ''
+
+    if not email or not code:
+        return Response({'detail': 'El correo y el código son requeridos.'}, status=status.HTTP_400_BAD_REQUEST)
+    if not password or password != password_confirm:
+        return Response({'detail': 'Las contraseñas no coinciden o están vacías.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    user = AuthUser.objects.filter(email=email).first() or AuthUser.objects.filter(username=email).first()
+    if user is None:
+        return Response({'detail': 'No existe una cuenta con ese correo.'}, status=status.HTTP_404_NOT_FOUND)
+
+    otp = PasswordResetOtp.objects.filter(user=user, is_active=True).order_by('-created_at').first()
+    if otp is None:
+        return Response({'detail': 'No hay un código de verificación activo.'}, status=status.HTTP_404_NOT_FOUND)
+    if otp.used_at is not None or not otp.is_valid():
+        otp.is_active = False
+        otp.save(update_fields=['is_active'])
+        return Response({'detail': 'El código ha expirado o ya fue usado.'}, status=status.HTTP_400_BAD_REQUEST)
+    if _hash_code(code) != otp.code_hash:
+        return Response({'detail': 'El código es incorrecto.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if user.check_password(password):
+        return Response(
+            {'detail': 'La nueva contraseña no puede ser la misma que la contraseña actual.'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        validate_password(password, user=user)
+    except Exception as exc:
+        return Response({'detail': [str(error) for error in exc.messages]}, status=status.HTTP_400_BAD_REQUEST)
+
+    user.set_password(password)
+    user.save(update_fields=['password'])
+    otp.used_at = timezone.now()
+    otp.is_active = False
+    otp.save(update_fields=['used_at', 'is_active'])
+    PasswordResetOtp.objects.filter(user=user).exclude(pk=otp.pk).update(is_active=False)
+
+    return Response({'detail': 'Tu contraseña ha sido actualizada correctamente.'})
+
+
 # Auth views
 class RegisterView(generics.CreateAPIView):
     queryset = AuthUser.objects.all()
@@ -900,3 +1045,60 @@ def verificar_limites(request):
         'incluye_reportes_avanzados': plan.incluye_reportes_avanzados,
         'incluye_api': plan.incluye_api,
     })
+
+
+def _location_payload(usuario):
+    configured = usuario.latitud_rancho is not None and usuario.longitud_rancho is not None
+    return {
+        'configurada': configured,
+        'latitud': float(usuario.latitud_rancho) if configured else None,
+        'longitud': float(usuario.longitud_rancho) if configured else None,
+        'direccion': usuario.direccion_rancho if configured else None,
+    }
+
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+def ubicacion_clima(request):
+    owner = get_account_owner(request.user)
+    if request.method == 'GET':
+        return Response(_location_payload(owner))
+
+    serializer = UbicacionClimaSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    latitude = serializer.validated_data['latitud']
+    longitude = serializer.validated_data['longitud']
+    try:
+        address = reverse_geocode(latitude, longitude)
+    except WeatherProviderError:
+        address = owner.direccion_rancho or f'Lat. {latitude}, Long. {longitude}'
+
+    with transaction.atomic():
+        owner.latitud_rancho = latitude
+        owner.longitud_rancho = longitude
+        owner.direccion_rancho = address
+        owner.save(update_fields=['latitud_rancho', 'longitud_rancho', 'direccion_rancho'])
+    return Response(_location_payload(owner))
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def clima_actual(request):
+    owner = get_account_owner(request.user)
+    if owner.latitud_rancho is None or owner.longitud_rancho is None:
+        return Response(
+            {'code': 'LOCATION_REQUIRED', 'message': 'Configura la ubicación de tu rancho.'},
+            status=status.HTTP_409_CONFLICT,
+        )
+    try:
+        payload = get_current_weather(
+            owner.latitud_rancho,
+            owner.longitud_rancho,
+            owner.direccion_rancho,
+        )
+    except WeatherProviderError:
+        return Response(
+            {'code': 'WEATHER_UNAVAILABLE', 'message': 'No fue posible consultar el clima. Intenta nuevamente.'},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+    return Response(payload)

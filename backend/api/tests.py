@@ -1,10 +1,14 @@
+import hashlib
+from datetime import timedelta
 from django.test import TestCase, Client
 from django.contrib.auth.models import User as AuthUser
+from django.utils import timezone
 from rest_framework.test import APITestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import Usuario, Lote, Animal, AuditoriaLogin, AuditoriaAnimal
+from unittest.mock import patch
+from .models import Usuario, Lote, Animal, AuditoriaLogin, AuditoriaAnimal, PasswordResetOtp
 
 
 class LoginUnitTest(TestCase):
@@ -83,6 +87,79 @@ class LoginIntegrationTest(TestCase):
         }
         response = self.client.post(url_login, data_erronea, format='json')
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class PasswordResetOtpFlowTests(APITestCase):
+    def setUp(self):
+        self.user = AuthUser.objects.create_user(
+            username='resetuser@test.com',
+            email='resetuser@test.com',
+            password='TestPassword123!'
+        )
+        Usuario.objects.create(
+            auth_user=self.user,
+            nombre_completo='Reset User',
+            email='resetuser@test.com',
+            password_hash='hashed_password'
+        )
+
+    @patch('api.email_utils.EmailMultiAlternatives.send')
+    def test_request_password_reset_crea_codigo_otp(self, mock_send):
+        response = self.client.post('/api/auth/password-reset/request/', {'email': 'resetuser@test.com'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(PasswordResetOtp.objects.filter(user=self.user).exists())
+        mock_send.assert_called_once()
+
+    @patch('api.email_utils.EmailMultiAlternatives.send')
+    def test_verificar_y_confirmar_password_reset_con_otp(self, mock_send):
+        self.client.post('/api/auth/password-reset/request/', {'email': 'resetuser@test.com'})
+        otp_obj = PasswordResetOtp.objects.get(user=self.user)
+        code = '123456'
+        otp_obj.code_hash = hashlib.sha256(code.encode('utf-8')).hexdigest()
+        otp_obj.save(update_fields=['code_hash'])
+
+        verify_response = self.client.post('/api/auth/password-reset/verify/', {
+            'email': 'resetuser@test.com',
+            'code': code,
+        })
+        self.assertEqual(verify_response.status_code, status.HTTP_200_OK)
+
+        confirm_response = self.client.post('/api/auth/password-reset/confirm/', {
+            'email': 'resetuser@test.com',
+            'code': code,
+            'password': 'NuevaPassword123*',
+            'password_confirm': 'NuevaPassword123*',
+        })
+        self.assertEqual(confirm_response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('NuevaPassword123*'))
+
+    def test_rechaza_la_contrasena_actual_y_mantiene_el_otp_activo(self):
+        code = '123456'
+        otp_obj = PasswordResetOtp.objects.create(
+            user=self.user,
+            code_hash=hashlib.sha256(code.encode('utf-8')).hexdigest(),
+            expires_at=timezone.now() + timedelta(minutes=10),
+            is_active=True,
+        )
+
+        response = self.client.post('/api/auth/password-reset/confirm/', {
+            'email': 'resetuser@test.com',
+            'code': code,
+            'password': 'TestPassword123!',
+            'password_confirm': 'TestPassword123!',
+        })
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(
+            response.data['detail'],
+            'La nueva contraseña no puede ser la misma que la contraseña actual.',
+        )
+        otp_obj.refresh_from_db()
+        self.assertTrue(otp_obj.is_active)
+        self.assertIsNone(otp_obj.used_at)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('TestPassword123!'))
 
 
 class LoteModelTest(TestCase):

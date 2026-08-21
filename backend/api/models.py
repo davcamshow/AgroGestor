@@ -1,6 +1,24 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import User as AuthUser
+from django.utils import timezone
+
+
+class PasswordResetOtp(models.Model):
+    user = models.ForeignKey(AuthUser, on_delete=models.CASCADE, related_name='password_reset_otps')
+    code_hash = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    def is_valid(self):
+        return self.is_active and self.used_at is None and timezone.now() < self.expires_at
+
+    def __str__(self):
+        return f'OTP para {self.user.email}'
+
 
 # ==================== Plan de Suscripción ====================
 class PlanSuscripcion(models.Model):
@@ -113,6 +131,18 @@ class Usuario(models.Model):
     cedula = models.CharField(max_length=100, blank=True, null=True)
     nombre_rancho = models.CharField(max_length=255, blank=True, null=True)
     direccion_rancho = models.TextField(blank=True, null=True)
+    latitud_rancho = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+    )
+    longitud_rancho = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+    )
     fecha_registro = models.DateTimeField(auto_now_add=True)
 
     moneda = models.CharField(max_length=10, choices=MONEDAS, default='MXN')

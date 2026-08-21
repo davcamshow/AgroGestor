@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/auth/auth_state.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/utils/validators.dart';
+import 'password_reset_request_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -214,7 +215,21 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 .animate()
                                 .fadeIn(delay: 500.ms)
                                 .slideY(begin: 0.5),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const PasswordResetRequestScreen(),
+                                    ),
+                                  );
+                                },
+                                child: const Text('¿Olvidaste tu contraseña?'),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
                             OutlinedButton.icon(
                               onPressed: () async {
                                 try {

@@ -38,10 +38,8 @@ class AuthRepository {
       return await getProfile();
     } on DioException catch (e) {
       final errorMsg = await _parseLoginError(e, email);
-      print('[AUTH] Error de login: $errorMsg');
       throw Exception(errorMsg);
     } catch (e) {
-      print('[AUTH] Error unexpected: $e');
       throw Exception('Error de conexión. Verifica tu red e intenta de nuevo.');
     }
   }
@@ -137,6 +135,65 @@ class AuthRepository {
       return Usuario.fromJson(response.data);
     } catch (e) {
       throw Exception('Failed to get profile: $e');
+    }
+  }
+
+  Future<void> requestPasswordReset(String email) async {
+    try {
+      await _apiClient.dio.post('auth/password-reset/request/', data: {'email': email.trim()});
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      if (data is Map && data.containsKey('detail')) {
+        throw Exception(data['detail'].toString());
+      }
+      throw Exception('No se pudo enviar el código. Intenta de nuevo.');
+    } catch (e) {
+      throw Exception('No se pudo enviar el código. Intenta de nuevo.');
+    }
+  }
+
+  Future<void> verifyPasswordResetOtp(String email, String code) async {
+    try {
+      await _apiClient.dio.post('auth/password-reset/verify/', data: {
+        'email': email.trim(),
+        'code': code.trim(),
+      });
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      if (data is Map && data.containsKey('detail')) {
+        throw Exception(data['detail'].toString());
+      }
+      throw Exception('No se pudo verificar el código.');
+    } catch (e) {
+      throw Exception('No se pudo verificar el código.');
+    }
+  }
+
+  Future<void> confirmPasswordReset({
+    required String email,
+    required String code,
+    required String password,
+    required String passwordConfirm,
+  }) async {
+    try {
+      await _apiClient.dio.post('auth/password-reset/confirm/', data: {
+        'email': email.trim(),
+        'code': code.trim(),
+        'password': password,
+        'password_confirm': passwordConfirm,
+      });
+    } on DioException catch (e) {
+      final data = e.response?.data;
+      if (data is Map && data.containsKey('detail')) {
+        final detail = data['detail'];
+        if (detail is List) {
+          throw Exception(detail.join('\n'));
+        }
+        throw Exception(detail.toString());
+      }
+      throw Exception('No se pudo actualizar la contraseña.');
+    } catch (e) {
+      throw Exception('No se pudo actualizar la contraseña.');
     }
   }
 
