@@ -23,8 +23,7 @@ class KpiCard extends StatefulWidget {
   State<KpiCard> createState() => _KpiCardState();
 }
 
-class _KpiCardState extends State<KpiCard>
-    with SingleTickerProviderStateMixin {
+class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _animation;
 
@@ -56,7 +55,8 @@ class _KpiCardState extends State<KpiCard>
       opacity: _animation,
       child: SlideTransition(
         position: Tween<Offset>(begin: const Offset(0.3, 0), end: Offset.zero)
-            .animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOut)),
+            .animate(CurvedAnimation(
+                parent: _animationController, curve: Curves.easeOut)),
         child: Container(
           decoration: BoxDecoration(
             gradient: gradient,
@@ -74,9 +74,7 @@ class _KpiCardState extends State<KpiCard>
                     Expanded(
                       child: Text(
                         widget.title,
-                        style: Theme.of(context)
-                            .textTheme.bodyMedium
-                            ?.copyWith(
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Colors.white70,
                               fontSize: 13,
                             ),
@@ -109,7 +107,8 @@ class _KpiCardState extends State<KpiCard>
                   Text(
                     widget.subtitle!,
                     style: Theme.of(context)
-                        .textTheme.bodySmall
+                        .textTheme
+                        .bodySmall
                         ?.copyWith(color: Colors.white70),
                   ),
                 ],

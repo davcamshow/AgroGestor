@@ -50,7 +50,8 @@ class LotesScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const SizedBox(height: 4),
-                        Text('${lote.cantidadCabezas} cabezas • ${lote.pesoPromedioActualKg} kg'),
+                        Text(
+                            '${lote.cantidadCabezas} cabezas • ${lote.pesoPromedioActualKg} kg'),
                         const SizedBox(height: 8),
                         Row(
                           children: [
@@ -70,7 +71,9 @@ class LotesScreen extends ConsumerWidget {
                         PopupMenuItem(
                           child: const Text('Eliminar'),
                           onTap: () {
-                            ref.read(lotesNotifierProvider.notifier).deleteLote(lote.id);
+                            ref
+                                .read(lotesNotifierProvider.notifier)
+                                .deleteLote(lote.id);
                           },
                         ),
                       ],

@@ -17,39 +17,47 @@ class AlimentacionScreen extends ConsumerWidget {
     final lotesAsync = ref.watch(lotesNotifierProvider);
     final insumosAsync = ref.watch(insumosNotifierProvider);
 
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final successColor = isDark ? AppTheme.darkSuccess : AppTheme.success;
+    final errorColor = theme.colorScheme.error;
+
     return DefaultTabController(
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Alimentación', style: TextStyle(color: Colors.white)),
-          backgroundColor: AppTheme.primary,
-          elevation: 0,
-          iconTheme: const IconThemeData(color: Colors.white),
+          title: const Text('Alimentación'),
           actions: [
             IconButton(
-              icon: CircleAvatar(
-                radius: 16,
-                backgroundColor: Colors.white.withOpacity(0.2),
-                child: const Icon(Icons.person, color: Colors.white, size: 18),
-              ),
-              onPressed: () => context.go('/configuracion'),
-            ),
-            IconButton(
-              icon: const Icon(Icons.bar_chart, color: Colors.white),
+              icon: const Icon(Icons.bar_chart),
               onPressed: () => context.push('/alimentacion/reporte'),
               tooltip: 'Reporte de Consumo',
             ),
             IconButton(
-              icon: const Icon(Icons.warning_amber, color: Colors.white),
+              icon: const Icon(Icons.warning_amber),
               onPressed: () => context.push('/alimentacion/alertas'),
               tooltip: 'Alertas de Stock',
             ),
+            // El apartado de usuario ahora es el último elemento,
+            // por lo que se renderizará totalmente a la derecha.
+            IconButton(
+              icon: CircleAvatar(
+                radius: 16,
+                backgroundColor: theme.colorScheme.onPrimary.withOpacity(0.2),
+                child: Icon(Icons.person,
+                    color: theme.appBarTheme.foregroundColor, size: 18),
+              ),
+              onPressed: () => context.go('/configuracion'),
+              tooltip: 'Perfil de Usuario',
+            ),
           ],
-          bottom: const TabBar(
-            labelColor: Colors.white,
-            unselectedLabelColor: Colors.white70,
-            indicatorColor: Colors.white,
-            tabs: [
+          bottom: TabBar(
+            labelColor: theme.appBarTheme.foregroundColor,
+            unselectedLabelColor:
+                theme.appBarTheme.foregroundColor?.withOpacity(0.7),
+            indicatorColor: theme.appBarTheme.foregroundColor,
+            tabs: const [
               Tab(text: 'Dietas'),
               Tab(text: 'Lotes'),
               Tab(text: 'Insumos'),
@@ -58,7 +66,9 @@ class AlimentacionScreen extends ConsumerWidget {
         ),
         body: TabBarView(
           children: [
+            // =========================================================
             // Tab 1: Dietas
+            // =========================================================
             dietasAsync.when(
               loading: () => ListView.builder(
                 itemCount: 3,
@@ -78,44 +88,41 @@ class AlimentacionScreen extends ConsumerWidget {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: theme.cardTheme.color,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: AppTheme.secondary,
+                                color: theme.colorScheme.secondary,
                                 width: 2,
                               ),
-                              boxShadow: [AppTheme.softShadow],
+                              boxShadow: [
+                                AppTheme.softShadowFor(theme.brightness)
+                              ],
                             ),
                             child: ListTile(
                               title: Text(dieta.nombre),
                               subtitle: Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const SizedBox(height: 4),
-                                  Text(
-                                      'Objetivo: ${dieta.objetivo}'),
-                                  Text(
-                                      'Costo: ${dieta.costoEstimadoKg}/kg'),
+                                  Text('Objetivo: ${dieta.objetivo}'),
+                                  Text('Costo: \$${dieta.costoEstimadoKg}/kg'),
                                 ],
                               ),
-                              trailing: Icon(Icons.check_circle,
-                                  color: AppTheme.success),
+                              trailing:
+                                  Icon(Icons.check_circle, color: successColor),
                             ),
-                          )
-                              .animate()
-                              .fadeIn()
-                              .slideX();
+                          ).animate().fadeIn().slideX();
                         },
                       );
               },
             ),
+
+            // =========================================================
             // Tab 2: Lotes
+            // =========================================================
             lotesAsync.when(
-              loading: () => const Center(
-                  child: CircularProgressIndicator()),
-              error: (err, _) =>
-                  Center(child: Text('Error: $err')),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, _) => Center(child: Text('Error: $err')),
               data: (lotes) {
                 return lotes.isEmpty
                     ? const Center(child: Text('Sin lotes'))
@@ -128,31 +135,27 @@ class AlimentacionScreen extends ConsumerWidget {
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: theme.cardTheme.color,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: Colors.grey[300]!),
+                              border: Border.all(color: theme.dividerColor),
                             ),
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(lote.nombre,
-                                    style: Theme.of(context)
-                                        .textTheme.labelLarge),
+                                    style: theme.textTheme.labelLarge),
                                 const SizedBox(height: 8),
                                 Row(
                                   mainAxisAlignment:
-                                      MainAxisAlignment
-                                          .spaceBetween,
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
                                       '${lote.cantidadCabezas} cabezas',
-                                      style: Theme.of(context)
-                                          .textTheme.bodySmall,
+                                      style: theme.textTheme.bodySmall,
                                     ),
                                     Chip(
                                       label: Text(lote.estado),
-                                      backgroundColor: AppTheme.primary
+                                      backgroundColor: theme.colorScheme.primary
                                           .withOpacity(0.2),
                                     ),
                                   ],
@@ -164,12 +167,13 @@ class AlimentacionScreen extends ConsumerWidget {
                       );
               },
             ),
+
+            // =========================================================
             // Tab 3: Insumos
+            // =========================================================
             insumosAsync.when(
-              loading: () => const Center(
-                  child: CircularProgressIndicator()),
-              error: (err, _) =>
-                  Center(child: Text('Error: $err')),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, _) => Center(child: Text('Error: $err')),
               data: (insumos) {
                 return insumos.isEmpty
                     ? const Center(child: Text('Sin insumos'))
@@ -192,56 +196,46 @@ class AlimentacionScreen extends ConsumerWidget {
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: alerta
-                                  ? AppTheme.error.withOpacity(0.1)
-                                  : Colors.white,
+                                  ? errorColor.withOpacity(0.1)
+                                  : theme.cardTheme.color,
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
-                                color: alerta
-                                    ? AppTheme.error
-                                    : Colors.grey[300]!,
+                                color: alerta ? errorColor : theme.dividerColor,
                               ),
                             ),
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
                                   mainAxisAlignment:
-                                      MainAxisAlignment
-                                          .spaceBetween,
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(insumo.nombre,
-                                        style: Theme.of(context)
-                                            .textTheme.labelLarge),
+                                        style: theme.textTheme.labelLarge),
                                     if (alerta)
                                       Chip(
                                         label: const Text('Bajo stock'),
-                                        backgroundColor: AppTheme.error
-                                            .withOpacity(0.3),
+                                        backgroundColor:
+                                            errorColor.withOpacity(0.3),
                                       ),
                                   ],
                                 ),
                                 const SizedBox(height: 8),
                                 ClipRRect(
-                                  borderRadius:
-                                      BorderRadius.circular(4),
-                                  child:
-                                      LinearProgressIndicator(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: LinearProgressIndicator(
                                     value: progreso,
                                     minHeight: 6,
-                                    backgroundColor: Colors.grey[300],
+                                    backgroundColor: theme.dividerColor,
                                     valueColor: AlwaysStoppedAnimation(
-                                      alerta
-                                          ? AppTheme.error
-                                          : AppTheme.success,
+                                      alerta ? errorColor : successColor,
                                     ),
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   '${actual.toStringAsFixed(1)}/${minimo.toStringAsFixed(1)} kg',
-                                  style: Theme.of(context)
-                                      .textTheme.bodySmall,
+                                  style: theme.textTheme.bodySmall,
                                 ),
                               ],
                             ),

@@ -39,6 +39,8 @@ urlpatterns = [
     path('auth/google/', GoogleAuthView.as_view(), name='google-auth'),
     # KPIs y Reports
     path('kpis/reproductivos/', views.kpis_reproductivos, name='kpis-reproductivos'),
+    path('ia/calculadora-gestacion/', views.calculadora_ia_gestacion, name='calculadora-ia-gestacion'),
+    path('temporadas/', views.temporadas_reproductivas, name='temporadas'),
     path('arbol-genealogico/<int:animal_id>/', views.arbol_genealogico, name='arbol-genealogico'),
     path('reporte/consumo/', views.reporte_consumo, name='reporte-consumo'),
     path('clima/ubicacion/', views.ubicacion_clima, name='ubicacion-clima'),

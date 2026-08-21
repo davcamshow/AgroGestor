@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BOVION — Guión Publicitario</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --primary: #1B4332;
+      --primary-light: #2D6A4F;
+      --secondary: #52B788;
+      --accent: #D4A853;
+      --bg: #F8F9FA;
+      --surface: #FFFFFF;
+      --text: #1a1a2e;
+      --text-muted: #6B7280;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --info: #3b82f6;
+      --radius: 16px;
+      --shadow: 0 8px 32px rgba(0,0,0,0.08);
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
+
+    /* ───── HEADER ───── */
+    header {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: #fff;
+      padding: 40px 0 32px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: -60px; left: -10%;
+      width: 120%; height: 120px;
+      background: var(--bg);
+      border-radius: 50% 50% 0 0;
+    }
+    header .logo {
+      font-family: 'Poppins', sans-serif;
+      font-size: 3.2rem;
+      font-weight: 800;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+    header .logo span { color: var(--accent); }
+    header .subtitle {
+      font-size: 1rem;
+      font-weight: 400;
+      opacity: .85;
+      margin-bottom: 6px;
+    }
+    header .tagline {
+      font-size: 0.85rem;
+      opacity: .65;
+      font-weight: 300;
+    }
+
+    /* ───── NAV ───── */
+    .scene-nav {
+      background: var(--surface);
+      border-bottom: 1px solid rgba(0,0,0,.06);
+      padding: 12px 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,.04);
+    }
+    .scene-nav .container {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .scene-nav .container::-webkit-scrollbar { display: none; }
+    .scene-nav a {
+      flex-shrink: 0;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: .8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: var(--bg);
+      text-decoration: none;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+    .scene-nav a:hover, .scene-nav a.active {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* ───── INFO BAR ───── */
+    .info-bar {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin: 32px auto 0;
+      padding: 20px 28px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 28px;
+      align-items: center;
+      justify-content: center;
+    }
+    .info-bar .item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .88rem;
+      color: var(--text-muted);
+    }
+    .info-bar .item strong {
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .info-bar .item .icon {
+      font-size: 1.2rem;
+    }
+
+    /* ───── TEAM ───── */
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    .team-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 20px 16px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      transition: transform .2s;
+      cursor: default;
+      border: 2px solid transparent;
+    }
+    .team-card:hover { transform: translateY(-4px); }
+    .team-card.david { border-color: var(--primary); }
+    .team-card.maria { border-color: var(--secondary); }
+    .team-card.osvaldo { border-color: var(--info); }
+    .team-card.martin { border-color: var(--warning); }
+    .team-card.lucia { border-color: var(--accent); }
+
+    .team-card .avatar {
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 10px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .team-card.david .avatar { background: linear-gradient(135deg, var(--primary), var(--primary-light)); }
+    .team-card.maria .avatar { background: linear-gradient(135deg, var(--secondary), #40916c); }
+    .team-card.osvaldo .avatar { background: linear-gradient(135deg, var(--info), #2563eb); }
+    .team-card.martin .avatar { background: linear-gradient(135deg, var(--warning), #d97706); }
+    .team-card.lucia .avatar { background: linear-gradient(135deg, var(--accent), #b8943f); }
+
+    .team-card .name {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    .team-card .role {
+      font-size: .78rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .team-card .bio {
+      font-size: .78rem;
+      color: var(--text);
+      margin-top: 8px;
+      line-height: 1.4;
+    }
+    .team-card .badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 2px 12px;
+      border-radius: 12px;
+      font-size: .7rem;
+      font-weight: 600;
+    }
+    .team-card.david .badge { background: #e8f5e9; color: var(--primary); }
+    .team-card.maria .badge { background: #e8f5e9; color: #2d6a4f; }
+    .team-card.osvaldo .badge { background: #dbeafe; color: #1d4ed8; }
+    .team-card.martin .badge { background: #fef3c7; color: #92400e; }
+    .team-card.lucia .badge { background: #fef9e7; color: #7d6300; }
+
+    /* ───── SCENE ───── */
+    .scene {
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin-top: 24px;
+      padding: 28px;
+      scroll-margin-top: 72px;
+    }
+    .scene-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .scene-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 700;
+      font-size: .9rem;
+      flex-shrink: 0;
+    }
+    .scene-title {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: var(--primary);
+    }
+    .scene-time {
+      margin-left: auto;
+      padding: 4px 14px;
+      border-radius: 12px;
+      background: var(--bg);
+      font-size: .78rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .location {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .85rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(0,0,0,.06);
+    }
+
+    .dialogue {
+      margin-top: 12px;
+    }
+    .dialogue .line {
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: var(--bg);
+      border-left: 3px solid transparent;
+    }
+    .dialogue .line.david { border-left-color: var(--primary); }
+    .dialogue .line.maria { border-left-color: var(--secondary); }
+    .dialogue .line.osvaldo { border-left-color: var(--info); }
+    .dialogue .line.martin { border-left-color: var(--warning); }
+    .dialogue .line.lucia { border-left-color: var(--accent); }
+    .dialogue .line.narrator { border-left-color: #9ca3af; }
+    .dialogue .line.extra { border-left-color: #d1d5db; }
+
+    .line .speaker {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: .82rem;
+    }
+    .line.david .speaker { color: var(--primary); }
+    .line.maria .speaker { color: var(--secondary); }
+    .line.osvaldo .speaker { color: var(--info); }
+    .line.martin .speaker { color: var(--warning); }
+    .line.lucia .speaker { color: var(--accent); }
+    .line.narrator .speaker { color: var(--text-muted); }
+    .line.extra .speaker { color: #9ca3af; }
+
+    .line .speaker .via { font-weight: 400; font-size: .75rem; color: var(--text-muted); }
+
+    .line .text {
+      margin-top: 4px;
+      font-size: .92rem;
+      line-height: 1.7;
+    }
+
+    .cue {
+      margin: 8px 0;
+      padding: 8px 14px;
+      border-radius: 8px;
+      background: #f3f4f6;
+      font-size: .82rem;
+      font-style: italic;
+      color: var(--text-muted);
+      border-left: 3px solid var(--accent);
+    }
+    .cue strong { color: var(--primary); font-style: normal; }
+
+    .shot-list {
+      margin-top: 16px;
+      padding: 14px;
+      background: #f3f4f6;
+      border-radius: 10px;
+    }
+    .shot-list summary {
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      font-size: .85rem;
+      color: var(--primary);
+      cursor: pointer;
+    }
+    .shot-list table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: .82rem;
+    }
+    .shot-list th {
+      text-align: left;
+      font-weight: 600;
+      color: var(--primary);
+      padding: 6px 8px;
+      border-bottom: 2px solid var(--primary);
+    }
+    .shot-list td {
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(0,0,0,.06);
+    }
+    .shot-list tr:hover td { background: rgba(27,67,50,.04); }
+
+    /* ───── SECTION HEADERS ───── */
+    .section-title {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin: 48px 0 8px;
+      text-align: center;
+    }
+    .section-title::after {
+      content: '';
+      display: block;
+      width: 60px; height: 3px;
+      background: var(--accent);
+      margin: 8px auto 0;
+      border-radius: 2px;
+    }
+
+    /* ───── FOOTER ───── */
+    footer {
+      margin-top: 60px;
+      padding: 24px 0;
+      text-align: center;
+      font-size: .82rem;
+      color: var(--text-muted);
+      border-top: 1px solid rgba(0,0,0,.06);
+    }
+
+    /* ───── RESPONSIVE ───── */
+    @media (max-width: 640px) {
+      header .logo { font-size: 2.2rem; }
+      .info-bar { flex-direction: column; gap: 12px; align-items: flex-start; }
+      .scene-header { flex-wrap: wrap; }
+      .scene-time { margin-left: 0; }
+      .team-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ───── PRINT ───── */
+    @media print {
+      .scene-nav { display: none; }
+      .scene { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; }
+      header::after { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ════════════ HEADER ════════════ -->
+<header>
+  <div class="container">
+    <div class="logo">BOVI<span>ON</span></div>
+    <div class="subtitle">Gestor Ganadero Bovina Premium</div>
+    <div class="tagline">Guión Publicitario — 5:45 min</div>
+  </div>
+</header>
+
+<!-- ════════════ NAV ════════════ -->
+<nav class="scene-nav">
+  <div class="container">
+    <a href="#info">Equipo</a>
+    <a href="#escena-1">E1 — Problemática</a>
+    <a href="#escena-2">E2 — Solución</a>
+    <a href="#escena-3">E3 — Interfaz</a>
+    <a href="#escena-4">E4 — Alimentación</a>
+    <a href="#escena-5">E5 — Peso</a>
+    <a href="#escena-6">E6 — Sanidad</a>
+    <a href="#escena-7">E7 — Genética</a>
+    <a href="#escena-8">E8 — Offline</a>
+    <a href="#escena-9">E9 — Planes</a>
+    <a href="#produccion">Producción</a>
+  </div>
+</nav>
+
+<main class="container">
+
+  <!-- ════════════ INFO BAR ════════════ -->
+  <div class="info-bar" id="info">
+    <span class="item"><span class="icon">&#9200;</span> <strong>Duración:</strong> 5:45 min</span>
+    <span class="item"><span class="icon">&#127917;</span> <strong>Formato:</strong> Vídeo corporativo</span>
+    <span class="item"><span class="icon">&#127918;</span> <strong>Estilo:</strong> Documental + dramático</span>
+    <span class="item"><span class="icon">&#127925;</span> <strong>Audio:</strong> Acústica + electrónica</span>
+  </div>
+
+  <!-- ════════════ TEAM ════════════ -->
+  <h2 class="section-title">El Equipo</h2>
+  <div class="team-grid">
+    <div class="team-card david">
+      <div class="avatar">D</div>
+      <div class="name">David</div>
+      <div class="role">Ing. Sistemas — Full Stack</div>
+      <div class="bio">Líder técnico. Conectó frontend, backend y base de datos. Visión del producto.</div>
+      <span class="badge">Líder técnico</span>
+    </div>
+    <div class="team-card maria">
+      <div class="avatar">M</div>
+      <div class="name">María</div>
+      <div class="role">Ing. Sistemas — Móvil</div>
+      <div class="bio">App Flutter. UI/UX, animaciones, experiencia de usuario.</div>
+      <span class="badge">Flutter Dev</span>
+    </div>
+    <div class="team-card osvaldo">
+      <div class="avatar">O</div>
+      <div class="name">Osvaldo</div>
+      <div class="role">Ing. Sistemas — Backend / IA</div>
+      <div class="bio">API Django, calculadora IA de gestación, modelos de datos.</div>
+      <span class="badge">Backend &amp; IA</span>
+    </div>
+    <div class="team-card martin">
+      <div class="avatar">M</div>
+      <div class="name">Martín</div>
+      <div class="role">Ing. Sistemas — DevOps</div>
+      <div class="bio">Infraestructura, Cloud Run, seguridad, disponibilidad 24/7.</div>
+      <span class="badge">Infraestructura</span>
+    </div>
+    <div class="team-card lucia">
+      <div class="avatar">L</div>
+      <div class="name">Lucía</div>
+      <div class="role">Lic. Administración</div>
+      <div class="bio">Modelo de negocio, planes de suscripción, análisis de mercado.</div>
+      <span class="badge">Estrategia</span>
+    </div>
+  </div>
+
+  <!-- ════════════ ESCENA 1 ════════════ -->
+  <h2 class="section-title">Escenas</h2>
+
+  <div class="scene" id="escena-1">
+    <div class="scene-header">
+      <span class="scene-number">1</span>
+      <span class="scene-title">La Problemática Ganadera</span>
+      <span class="scene-time">0:00 – 0:27</span>
+    </div>
+    <div class="location">&#128205; Corrales y potreros — Tomas de apoyo</div>
+
+    <div class="cue"><strong>VISUAL / ANIMACIONES:</strong> Tomas de apoyo de vacas en corrales y pastando libremente. Aparece el logotipo de BOVION superpuesto. Elementos visuales (iconografía o texto) que resalten las problemáticas mencionadas: errores de vacunación, dietas, gestación y uso de libretas.</div>
+
+    <div class="dialogue">
+      <div class="line david">
+        <div class="speaker">David <span class="via">(voz en off)</span></div>
+        <div class="text">"En la actividad ganadera, los errores de administración se pagan caros. No saber cuándo vacunar, perder el control de pesos y dietas, desconocer qué animales están en gestación o cuánto cuesta realmente engordar cada cabeza. Datos dispersos en libretas y memoria significan costos ocultos, decisiones tardías y oportunidades perdidas."</div>
+      </div>
+    </div>
+
+    <div class="cue"><strong>TRANSICIÓN:</strong> Corte rápido de las escenas de campo hacia una toma enfocada en los animales alimentándose, marcando el inicio de la solución.</div>
+
+    <details class="shot-list">
+      <summary>Planos de rodaje</summary>
+      <table>
+        <tr><th>Toma</th><th>Plano</th><th>Equipo</th></tr>
+        <tr><td>1A</td><td>Vacas en corrales y pastando</td><td>Cámara + lente 24-70mm</td></tr>
+        <tr><td>1B</td><td>Logo BOVION superpuesto</td><td>Post-producción</td></tr>
+        <tr><td>1C</td><td>Iconografía de problemáticas</td><td>Post-producción</td></tr>
+      </table>
+    </details>
+  </div>
+
+  <!-- ════════════ ESCENA 2 ════════════ -->
+  <div class="scene" id="escena-2">
+    <div class="scene-header">
+      <span class="scene-number">2</span>
+      <span class="scene-title">La Solución BOVION</span>
+      <span class="scene-time">0:28 – 0:57</span>
+    </div>
+    <div class="location">&#128205; Comederos del rancho — Vacas alimentándose</div>
+
+    <div class="cue"><strong>VISUAL / ANIMACIONES:</strong> Tomas de las vacas en los comederos. Animación en pantalla desplegando los módulos de la aplicación a modo de lista: Registro individual, Lotes, Nutrición, Sanidad, Reproducción, Inventario y Reportes.</div>
+
+    <div class="dialogue">
+      <div class="line david">
+        <div class="speaker">David <span class="via">(voz en off)</span></div>
+        <div class="text">"Bovion resuelve ese problema. Una plataforma que centraliza toda tu operación en un solo lugar. Registro individual de animales, control de lotes, nutrición, sanidad, reproducción, inventario de insumos y reportes con indicadores precisos para decidir con base en tu información confiable. Bovion: tu rancho, tu estrategia, tu negocio. En una sola plataforma."</div>
+      </div>
+    </div>
+
+    <div class="cue"><strong>TRANSICIÓN:</strong> Corte directo a plano medio del presentador en el establo.</div>
+
+    <details class="shot-list">
+      <summary>Planos de rodaje</summary>
+      <table>
+        <tr><th>Toma</th><th>Plano</th><th>Equipo</th></tr>
+        <tr><td>2A</td><td>Vacas en comederos</td><td>Cámara</td></tr>
+        <tr><td>2B</td><td>Animación de módulos de la app</td><td>Post-producción</td></tr>
+      </table>
+    </details>
+  </div>
+
+  <!-- ════════════ ESCENA 3 ════════════ -->
+  <div class="scene" id="escena-3">
+    <div class="scene-header">
+      <span class="scene-number">3</span>
+      <span class="scene-title">Introducción a la Interfaz</span>
+      <span class="scene-time">0:58 – 1:05</span>
+    </div>
+    <div class="location">&#128205; Establo — Frente a pacas de alimento</div>
+
+    <div class="cue"><strong>VISUAL:</strong> Presentador de pie frente a pacas de alimento, sosteniendo un teléfono móvil. Hace un gesto con la mano invitando a mirar la pantalla.</div>
+
+    <div class="dialogue">
+      <div class="line david">
+        <div class="speaker">David <span class="via">(presentador)</span></div>
+        <div class="text">"¿Sabías que en Bovion puedes llevar un registro de tu inventario en tiempo real? Sígueme y te lo muestro."</div>
+      </div>
+    </div>
+
+    <div class="cue"><strong>TRANSICIÓN:</strong> Fundido o efecto de "zoom-in" hacia la grabación de pantalla de la aplicación (screencast).</div>
+
+    <details class="shot-list">
+      <summary>Planos de rodaje</summary>
+      <table>
+        <tr><th>Toma</th><th>Plano</th><th>Equipo</th></tr>
+        <tr><td>3A</td><td>Presentador con celular frente a pacas</td><td>Trípode</td></tr>
+        <tr><td>3B</td><td>Zoom-in a screencast</td><td>Post-producción</td></tr>
+      </table>
+    </details>
+  </div>
+
+  <!-- ════════════ ESCENA 4 ════════════ -->
+  <div class="scene" id="escena-4">
+    <div class="scene-header">
+      <span class="scene-number">4</span>
+      <span class="scene-title">Módulo de Alimentación e Inventario</span>
+      <span class="scene-time">1:06 – 2:05</span>
+    </div>
+    <div class="location">&#128205; Screencast — Grabación de pantalla de la App</div>
+
+    <div class="cue"><strong>VISUAL:</strong> Grabación de pantalla navegando por la App. Se muestran los módulos "Dietas", "Lotes" e "Insumos". Se visualiza la calculadora de raciones, los detalles de costos y el sistema de alertas de stock.</div>
+
+    <div class="dialogue">
+      <div class="line david">
+        <div class="speaker">David <span class="via">(voz en off)</span></div>
+        <div class="text">"En la sección de alimentación tenemos tres módulos. En Dietas, cada fórmula está registrada con su objetivo, su costo por kilogramo y su estado. Puedo crear una dieta, definirla por porcentaje o por una tabla de kilogramo y asignarla a un lote. Con la calculadora, estimo la ración exacta según el número de animales, peso promedio y días de alimentación. El consumo se calcula al instante, sin desperdicio. En Lotes, veo qué dieta recibe cada lote y registro la alimentación diaria: cantidad servida y costo de cada ración. En insumos, el consumo se refleja en el inventario con alerta de stock y reporte de consumo para saber cuánto te cuesta engordar cada cabeza."</div>
+      </div>
+    </div>
+
+    <div class="cue"><strong>TRANSICIÓN:</strong> Corte de vuelta al presentador interactuando físicamente con una vaca (Blanca) en el establo.</div>
+
+    <details class="shot-list">
+      <summary>Planos de rodaje</summary>
+      <table>
+        <tr><th>Toma</th><th>Plano</th><th>Equipo</th></tr>
+        <tr><td>4A</td><td>Screencast: tab Dietas</td><td>Grabación de pantalla</td></tr>
+        <tr><td>4B</td><td>Screencast: tab Lotes</td><td>Grabación de pantalla</td></tr>
+        <tr><td>4C</td><td>Screencast: tab Insumos + alertas</td><td>Grabación de pantalla</td></tr>
+        <tr><td>4D</td><td>Calculadora de raciones</td><td>Grabación de pantalla</td></tr>
+      </table>
+    </details>
+  </div>
+
+  <!-- ════════════ ESCENA 5 ════════════ -->
+  <div class="scene" id="escena-5">
+    <div class="scene-header">
+      <span class="scene-number">5</span>
+      <span class="scene-title">Registro de Eventos — Peso</span>
+      <span class="scene-time">2:06 – 2:43</span>
+    </div>
+    <div class="location">&#128205; Establo — Junto al animal (Blanca)</div>
+
+    <div class="cue"><strong>VISUAL:</strong> Presentador manejando la App junto al animal. La pantalla del celular aparece del lado izquierdo mostrando el perfil de la vaca, el calendario de eventos y el formulario de ingreso de peso (320 kg y condición corporal). Animación de la gráfica de evolución de peso trazándose.</div>
+
+    <div class="dialogue">
+      <div class="line osvaldo">
+        <div class="speaker">Osvaldo <span class="via">(presentador)</span></div>
+        <div class="text">"Hablemos ahora de los eventos que podemos registrar en nuestros animales. Si vamos a los detalles del animal, en la parte de abajo de nuestro calendario podemos ver dos opciones: una para registro de peso y otra para un evento sanitario. Comencemos por el peso. Aquí seleccionamos la fecha y pongamos un peso de 320. Condición corporal va de 1 a 5, donde 1 es poco favorable y 5 es excelente. Guardamos el pesaje. Y una vez que se ha guardado, en la parte del inicio podemos seleccionar una gráfica que nos muestra cómo ha evolucionado el peso de este animal en concreto."</div>
+      </div>
+    </div>
+
+    <div class="cue"><strong>TRANSICIÓN:</strong> Salto sutil en la pantalla del celular regresando al menú principal de eventos.</div>
+
+    <details class="shot-list">
+      <summary>Planos de rodaje</summary>
+      <table>
+        <tr><th>Toma</th><th>Plano</th><th>Equipo</th></tr>
+        <tr><td>5A</td><td>Presentador + vaca Blanca</td><td>Trípode</td></tr>
+        <tr><td>5B</td><td>Perfil de la vaca en pantalla</td><td>Smartphone dedicado</td></tr>
+        <tr><td>5C</td><td>Formulario de peso y gráfica de evolución</td><td>Smartphone dedicado</td></tr>
+      </table>
+    </details>
+  </div>
+
+  <div class="scene" id="escena-6">
+    <div class="scene-header">
+      <span class="scene-number">6</span>
+      <span class="scene-title">Registro de Eventos — Sanidad</span>
+      <span class="scene-time">2:44 – 3:32</span>
+    </div>
+    <div class="location">&#128205; Vista dual — Presentador y App</div>
+
+    <div class="cue"><strong>VISUAL:</strong> Se mantiene la vista dual (presentador y App). Muestra el menú sanitario (vacunación, desparasitación, tratamiento, cirugía). Captura del llenado de formulario: medicamento X, dosis de 10 mg, fecha de aplicación, agendado de próxima cita, veterinario y costo.</div>
+
+    <div class="dialogue">
+      <div class="line osvaldo">
+        <div class="speaker">Osvaldo <span class="via">(presentador)</span></div>
+        <div class="text">"Ahora sí regresamos y registramos un evento sanitario. Tenemos 4 opciones: vacunación, desparasitación, tratamiento y cirugía. Seleccionamos vacunación. En medicamento vamos a suponer un medicamento X, una dosis de 10mg. La fecha sería el día de hoy y la siguiente sería para el siguiente mes, el primero de septiembre. Veterinario sería un veterinario A, costo supongamos 600 pesos, y tenemos una zona de notas donde podemos agregar algún detalle extra sobre este evento. Una vez que lo guardamos, si vamos a la zona del inicio en eventos próximos, vemos que se ha agregado uno nuevo. Si tocamos, vemos el detalle que sería la siguiente vacunación."</div>
+      </div>
+    </div>
+
+    <div class="cue"><strong>TRANSICIÓN:</strong> Corte a una demostración visual (esquemas o tomas de apoyo) para hablar sobre genética.</div>
+
+    <details class="shot-list">
+      <summary>Planos de rodaje</summary>
+      <table>
+        <tr><th>Toma</th><th>Plano</th><th>Equipo</th></tr>
+        <tr><td>6A</td><td>Menú sanitario en la app</td><td>Smartphone dedicado</td></tr>
+        <tr><td>6B</td><td>Formulario de evento sanitario</td><td>Smartphone dedicado</td></tr>
+        <tr><td>6C</td><td>Evento agregado en eventos próximos</td><td>Smartphone dedicado</td></tr>
+      </table>
+    </details>
+  </div>
+
+  <div class="scene" id="escena-7">
+    <div class="scene-header">
+      <span class="scene-number">7</span>
+      <span class="scene-title">Genética y Trazabilidad</span>
+      <span class="scene-time">3:33 – 4:18</span>
+    </div>
+    <div class="location">&#128205; Gráficos en movimiento — Árbol genealógico</div>
+
+    <div class="cue"><strong>VISUAL:</strong> Gráficos en movimiento de un árbol genealógico conectando madre, padre y descendiente, y representaciones visuales del historial médico.</div>
+
+    <div class="dialogue">
+      <div class="line maria">
+        <div class="speaker">María <span class="via">(voz en off)</span></div>
+        <div class="text">"En la producción bovina también la genética y la trazabilidad son el núcleo de la rentabilidad. En nuestro sistema Bovion tenemos un módulo de genética en el cual se procesa un árbol genealógico, en donde nosotros tenemos tanto a la madre como al padre y al descendiente. Esto nos permite mantener un historial, igualmente médico, de cada animal y a partir de todos estos datos se pueden tomar decisiones de selección y reproducción para que el ganadero tenga mayor producción. Igualmente, la generación de las auditorías al dar de baja ciertos animales o saber lo que ha transcurrido con ellos."</div>
+      </div>
+    </div>
+
+    <div class="cue"><strong>TRANSICIÓN:</strong> Pantalla de texto o diseño gráfico minimalista introduciendo el concepto de transformación digital.</div>
+
+    <details class="shot-list">
+      <summary>Planos de rodaje</summary>
+      <table>
+        <tr><th>Toma</th><th>Plano</th><th>Equipo</th></tr>
+        <tr><td>7A</td><td>Árbol genealógico animado</td><td>Post-producción</td></tr>
+        <tr><td>7B</td><td>Historial médico del animal</td><td>Smartphone dedicado</td></tr>
+      </table>
+    </details>
+  </div>
+
+  <div class="scene" id="escena-8">
+    <div class="scene-header">
+      <span class="scene-number">8</span>
+      <span class="scene-title">Propósito y Funcionalidad Offline</span>
+      <span class="scene-time">4:19 – 5:14</span>
+    </div>
+    <div class="location">&#128205; Infografías — Flujo de trabajo offline/online</div>
+
+    <div class="cue"><strong>VISUAL:</strong> Infografías que ilustran el flujo de trabajo: un ícono de celular sin señal (offline) guardando datos y, posteriormente, sincronizándose con un ícono de nube (online). Tomas del ganadero trabajando en zonas remotas.</div>
+
+    <div class="dialogue">
+      <div class="line lucia">
+        <div class="speaker">Lucía <span class="via">(voz en off)</span></div>
+        <div class="text">"En Bovion buscamos transformar la manera en que los ganaderos administran su ganado. Nuestra innovación consiste en facilitar la transición de registros manuales como las libretas, hojas o archivos fijos hacia un sistema digital más práctico, organizado y accesible."</div>
+      </div>
+
+      <div class="line martin">
+        <div class="speaker">Martín <span class="via">(voz en off)</span></div>
+        <div class="text">"Una ventaja que nos distingue en Bovion es el apartado modo offline. Al momento de que el ganadero está en las parcelas y no tiene conexión a internet... esta desventaja hace que la aplicación no tenga conectividad. En el modo offline lo que tenemos es que al momento de hacer sus registros, se van a guardar localmente en la aplicación. Sin embargo, al momento de que se conecta a internet, todos estos registros se van a ir directamente a la nube, teniendo así los registros completos."</div>
+      </div>
+    </div>
+
+    <div class="cue"><strong>TRANSICIÓN:</strong> Aparición paulatina de los modelos de suscripción en la pantalla.</div>
+
+    <details class="shot-list">
+      <summary>Planos de rodaje</summary>
+      <table>
+        <tr><th>Toma</th><th>Plano</th><th>Equipo</th></tr>
+        <tr><td>8A</td><td>Ícono offline guardando datos</td><td>Post-producción</td></tr>
+        <tr><td>8B</td><td>Sincronización a la nube</td><td>Post-producción</td></tr>
+        <tr><td>8C</td><td>Ganadero en zona remota</td><td>Cámara</td></tr>
+      </table>
+    </details>
+  </div>
+
+  <div class="scene" id="escena-9">
+    <div class="scene-header">
+      <span class="scene-number">9</span>
+      <span class="scene-title">Modelos de Inversión y Cierre</span>
+      <span class="scene-time">5:15 – 5:45</span>
+    </div>
+    <div class="location">&#128205; Gráfico comparativo — Logotipo de cierre</div>
+
+    <div class="cue"><strong>VISUAL:</strong> Gráfico comparativo visualizando los 3 planes de la plataforma: Modo Básico, Modo Productor y Modo Empresarial. Logotipo de cierre de BOVION.</div>
+
+    <div class="dialogue">
+      <div class="line martin">
+        <div class="speaker">Martín <span class="via">(voz en off)</span></div>
+        <div class="text">"Hoy en día, una problemática muy seria que tenemos en México es que al momento de ver planes de suscripción, decimos: 'es un gasto innecesario'. Sin embargo, en el proyecto Bovion del sector ganadero, no es un gasto, sino una inversión a futuro. Por consiguiente, tenemos tres planes: tenemos el modo básico, tenemos el modo productor y tenemos el modo empresarial."</div>
+      </div>
+    </div>
+
+    <div class="cue"><strong>TRANSICIÓN:</strong> Fundido a negro (fade out) cerrando el video corporativo.</div>
+
+    <div class="cue" style="background:#1B4332;color:#fff;padding:20px;text-align:center;border-left-color:var(--accent);">
+      <strong style="font-size:1.4rem;color:var(--accent);font-family:'Poppins',sans-serif;">BOVION</strong><br>
+      <span style="font-size:.85rem;opacity:.8;">Gestor Ganadero Bovina Premium</span><br><br>
+      <span style="font-size:1rem;">Descárgala hoy</span><br>
+      <span style="color:var(--accent);">www.bovion.app</span>
+    </div>
+
+    <details class="shot-list">
+      <summary>Planos de rodaje</summary>
+      <table>
+        <tr><th>Toma</th><th>Plano</th><th>Equipo</th></tr>
+        <tr><td>9A</td><td>Comparativa de los 3 planes</td><td>Post-producción</td></tr>
+        <tr><td>9B</td><td>Logotipo de cierre + fundido a negro</td><td>Post-producción</td></tr>
+      </table>
+    </details>
+  </div>
+
+  <!-- ════════════ PRODUCCIÓN ════════════ -->
+  <h2 class="section-title" id="produccion">Plan de Producción</h2>
+
+  <div class="scene">
+    <h3 style="font-family:'Poppins',sans-serif;color:var(--primary);margin-bottom:12px;">Equipo Técnico Requerido</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+      <div style="padding:12px;background:var(--bg);border-radius:10px;">
+        <strong style="color:var(--primary);">Cámara</strong><br>
+        <span style="font-size:.85rem;">DSLR / mirrorless + lente 24-70mm o 50mm fijo</span>
+      </div>
+      <div style="padding:12px;background:var(--bg);border-radius:10px;">
+        <strong style="color:var(--secondary);">Audio</strong><br>
+        <span style="font-size:.85rem;">Micrófono lavalier + shotgun para ambiente</span>
+      </div>
+      <div style="padding:12px;background:var(--bg);border-radius:10px;">
+        <strong style="color:var(--info);">Estabilización</strong><br>
+        <span style="font-size:.85rem;">Gimbal / estabilizador de mano + trípode pesado</span>
+      </div>
+      <div style="padding:12px;background:var(--bg);border-radius:10px;">
+        <strong style="color:var(--warning);">Iluminación</strong><br>
+        <span style="font-size:.85rem;">2 paneles LED portátiles</span>
+      </div>
+      <div style="padding:12px;background:var(--bg);border-radius:10px;">
+        <strong style="color:var(--accent);">Extras</strong><br>
+        <span style="font-size:.85rem;">Smartphone extra para close-ups de app</span>
+      </div>
+      <div style="padding:12px;background:var(--bg);border-radius:10px;">
+        <strong style="color:var(--error);">Slider</strong><br>
+        <span style="font-size:.85rem;">Slider de cámara (opcional) para travellings</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene">
+    <h3 style="font-family:'Poppins',sans-serif;color:var(--primary);margin-bottom:12px;">Storyboard Resumido</h3>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:.85rem;">
+        <thead>
+          <tr style="background:var(--primary);color:#fff;">
+            <th style="padding:10px 12px;text-align:left;">#</th>
+            <th style="padding:10px 12px;text-align:left;">Escena</th>
+            <th style="padding:10px 12px;text-align:left;">Plano</th>
+            <th style="padding:10px 12px;text-align:left;">Tiempo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom:1px solid rgba(0,0,0,.06);"><td style="padding:10px 12px;">1</td><td style="padding:10px 12px;">E1 — Problemática</td><td style="padding:10px 12px;">Tomas de apoyo: corrales y pastoreo</td><td style="padding:10px 12px;">0:27</td></tr>
+          <tr style="border-bottom:1px solid rgba(0,0,0,.06);"><td style="padding:10px 12px;">2</td><td style="padding:10px 12px;">E2 — Solución</td><td style="padding:10px 12px;">Vacas en comederos + módulos de la app</td><td style="padding:10px 12px;">0:29</td></tr>
+          <tr style="border-bottom:1px solid rgba(0,0,0,.06);"><td style="padding:10px 12px;">3</td><td style="padding:10px 12px;">E3 — Interfaz</td><td style="padding:10px 12px;">Presentador con celular frente a pacas</td><td style="padding:10px 12px;">0:07</td></tr>
+          <tr style="border-bottom:1px solid rgba(0,0,0,.06);"><td style="padding:10px 12px;">4</td><td style="padding:10px 12px;">E4 — Alimentación</td><td style="padding:10px 12px;">Screencast: Dietas, Lotes, Insumos</td><td style="padding:10px 12px;">0:59</td></tr>
+          <tr style="border-bottom:1px solid rgba(0,0,0,.06);"><td style="padding:10px 12px;">5</td><td style="padding:10px 12px;">E5 — Peso</td><td style="padding:10px 12px;">Presentador + app, formulario de peso</td><td style="padding:10px 12px;">0:37</td></tr>
+          <tr style="border-bottom:1px solid rgba(0,0,0,.06);"><td style="padding:10px 12px;">6</td><td style="padding:10px 12px;">E6 — Sanidad</td><td style="padding:10px 12px;">Vista dual, menú sanitario</td><td style="padding:10px 12px;">0:48</td></tr>
+          <tr style="border-bottom:1px solid rgba(0,0,0,.06);"><td style="padding:10px 12px;">7</td><td style="padding:10px 12px;">E7 — Genética</td><td style="padding:10px 12px;">Árbol genealógico animado</td><td style="padding:10px 12px;">0:45</td></tr>
+          <tr style="border-bottom:1px solid rgba(0,0,0,.06);"><td style="padding:10px 12px;">8</td><td style="padding:10px 12px;">E8 — Offline</td><td style="padding:10px 12px;">Infografías offline/online</td><td style="padding:10px 12px;">0:55</td></tr>
+          <tr><td style="padding:10px 12px;">9</td><td style="padding:10px 12px;">E9 — Planes</td><td style="padding:10px 12px;">Comparativa 3 planes + logo de cierre</td><td style="padding:10px 12px;">0:30</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="scene">
+    <h3 style="font-family:'Poppins',sans-serif;color:var(--primary);margin-bottom:12px;">Post-producción</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
+      <div style="padding:12px;background:var(--bg);border-radius:10px;">
+        <strong style="color:var(--primary);">Color Grading</strong><br>
+        <span style="font-size:.85rem;">Tono verdoso-cálido. Sombras en #1B4332, luces cálidas doradas.</span>
+      </div>
+      <div style="padding:12px;background:var(--bg);border-radius:10px;">
+        <strong style="color:var(--secondary);">Transición clave</strong><br>
+        <span style="font-size:.85rem;">E1 a E2: papeles convertidos en partículas verdes (#52B788) que reordenan la escena.</span>
+      </div>
+      <div style="padding:12px;background:var(--bg);border-radius:10px;">
+        <strong style="color:var(--accent);">Gráficos</strong><br>
+        <span style="font-size:.85rem;">Lower thirds con nombre + rol. Overlay de UI de app en tomas de teléfono.</span>
+      </div>
+      <div style="padding:12px;background:var(--bg);border-radius:10px;">
+        <strong style="color:var(--info);">Subtítulos</strong><br>
+        <span style="font-size:.85rem;">Recomendados para distribución sin sonido (redes sociales).</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="scene">
+    <h3 style="font-family:'Poppins',sans-serif;color:var(--primary);margin-bottom:12px;">Distribución Sugerida</h3>
+    <ul style="list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;">
+      <li style="padding:12px;background:var(--bg);border-radius:10px;font-size:.85rem;">
+        <strong style="color:#ff0000;">&#9654; YouTube</strong><br>Versión completa 5:45 min
+      </li>
+      <li style="padding:12px;background:var(--bg);border-radius:10px;font-size:.85rem;">
+        <strong style="color:#E4405F;">&#9835; Instagram / TikTok</strong><br>Teasers 30s + clips por funcionalidad (15s c/u)
+      </li>
+      <li style="padding:12px;background:var(--bg);border-radius:10px;font-size:.85rem;">
+        <strong style="color:#25D366;">&#9993; WhatsApp Business</strong><br>Versión resumida 1:30 para prospección
+      </li>
+    </ul>
+  </div>
+
+</main>
+
+<footer>
+  <div class="container">
+    <strong style="color:var(--primary);font-family:'Poppins',sans-serif;">BOVION</strong> — Gestor Ganadero Bovina Premium<br>
+    <span style="font-size:.75rem;">Guión generado del código fuente del proyecto AgroGestor &bull; Julio 2026</span>
+  </div>
+</footer>
+
+</body>
+</html>

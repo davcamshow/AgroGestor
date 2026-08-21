@@ -8,18 +8,19 @@ class SaludScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Salud', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppTheme.primary,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('Salud'),
         actions: [
           IconButton(
             icon: CircleAvatar(
               radius: 16,
-              backgroundColor: Colors.white.withOpacity(0.2),
-              child: const Icon(Icons.person, color: Colors.white, size: 18),
+              backgroundColor: theme.colorScheme.onPrimary.withOpacity(0.2),
+              child: Icon(Icons.person,
+                  color: theme.appBarTheme.foregroundColor, size: 18),
             ),
             onPressed: () => context.go('/configuracion'),
           ),
@@ -32,21 +33,21 @@ class SaludScreen extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.1),
+                color: primaryColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.construction,
                 size: 64,
-                color: AppTheme.primary,
+                color: primaryColor,
               ),
             ),
             const SizedBox(height: 24),
             Text(
               'Próximamente...',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              style: theme.textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: AppTheme.primary,
+                color: primaryColor,
               ),
             ),
             const SizedBox(height: 12),
@@ -55,8 +56,8 @@ class SaludScreen extends ConsumerWidget {
               child: Text(
                 'Estamos trabajando en nuevas funcionalidades de salud animal',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Colors.grey[600],
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.textTheme.bodySmall?.color,
                 ),
               ),
             ),
@@ -65,22 +66,27 @@ class SaludScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               margin: const EdgeInsets.symmetric(horizontal: 32),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: theme.cardTheme.color,
                 borderRadius: BorderRadius.circular(12),
+                boxShadow: [AppTheme.softShadowFor(theme.brightness)],
               ),
               child: Column(
                 children: [
                   Text(
                     'Próximas funcionalidades:',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    style: theme.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 12),
-                  _buildFeatureComing(Icons.vaccines, 'Calendario de Vacunas'),
-                  _buildFeatureComing(Icons.medical_services, 'Expedientes Médicos'),
-                  _buildFeatureComing(Icons.analytics, 'Reportes de Salud'),
-                  _buildFeatureComing(Icons.notifications, 'Alertas Automáticas'),
+                  _buildFeatureComing(
+                      Icons.vaccines, 'Calendario de Vacunas', primaryColor),
+                  _buildFeatureComing(Icons.medical_services,
+                      'Expedientes Médicos', primaryColor),
+                  _buildFeatureComing(
+                      Icons.analytics, 'Reportes de Salud', primaryColor),
+                  _buildFeatureComing(
+                      Icons.notifications, 'Alertas Automáticas', primaryColor),
                 ],
               ),
             ),
@@ -90,12 +96,12 @@ class SaludScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildFeatureComing(IconData icon, String text) {
+  Widget _buildFeatureComing(IconData icon, String text, Color color) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: AppTheme.primary),
+          Icon(icon, size: 18, color: color),
           const SizedBox(width: 8),
           Text(text, style: const TextStyle(fontSize: 13)),
         ],

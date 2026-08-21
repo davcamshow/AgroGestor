@@ -12,9 +12,11 @@ import '../../core/providers/eventos_sanitarios_provider.dart';
 import '../../core/providers/registros_peso_provider.dart';
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/blurred_modal_backdrop.dart';
 import 'animal_form_sheet.dart';
 import 'mover_lote_sheet.dart';
 import 'agregar_registro_sheet.dart';
+import 'animal_baja_sheet.dart'; // Importa el nuevo sheet
 
 // ---------------------------------------------------------------------------
 // Providers
@@ -81,6 +83,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
   @override
   Widget build(BuildContext context) {
     final animalesAsync = ref.watch(animalesNotifierProvider);
+    final theme = Theme.of(context);
 
     return animalesAsync.when(
       loading: () => const Scaffold(
@@ -88,7 +91,8 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       ),
       error: (err, _) => Scaffold(
         appBar: AppBar(title: const Text('Error')),
-        body: Center(child: Text('Error: $err')),
+        body: Center(
+            child: Text('Error: $err', style: theme.textTheme.bodyMedium)),
       ),
       data: (animales) {
         final animal = animales
@@ -98,7 +102,10 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
         if (animal == null) {
           return Scaffold(
             appBar: AppBar(title: const Text('Animal no encontrado')),
-            body: const Center(child: Text('Animal no encontrado')),
+            body: Center(
+              child: Text('Animal no encontrado',
+                  style: theme.textTheme.bodyMedium),
+            ),
           );
         }
 
@@ -130,7 +137,8 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                   icon: const Icon(Icons.remove_circle_outline),
                   tooltip: 'Dar de baja',
                   color: AppTheme.error,
-                  onPressed: () => _showBajaDialog(context, animal),
+                  onPressed: () =>
+                      _showBajaSheet(context, animal), // Llama al nuevo sheet
                 ),
             ],
             bottom: TabBar(
@@ -148,8 +156,8 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
           body: TabBarView(
             controller: _tabController,
             children: [
-              _buildInfoTab(animal),
-              _buildGenealogiaTab(animal),
+              _buildInfoTab(animal, theme),
+              _buildGenealogiaTab(animal, theme),
               _AuditoriaTab(animalId: animal.id),
             ],
           ),
@@ -161,22 +169,31 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
   // ---------------------------------------------------------------------------
   // Tab Info
   // ---------------------------------------------------------------------------
-  Widget _buildInfoTab(Animal animal) {
+  Widget _buildInfoTab(Animal animal, ThemeData theme) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          _buildHeader(animal).animate().fadeIn().slideY(begin: -0.2),
+          _buildHeader(animal, theme).animate().fadeIn().slideY(begin: -0.2),
           const SizedBox(height: 24),
           if (animal.estado != 'activo') ...[
-            _buildBajaCard(animal).animate().fadeIn(delay: 150.ms).slideX(),
+            _buildBajaCard(animal, theme)
+                .animate()
+                .fadeIn(delay: 150.ms)
+                .slideX(),
             const SizedBox(height: 16),
           ],
-          _buildInfoCard(animal).animate().fadeIn(delay: 200.ms).slideX(),
+          _buildInfoCard(animal, theme)
+              .animate()
+              .fadeIn(delay: 200.ms)
+              .slideX(),
           const SizedBox(height: 16),
-          _buildRegistrosCard(animal).animate().fadeIn(delay: 300.ms).slideX(),
+          _buildRegistrosCard(animal, theme)
+              .animate()
+              .fadeIn(delay: 300.ms)
+              .slideX(),
           const SizedBox(height: 24),
-          _buildEventsCalendar(animal)
+          _buildEventsCalendar(animal, theme)
               .animate()
               .fadeIn(delay: 400.ms)
               .slideY(begin: 0.2),
@@ -186,7 +203,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
               .fadeIn(delay: 500.ms)
               .slideY(begin: 0.2),
           const SizedBox(height: 16),
-          _buildRecentEvents(animal)
+          _buildRecentEvents(animal, theme)
               .animate()
               .fadeIn(delay: 600.ms)
               .slideY(begin: 0.2),
@@ -195,7 +212,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
     );
   }
 
-  Widget _buildBajaCard(Animal animal) {
+  Widget _buildBajaCard(Animal animal, ThemeData theme) {
     final auditoriaAsync = ref.watch(auditoriaAnimalProvider(animal.id));
 
     return auditoriaAsync.when(
@@ -217,16 +234,17 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
         return _Card(
           title: 'Detalles de Baja',
           icon: Icons.info,
+          theme: theme,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Descripción y Fecha:',
-                  style: TextStyle(color: Colors.grey, fontSize: 13)),
+              Text('Descripción y Fecha:', style: theme.textTheme.bodySmall),
               const SizedBox(height: 4),
               Text(
                 valorNuevo,
-                style:
-                    const TextStyle(fontWeight: FontWeight.w500, fontSize: 14),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ],
           ),
@@ -238,19 +256,22 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
   // ---------------------------------------------------------------------------
   // Calendario de eventos
   // ---------------------------------------------------------------------------
-  Widget _buildEventsCalendar(Animal animal) {
+  Widget _buildEventsCalendar(Animal animal, ThemeData theme) {
     final eventosAsync = ref.watch(eventosSanitariosAnimalProvider(animal.id));
     final pesosAsync = ref.watch(registrosPesoAnimalProvider(animal.id));
 
     return eventosAsync.when(
       loading: () => const SizedBox(),
-      error: (err, _) => Center(child: Text('Error: $err')),
+      error: (err, _) =>
+          Center(child: Text('Error: $err', style: theme.textTheme.bodyMedium)),
       data: (eventos) => pesosAsync.when(
         loading: () => const SizedBox(),
-        error: (err, _) => Center(child: Text('Error: $err')),
+        error: (err, _) => Center(
+            child: Text('Error: $err', style: theme.textTheme.bodyMedium)),
         data: (pesos) => _Card(
           title: 'Calendario de Eventos',
           icon: Icons.calendar_month,
+          theme: theme,
           child: Column(
             children: [
               TableCalendar<_CalendarEvent>(
@@ -272,31 +293,38 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                   _focusedDay = focusedDay;
                 },
                 onHeaderLongPressed: (focusedDay) =>
-                    _showYearPickerDialog(focusedDay),
+                    _showYearPickerDialog(focusedDay, theme),
                 eventLoader: (day) => _getEventsForDay(day, eventos, pesos),
-                headerStyle: const HeaderStyle(
+                headerStyle: HeaderStyle(
                   formatButtonVisible: true,
                   titleCentered: true,
-                  formatButtonTextStyle: TextStyle(color: AppTheme.primary),
-                  headerMargin: EdgeInsets.only(bottom: 8),
-                  leftChevronIcon:
-                      Icon(Icons.chevron_left, color: AppTheme.primary),
-                  rightChevronIcon:
-                      Icon(Icons.chevron_right, color: AppTheme.primary),
+                  formatButtonTextStyle:
+                      TextStyle(color: theme.colorScheme.primary),
+                  headerMargin: const EdgeInsets.only(bottom: 8),
+                  leftChevronIcon: Icon(Icons.chevron_left,
+                      color: theme.colorScheme.primary),
+                  rightChevronIcon: Icon(Icons.chevron_right,
+                      color: theme.colorScheme.primary),
                 ),
                 calendarStyle: CalendarStyle(
                   todayDecoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.2),
+                    color: theme.colorScheme.primary.withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
-                  selectedDecoration: const BoxDecoration(
-                    color: AppTheme.primary,
+                  selectedDecoration: BoxDecoration(
+                    color: theme.colorScheme.primary,
                     shape: BoxShape.circle,
                   ),
-                  markerDecoration: BoxDecoration(
+                  markerDecoration: const BoxDecoration(
                     color: AppTheme.info,
                     shape: BoxShape.circle,
                   ),
+                  defaultTextStyle:
+                      TextStyle(color: theme.textTheme.bodyMedium?.color),
+                  weekendTextStyle:
+                      TextStyle(color: theme.textTheme.bodyMedium?.color),
+                  outsideTextStyle:
+                      TextStyle(color: theme.textTheme.bodySmall?.color),
                 ),
                 calendarBuilders: CalendarBuilders(
                   markerBuilder: (context, date, events) {
@@ -322,8 +350,8 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                 ),
               ),
               if (_selectedDay != null) ...[
-                const Divider(height: 24),
-                _buildDayEvents(_selectedDay!, eventos, pesos),
+                Divider(height: 24, color: theme.dividerColor),
+                _buildDayEvents(_selectedDay!, eventos, pesos, theme),
               ],
             ],
           ),
@@ -368,14 +396,15 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
     DateTime day,
     List<EventoSanitario> eventos,
     List<RegistroPeso> pesos,
+    ThemeData theme,
   ) {
     final dayEvents = _getEventsForDay(day, eventos, pesos);
     if (dayEvents.isEmpty) {
-      return const Padding(
-        padding: EdgeInsets.symmetric(vertical: 8),
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
         child: Text(
           'Sin eventos en esta fecha',
-          style: TextStyle(color: Colors.grey),
+          style: theme.textTheme.bodySmall,
         ),
       );
     }
@@ -384,7 +413,10 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       children: [
         Text(
           'Eventos del ${day.day}/${day.month}/${day.year}',
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
         ),
         const SizedBox(height: 8),
         ...dayEvents.map((e) => Padding(
@@ -406,7 +438,9 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                     e.title,
                     style: TextStyle(
                       fontSize: 12,
-                      color: e.isProxima ? AppTheme.warning : null,
+                      color: e.isProxima
+                          ? AppTheme.warning
+                          : theme.textTheme.bodyMedium?.color,
                       fontWeight:
                           e.isProxima ? FontWeight.w600 : FontWeight.normal,
                     ),
@@ -418,7 +452,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
     );
   }
 
-  void _showYearPickerDialog(DateTime focusedDay) {
+  void _showYearPickerDialog(DateTime focusedDay, ThemeData theme) {
     showDialog(
       context: context,
       builder: (ctx) {
@@ -466,20 +500,22 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                     child: Container(
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? AppTheme.primary
+                            ? theme.colorScheme.primary
                             : isCurrent
-                                ? AppTheme.primary.withOpacity(0.1)
+                                ? theme.colorScheme.primary.withOpacity(0.1)
                                 : null,
                         borderRadius: BorderRadius.circular(8),
                         border: isCurrent
-                            ? Border.all(color: AppTheme.primary)
+                            ? Border.all(color: theme.colorScheme.primary)
                             : null,
                       ),
                       child: Center(
                         child: Text(
                           _monthName(month),
                           style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black87,
+                            color: isSelected
+                                ? Colors.white
+                                : theme.textTheme.bodyMedium?.color,
                             fontWeight: isSelected
                                 ? FontWeight.bold
                                 : FontWeight.normal,
@@ -538,9 +574,11 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => AgregarRegistroSheet(
-        animalId: animal.id,
-        animalArete: animal.numeroArete,
+      builder: (_) => BlurredModalBackdrop(
+        child: AgregarRegistroSheet(
+          animalId: animal.id,
+          animalArete: animal.numeroArete,
+        ),
       ),
     );
   }
@@ -548,16 +586,18 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
   // ---------------------------------------------------------------------------
   // Últimos eventos del animal
   // ---------------------------------------------------------------------------
-  Widget _buildRecentEvents(Animal animal) {
+  Widget _buildRecentEvents(Animal animal, ThemeData theme) {
     final eventosAsync = ref.watch(eventosSanitariosAnimalProvider(animal.id));
     final pesosAsync = ref.watch(registrosPesoAnimalProvider(animal.id));
 
     return eventosAsync.when(
       loading: () => const SizedBox(),
-      error: (err, _) => Center(child: Text('Error: $err')),
+      error: (err, _) =>
+          Center(child: Text('Error: $err', style: theme.textTheme.bodyMedium)),
       data: (eventos) => pesosAsync.when(
         loading: () => const SizedBox(),
-        error: (err, _) => Center(child: Text('Error: $err')),
+        error: (err, _) => Center(
+            child: Text('Error: $err', style: theme.textTheme.bodyMedium)),
         data: (pesos) {
           final items = <_RecentItem>[
             ...eventos.map((e) => _RecentItem(
@@ -577,13 +617,14 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
           return _Card(
             title: 'Últimos Registros',
             icon: Icons.history,
+            theme: theme,
             child: ultimos.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     child: Center(
                       child: Text(
                         'Sin registros',
-                        style: TextStyle(color: Colors.grey),
+                        style: theme.textTheme.bodySmall,
                       ),
                     ),
                   )
@@ -605,15 +646,14 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                             Expanded(
                               child: Text(
                                 item.title,
-                                style: const TextStyle(fontSize: 13),
+                                style: theme.textTheme.bodyMedium
+                                    ?.copyWith(fontSize: 13),
                               ),
                             ),
                             Text(
                               DateFormat('dd/MM/yy').format(item.date),
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey[500],
-                              ),
+                              style: theme.textTheme.bodySmall
+                                  ?.copyWith(fontSize: 11),
                             ),
                           ],
                         ),
@@ -629,12 +669,13 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
   // ---------------------------------------------------------------------------
   // Tab Genealogía - Árbol genealógico
   // ---------------------------------------------------------------------------
-  Widget _buildGenealogiaTab(Animal animal) {
+  Widget _buildGenealogiaTab(Animal animal, ThemeData theme) {
     final animalesAsync = ref.watch(animalesNotifierProvider);
 
     return animalesAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('Error: $err')),
+      error: (err, _) =>
+          Center(child: Text('Error: $err', style: theme.textTheme.bodyMedium)),
       data: (animales) {
         final madre = animal.madreId != null
             ? animales.where((a) => a.id == animal.madreId).firstOrNull
@@ -665,6 +706,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                       esMadre: true,
                       label: 'Madre',
                       animalId: animal.id,
+                      theme: theme,
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -674,25 +716,26 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                       esMadre: false,
                       label: 'Padre',
                       animalId: animal.id,
+                      theme: theme,
                     ),
                   ),
                 ],
               ).animate().fadeIn().slideY(begin: -0.2),
 
               // --- Conector ---
-              _buildConnector(),
+              _buildConnector(theme),
               const SizedBox(height: 8),
 
               // --- Animal actual ---
               GestureDetector(
-                onTap: () => _mostrarInfoAnimal(animal, animales),
+                onTap: () => _mostrarInfoAnimal(animal, animales, theme),
                 child: Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   decoration: BoxDecoration(
-                    gradient: AppTheme.primaryGradient,
+                    gradient: AppTheme.primaryGradientFor(theme.brightness),
                     borderRadius: BorderRadius.circular(30),
-                    boxShadow: [AppTheme.softShadow],
+                    boxShadow: [AppTheme.softShadowFor(theme.brightness)],
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -715,13 +758,13 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
               // --- Hermanos ---
               if (hermanos.isNotEmpty) ...[
                 const SizedBox(height: 24),
-                _buildFamilySection('Hermanos', hermanos, animales),
+                _buildFamilySection('Hermanos', hermanos, animales, theme),
               ],
 
               // --- Hijos ---
               if (hijos.isNotEmpty) ...[
                 const SizedBox(height: 20),
-                _buildFamilySection('Hijos', hijos, animales),
+                _buildFamilySection('Hijos', hijos, animales, theme),
               ],
 
               if (hermanos.isEmpty &&
@@ -733,22 +776,18 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                   child: Column(
                     children: [
                       Icon(Icons.family_restroom,
-                          size: 64, color: Colors.grey[300]),
+                          size: 64, color: theme.textTheme.bodySmall?.color),
                       const SizedBox(height: 12),
                       Text(
                         'Sin familia registrada',
-                        style: TextStyle(
-                          color: Colors.grey[500],
-                          fontSize: 16,
-                        ),
+                        style:
+                            theme.textTheme.bodyMedium?.copyWith(fontSize: 16),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         'Asigna madre y padre desde arriba',
-                        style: TextStyle(
-                          color: Colors.grey[400],
-                          fontSize: 13,
-                        ),
+                        style:
+                            theme.textTheme.bodySmall?.copyWith(fontSize: 13),
                       ),
                     ],
                   ),
@@ -760,7 +799,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
     );
   }
 
-  Widget _buildConnector() {
+  Widget _buildConnector(ThemeData theme) {
     return Column(
       children: [
         const SizedBox(height: 12),
@@ -768,21 +807,21 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
           child: Container(
             width: 2,
             height: 24,
-            color: AppTheme.primary.withOpacity(0.3),
+            color: theme.colorScheme.primary.withOpacity(0.3),
           ),
         ),
         Center(
           child: Container(
             width: 60,
             height: 2,
-            color: AppTheme.primary.withOpacity(0.3),
+            color: theme.colorScheme.primary.withOpacity(0.3),
           ),
         ),
         Center(
           child: Container(
             width: 2,
             height: 16,
-            color: AppTheme.primary.withOpacity(0.3),
+            color: theme.colorScheme.primary.withOpacity(0.3),
           ),
         ),
       ],
@@ -794,6 +833,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
     required bool esMadre,
     required String label,
     required int animalId,
+    required ThemeData theme,
   }) {
     final color = esMadre ? Colors.pink : Colors.blue;
     final icon = esMadre ? Icons.female : Icons.male;
@@ -801,7 +841,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
     return GestureDetector(
       onTap: () {
         if (animal != null) {
-          _mostrarInfoAnimal(animal, null);
+          _mostrarInfoAnimal(animal, null, theme);
         } else {
           _seleccionarPadre(context, esMadre, animalId);
         }
@@ -809,13 +849,13 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardTheme.color,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: color.withOpacity(0.3),
             width: 2,
           ),
-          boxShadow: [AppTheme.softShadow],
+          boxShadow: [AppTheme.softShadowFor(theme.brightness)],
         ),
         child: Column(
           children: [
@@ -849,7 +889,9 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                 fontSize: 12,
                 fontWeight:
                     animal != null ? FontWeight.w600 : FontWeight.normal,
-                color: animal != null ? Colors.black87 : Colors.grey,
+                color: animal != null
+                    ? theme.textTheme.bodyMedium?.color
+                    : theme.textTheme.bodySmall?.color,
               ),
               textAlign: TextAlign.center,
             ),
@@ -858,7 +900,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   animal.nombre ?? '',
-                  style: TextStyle(fontSize: 10, color: Colors.grey[500]),
+                  style: theme.textTheme.bodySmall?.copyWith(fontSize: 10),
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -870,8 +912,8 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
     );
   }
 
-  Widget _buildFamilySection(
-      String title, List<Animal> miembros, List<Animal> todos) {
+  Widget _buildFamilySection(String title, List<Animal> miembros,
+      List<Animal> todos, ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -879,7 +921,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
           child: Container(
             width: 2,
             height: 20,
-            color: AppTheme.primary.withOpacity(0.3),
+            color: theme.colorScheme.primary.withOpacity(0.3),
           ),
         ),
         Text(
@@ -887,7 +929,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 14,
-            color: AppTheme.primary,
+            color: theme.colorScheme.primary,
           ),
         ),
         const SizedBox(height: 8),
@@ -901,19 +943,19 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
               final m = miembros[index];
               final esMacho = m.sexo == 'M';
               return GestureDetector(
-                onTap: () => _mostrarInfoAnimal(m, todos),
+                onTap: () => _mostrarInfoAnimal(m, todos, theme),
                 child: Container(
                   width: 90,
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: theme.cardTheme.color,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: esMacho
                           ? Colors.blue.withOpacity(0.3)
                           : Colors.pink.withOpacity(0.3),
                     ),
-                    boxShadow: [AppTheme.softShadow],
+                    boxShadow: [AppTheme.softShadowFor(theme.brightness)],
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -931,7 +973,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                       const SizedBox(height: 4),
                       Text(
                         m.numeroArete,
-                        style: const TextStyle(
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
                         ),
@@ -942,10 +984,8 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                       if (m.nombre != null)
                         Text(
                           m.nombre!,
-                          style: TextStyle(
-                            fontSize: 9,
-                            color: Colors.grey[500],
-                          ),
+                          style:
+                              theme.textTheme.bodySmall?.copyWith(fontSize: 9),
                           textAlign: TextAlign.center,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -961,7 +1001,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
     );
   }
 
-  void _mostrarInfoAnimal(Animal animal, List<Animal>? todos) {
+  void _mostrarInfoAnimal(Animal animal, List<Animal>? todos, ThemeData theme) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -971,11 +1011,11 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
         title: Row(
           children: [
             CircleAvatar(
-              backgroundColor: AppTheme.primary.withOpacity(0.15),
+              backgroundColor: theme.colorScheme.primary.withOpacity(0.15),
               child: Text(
                 animal.numeroArete[0].toUpperCase(),
-                style: const TextStyle(
-                  color: AppTheme.primary,
+                style: TextStyle(
+                  color: theme.colorScheme.primary,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -993,14 +1033,16 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _infoRow('Arete', animal.numeroArete),
-            _infoRow('Nombre', animal.nombre ?? 'Sin nombre'),
-            _infoRow('Sexo', animal.sexo == 'M' ? 'Macho' : 'Hembra'),
-            _infoRow('Raza', animal.raza ?? 'No especificada'),
-            _infoRow('Color', animal.color ?? 'No especificado'),
-            _infoRow('Fecha Nac.',
-                animal.fechaNacimiento?.toString().split(' ')[0] ?? 'N/A'),
-            _infoRow('Estado', animal.estado),
+            _infoRow('Arete', animal.numeroArete, theme),
+            _infoRow('Nombre', animal.nombre ?? 'Sin nombre', theme),
+            _infoRow('Sexo', animal.sexo == 'M' ? 'Macho' : 'Hembra', theme),
+            _infoRow('Raza', animal.raza ?? 'No especificada', theme),
+            _infoRow('Color', animal.color ?? 'No especificado', theme),
+            _infoRow(
+                'Fecha Nac.',
+                animal.fechaNacimiento?.toString().split(' ')[0] ?? 'N/A',
+                theme),
+            _infoRow('Estado', animal.estado, theme),
             if (todos != null) ...[
               if (animal.madreId != null)
                 _infoRow(
@@ -1010,6 +1052,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                           .firstOrNull
                           ?.numeroArete ??
                       '#${animal.madreId}',
+                  theme,
                 ),
               if (animal.padreId != null)
                 _infoRow(
@@ -1019,6 +1062,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                           .firstOrNull
                           ?.numeroArete ??
                       '#${animal.padreId}',
+                  theme,
                 ),
             ],
           ],
@@ -1033,16 +1077,18 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
     );
   }
 
-  Widget _infoRow(String label, String value) {
+  Widget _infoRow(String label, String value, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+          Text(label, style: theme.textTheme.bodySmall?.copyWith(fontSize: 13)),
           Text(value,
-              style:
-                  const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              )),
         ],
       ),
     );
@@ -1132,6 +1178,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
   // Diálogo de baja
   // ---------------------------------------------------------------------------
   Future<void> _showBajaDialog(BuildContext context, Animal animal) async {
+    final theme = Theme.of(context);
     final causaOptions = [
       ('vendido', 'Venta', Icons.sell_outlined, AppTheme.primary),
       ('muerto', 'Muerte', Icons.close_outlined, AppTheme.primary),
@@ -1170,20 +1217,20 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey[100],
+                    color: theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.pets, size: 18, color: Colors.grey[600]),
+                      Icon(Icons.pets,
+                          size: 18, color: theme.textTheme.bodySmall?.color),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'Animal: ${animal.nombre ?? animal.numeroArete}',
-                          style: const TextStyle(
+                          style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
-                            color: Colors.black87,
                           ),
                         ),
                       ),
@@ -1209,7 +1256,6 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                       avatar: Icon(
                         icon,
                         size: 16,
-                        // Corrige el color del icono inactivo
                         color: seleccionado ? Colors.white : color,
                       ),
                       label: Text(label),
@@ -1217,20 +1263,21 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                       onSelected: (_) =>
                           setDialogState(() => causaSeleccionada = valor),
                       selectedColor: color,
-                      backgroundColor: Colors.grey[50], // Fondo limpio inactivo
+                      backgroundColor:
+                          theme.colorScheme.surfaceContainerHighest,
                       shadowColor: color.withOpacity(0.4),
                       checkmarkColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                         side: BorderSide(
-                          // Borde temático o gris sutil
-                          color: seleccionado ? color : Colors.grey[300]!,
+                          color: seleccionado ? color : theme.dividerColor,
                           width: seleccionado ? 1.5 : 1,
                         ),
                       ),
                       labelStyle: TextStyle(
-                        // SOLUCIÓN AL BUG VISUAL: Fuerza color oscuro si no está seleccionado
-                        color: seleccionado ? Colors.white : Colors.black87,
+                        color: seleccionado
+                            ? Colors.white
+                            : theme.textTheme.bodyMedium?.color,
                         fontWeight:
                             seleccionado ? FontWeight.bold : FontWeight.normal,
                         fontSize: 13,
@@ -1261,22 +1308,23 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                     padding: const EdgeInsets.symmetric(
                         horizontal: 14, vertical: 14),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Colors.grey[300]!),
+                      color: theme.cardTheme.color,
+                      border: Border.all(color: theme.dividerColor),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       children: [
                         Icon(Icons.calendar_today,
-                            size: 18, color: AppTheme.primary),
+                            size: 18, color: theme.colorScheme.primary),
                         const SizedBox(width: 10),
                         Text(
                           DateFormat('dd/MM/yyyy').format(fechaSeleccionada),
-                          style: const TextStyle(
-                              fontSize: 14, color: Colors.black87),
+                          style: theme.textTheme.bodyMedium
+                              ?.copyWith(fontSize: 14),
                         ),
                         const Spacer(),
-                        Icon(Icons.arrow_drop_down, color: Colors.grey[400]),
+                        Icon(Icons.arrow_drop_down,
+                            color: theme.textTheme.bodySmall?.color),
                       ],
                     ),
                   ),
@@ -1290,24 +1338,25 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                 TextField(
                   controller: notasCtrl,
                   maxLines: 3,
-                  style: const TextStyle(fontSize: 14),
+                  style: theme.textTheme.bodyMedium?.copyWith(fontSize: 14),
                   decoration: InputDecoration(
                     hintText: 'Detalle adicional sobre la baja...',
-                    hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+                    hintStyle:
+                        theme.textTheme.bodySmall?.copyWith(fontSize: 13),
                     filled: true,
-                    fillColor: Colors.grey[50],
+                    fillColor: theme.colorScheme.surfaceContainerHighest,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
+                      borderSide: BorderSide(color: theme.dividerColor),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey[300]!),
+                      borderSide: BorderSide(color: theme.dividerColor),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide:
-                          BorderSide(color: AppTheme.primary, width: 1.5),
+                      borderSide: BorderSide(
+                          color: theme.colorScheme.primary, width: 1.5),
                     ),
                     contentPadding: const EdgeInsets.all(12),
                   ),
@@ -1395,7 +1444,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
 
   // --- UI helpers ---
 
-  Widget _buildHeader(Animal animal) {
+  Widget _buildHeader(Animal animal, ThemeData theme) {
     final esActivo = animal.estado == 'activo';
     return Center(
       child: Column(
@@ -1407,7 +1456,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                 height: 100,
                 decoration: BoxDecoration(
                   gradient: esActivo
-                      ? AppTheme.primaryGradient
+                      ? AppTheme.primaryGradientFor(theme.brightness)
                       : const LinearGradient(
                           colors: [Colors.grey, Color(0xFF9E9E9E)]),
                   borderRadius: BorderRadius.circular(50),
@@ -1429,8 +1478,8 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                   right: 0,
                   child: Container(
                     padding: const EdgeInsets.all(4),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
+                    decoration: BoxDecoration(
+                      color: theme.cardTheme.color,
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -1445,7 +1494,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
           const SizedBox(height: 12),
           Text(
             animal.numeroArete,
-            style: Theme.of(context).textTheme.headlineSmall,
+            style: theme.textTheme.headlineSmall,
           ),
           const SizedBox(height: 4),
           _EstadoBadge(estado: animal.estado),
@@ -1454,38 +1503,56 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
     );
   }
 
-  Widget _buildInfoCard(Animal animal) {
+  Widget _buildInfoCard(Animal animal, ThemeData theme) {
     return _Card(
       title: 'Información',
       icon: Icons.info_outline,
+      theme: theme,
       child: Column(
         children: [
-          _Row('Estado',
-              animal.estado[0].toUpperCase() + animal.estado.substring(1)),
-          _Row('Número de Arete', animal.numeroArete),
-          _Row('Nombre', animal.nombre ?? 'Sin nombre'),
-          _Row('Raza', animal.raza ?? 'No especificada'),
-          _Row('Sexo', animal.sexo == 'M' ? 'Macho' : 'Hembra'),
-          _Row('Color', animal.color ?? 'No especificado'),
-          _Row('Peso Nac. (kg)', animal.pesoNacimientoKg?.toString() ?? 'N/A'),
+          _Row(
+              'Estado',
+              animal.estado[0].toUpperCase() + animal.estado.substring(1),
+              theme),
+          _Row('Número de Arete', animal.numeroArete, theme),
+          _Row('Nombre', animal.nombre ?? 'Sin nombre', theme),
+          _Row('Raza', animal.raza ?? 'No especificada', theme),
+          _Row('Sexo', animal.sexo == 'M' ? 'Macho' : 'Hembra', theme),
+          _Row('Color', animal.color ?? 'No especificado', theme),
+          _Row('Peso Nac. (kg)', animal.pesoNacimientoKg?.toString() ?? 'N/A',
+              theme),
           _Row('Fecha Nac.',
-              animal.fechaNacimiento?.toString().split(' ')[0] ?? 'N/A'),
-          _Row('Lote', animal.loteId?.toString() ?? 'Sin lote'),
+              animal.fechaNacimiento?.toString().split(' ')[0] ?? 'N/A', theme),
+          _Row('Lote', animal.loteId?.toString() ?? 'Sin lote', theme),
         ],
       ),
     );
   }
 
-  Widget _buildRegistrosCard(Animal animal) {
+  Widget _buildRegistrosCard(Animal animal, ThemeData theme) {
     return _Card(
       title: 'Últimos Registros',
       icon: Icons.history,
+      theme: theme,
       child: Column(
         children: [
-          _Row('Último peso', animal.ultimoPeso?.toString() ?? 'Sin registro'),
+          _Row('Último peso', animal.ultimoPeso?.toString() ?? 'Sin registro',
+              theme),
           _Row('Fecha último peso',
-              animal.fechaUltimoPeso?.toString().split(' ')[0] ?? 'N/A'),
+              animal.fechaUltimoPeso?.toString().split(' ')[0] ?? 'N/A', theme),
         ],
+      ),
+    );
+  }
+
+  // Nuevo método para mostrar el AnimalBajaSheet
+  void _showBajaSheet(BuildContext context, Animal animal) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => BlurredModalBackdrop(
+        child: AnimalBajaSheet(animal: animal),
       ),
     );
   }
@@ -1495,7 +1562,9 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => AnimalFormSheet(animalToEdit: animal),
+      builder: (_) => BlurredModalBackdrop(
+        child: AnimalFormSheet(animalToEdit: animal),
+      ),
     );
   }
 
@@ -1504,7 +1573,9 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => MoverLoteSheet(animal: animal),
+      builder: (_) => BlurredModalBackdrop(
+        child: MoverLoteSheet(animal: animal),
+      ),
     );
   }
 
@@ -1578,20 +1649,23 @@ class _AuditoriaTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final auditoriaAsync = ref.watch(auditoriaAnimalProvider(animalId));
+    final theme = Theme.of(context);
 
     return auditoriaAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text('Error: $err')),
+      error: (err, _) =>
+          Center(child: Text('Error: $err', style: theme.textTheme.bodyMedium)),
       data: (registros) {
         if (registros.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.history, size: 48, color: Colors.grey[300]),
+                Icon(Icons.history,
+                    size: 48, color: theme.textTheme.bodySmall?.color),
                 const SizedBox(height: 12),
                 Text('Sin cambios registrados',
-                    style: Theme.of(context).textTheme.bodyMedium),
+                    style: theme.textTheme.bodyMedium),
               ],
             ),
           );
@@ -1604,7 +1678,8 @@ class _AuditoriaTab extends ConsumerWidget {
         return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: ordenados.length,
-          separatorBuilder: (_, __) => const Divider(height: 1),
+          separatorBuilder: (_, __) =>
+              Divider(height: 1, color: theme.dividerColor),
           itemBuilder: (context, index) {
             final r = ordenados[index];
             final campo = r['campo'] as String? ?? '';
@@ -1619,10 +1694,11 @@ class _AuditoriaTab extends ConsumerWidget {
             return ListTile(
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
-              leading: _campoIcon(campo),
+              leading: _campoIcon(campo, theme),
               title: Text(
                 _campoLabel(campo),
-                style: const TextStyle(fontWeight: FontWeight.w600),
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(fontWeight: FontWeight.w600),
               ),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1655,7 +1731,7 @@ class _AuditoriaTab extends ConsumerWidget {
                   const SizedBox(height: 2),
                   Text(
                     fecha,
-                    style: TextStyle(color: Colors.grey[500], fontSize: 11),
+                    style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
                   ),
                 ],
               ),
@@ -1666,19 +1742,27 @@ class _AuditoriaTab extends ConsumerWidget {
     );
   }
 
-  Widget _campoIcon(String campo) {
+  Widget _campoIcon(String campo, ThemeData theme) {
     final icon = switch (campo) {
       'estado' => Icons.swap_horiz,
       'nombre' => Icons.badge_outlined,
       'raza' => Icons.pets,
       'lote' => Icons.group_outlined,
       'notas_baja' => Icons.note_outlined,
+      'movimiento_lote_detalles' => Icons.compare_arrows,
+      'madre' => Icons.female,
+      'padre' => Icons.male,
+      'numero_arete' => Icons.tag,
+      'sexo' => Icons.wc,
+      'color' => Icons.palette,
+      'fecha_nacimiento' => Icons.cake,
+      'peso_nacimiento_kg' => Icons.monitor_weight,
       _ => Icons.edit_outlined,
     };
     return CircleAvatar(
       radius: 18,
-      backgroundColor: AppTheme.primary.withOpacity(0.1),
-      child: Icon(icon, size: 16, color: AppTheme.primary),
+      backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+      child: Icon(icon, size: 16, color: theme.colorScheme.primary),
     );
   }
 
@@ -1693,6 +1777,9 @@ class _AuditoriaTab extends ConsumerWidget {
         'fecha_nacimiento' => 'Fecha de nacimiento',
         'peso_nacimiento_kg' => 'Peso nacimiento',
         'notas_baja' => 'Notas de baja',
+        'movimiento_lote_detalles' => 'Movimiento de lote',
+        'madre' => 'Madre',
+        'padre' => 'Padre',
         _ => campo,
       };
 }
@@ -1704,8 +1791,14 @@ class _Card extends StatelessWidget {
   final String title;
   final IconData icon;
   final Widget child;
+  final ThemeData theme;
 
-  const _Card({required this.title, required this.icon, required this.child});
+  const _Card({
+    required this.title,
+    required this.icon,
+    required this.child,
+    required this.theme,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1714,9 +1807,9 @@ class _Card extends StatelessWidget {
       children: [
         Row(
           children: [
-            Icon(icon, color: AppTheme.primary, size: 20),
+            Icon(icon, color: theme.colorScheme.primary, size: 20),
             const SizedBox(width: 8),
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
+            Text(title, style: theme.textTheme.titleMedium),
           ],
         ),
         const SizedBox(height: 8),
@@ -1724,9 +1817,9 @@ class _Card extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: theme.cardTheme.color,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [AppTheme.softShadow],
+            boxShadow: [AppTheme.softShadowFor(theme.brightness)],
           ),
           child: child,
         ),
@@ -1738,8 +1831,9 @@ class _Card extends StatelessWidget {
 class _Row extends StatelessWidget {
   final String label;
   final String value;
+  final ThemeData theme;
 
-  const _Row(this.label, this.value);
+  const _Row(this.label, this.value, this.theme);
 
   @override
   Widget build(BuildContext context) {
@@ -1748,11 +1842,12 @@ class _Row extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey)),
+          Text(label, style: theme.textTheme.bodySmall),
           Flexible(
             child: Text(
               value,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(fontWeight: FontWeight.w500),
               textAlign: TextAlign.end,
             ),
           ),

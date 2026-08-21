@@ -505,10 +505,17 @@ class CicloReproductivo(models.Model):
             models.Index(fields=['estado']),
         ]
 
+    DIAS_GESTACION_POR_DEFECTO = 283
+    DIAS_DESTETE_POR_DEFECTO = 60
+
     def save(self, *args, **kwargs):
+        from datetime import timedelta
         if self.fecha_servicio and not self.fecha_estimada_parto:
-            from datetime import timedelta
-            self.fecha_estimada_parto = self.fecha_servicio + timedelta(days=self.dias_gestacion)
+            self.fecha_estimada_parto = self.fecha_servicio + timedelta(days=self.dias_gestacion or self.DIAS_GESTACION_POR_DEFECTO)
+        if self.fecha_parto_real and not self.fecha_destete:
+            self.fecha_destete = self.fecha_parto_real + timedelta(days=self.DIAS_DESTETE_POR_DEFECTO)
+        if self.estado == 'pario' and not self.fecha_parto_real:
+            self.fecha_parto_real = self.fecha_estimada_parto or self.fecha_servicio + timedelta(days=self.dias_gestacion or self.DIAS_GESTACION_POR_DEFECTO)
         super().save(*args, **kwargs)
 
 

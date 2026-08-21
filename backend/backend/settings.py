@@ -183,15 +183,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS configuration
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:5173",  # Puerto de desarrollo de Vite
-    "http://127.0.0.1:5173",
-    "http://10.0.2.2:8000",  # Android emulator
-]
-
-# Si quieres permitir todas las credenciales (cookies, headers de autorización)
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 # REST Framework configuration

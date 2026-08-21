@@ -24,9 +24,65 @@ import '../screens/alimentacion/calculadora_screen.dart';
 import '../screens/alimentacion/reporte_consumo_screen.dart';
 import '../screens/alimentacion/alertas_stock_screen.dart';
 import '../screens/planes/planes_screen.dart';
-import '../screens/salud/salud_screen.dart';
 import '../widgets/app_shell.dart';
 import '../screens/clima/ubicacion_rancho_screen.dart';
+import '../screens/salud/salud_screen.dart';
+
+/// Duración estándar para las transiciones de pantalla en toda la app.
+const Duration _kTransitionDuration = Duration(milliseconds: 320);
+
+/// Construye una [CustomTransitionPage] con fade + slide sutil.
+///
+/// Se usa en lugar de `builder:` en cada [GoRoute] para lograr
+/// transiciones consistentes en toda la app sin modificar las pantallas.
+CustomTransitionPage<void> _fadeSlidePage({
+  required GoRouterState state,
+  required Widget child,
+}) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: _kTransitionDuration,
+    reverseTransitionDuration: _kTransitionDuration,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+        reverseCurve: Curves.easeInCubic,
+      );
+      return FadeTransition(
+        opacity: curved,
+        child: SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0.04, 0),
+            end: Offset.zero,
+          ).animate(curved),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+/// Transición para pantallas dentro del bottom nav (tabs): solo fade,
+/// sin slide horizontal, ya que van y vienen entre ramas del shell.
+CustomTransitionPage<void> _fadePage({
+  required GoRouterState state,
+  required Widget child,
+}) {
+  return CustomTransitionPage<void>(
+    key: state.pageKey,
+    child: child,
+    transitionDuration: _kTransitionDuration,
+    reverseTransitionDuration: _kTransitionDuration,
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      return FadeTransition(
+        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+        child: child,
+      );
+    },
+  );
+}
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authStatus =
@@ -54,12 +110,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         name: 'login',
-        builder: (_, __) => const LoginScreen(),
+        pageBuilder: (context, state) =>
+            _fadeSlidePage(state: state, child: const LoginScreen()),
       ),
       GoRoute(
         path: '/register',
         name: 'register',
-        builder: (_, __) => const RegisterScreen(),
+        pageBuilder: (context, state) =>
+            _fadeSlidePage(state: state, child: const RegisterScreen()),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
@@ -71,7 +129,8 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/dashboard',
                 name: 'dashboard',
-                builder: (_, __) => const DashboardScreen(),
+                pageBuilder: (context, state) =>
+                    _fadePage(state: state, child: const DashboardScreen()),
               ),
             ],
           ),
@@ -81,14 +140,20 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/animales',
                 name: 'animales',
-                builder: (_, __) => const AnimalesScreen(),
-              ),
-              GoRoute(
-                path: '/animales/:id',
-                name: 'animal-detail',
-                builder: (context, state) => AnimalDetailScreen(
-                  animalId: state.pathParameters['id']!,
-                ),
+                pageBuilder: (context, state) =>
+                    _fadePage(state: state, child: const AnimalesScreen()),
+                routes: [
+                  GoRoute(
+                    path: ':id',
+                    name: 'animal-detail',
+                    pageBuilder: (context, state) => _fadeSlidePage(
+                      state: state,
+                      child: AnimalDetailScreen(
+                        animalId: state.pathParameters['id']!,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -98,7 +163,8 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/reproduccion',
                 name: 'reproduccion',
-                builder: (_, __) => const ReproduccionScreen(),
+                pageBuilder: (context, state) =>
+                    _fadePage(state: state, child: const ReproduccionScreen()),
               ),
               GoRoute(
                 path: '/reproduccion/nacimiento',
@@ -137,7 +203,8 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/alimentacion',
                 name: 'alimentacion',
-                builder: (_, __) => const AlimentacionScreen(),
+                pageBuilder: (context, state) =>
+                    _fadePage(state: state, child: const AlimentacionScreen()),
               ),
               GoRoute(
                 path: '/alimentacion/calculadora',
@@ -162,17 +229,8 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/salud',
                 name: 'salud',
-                builder: (_, __) => const SaludScreen(),
-              ),
-            ],
-          ),
-          // Tab 5: Suscripción
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/suscripcion',
-                name: 'suscripcion',
-                builder: (_, __) => const PlanesScreen(),
+                pageBuilder: (context, state) =>
+                    _fadePage(state: state, child: const SaludScreen()),
               ),
             ],
           ),
@@ -187,49 +245,52 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/lotes',
         name: 'lotes',
-        builder: (_, __) => const LotesScreen(),
+        pageBuilder: (context, state) =>
+            _fadeSlidePage(state: state, child: const LotesScreen()),
       ),
       GoRoute(
         path: '/lotes/new',
         name: 'lote-new',
-        builder: (_, __) => const LoteFormScreen(),
+        pageBuilder: (context, state) =>
+            _fadeSlidePage(state: state, child: const LoteFormScreen()),
       ),
       GoRoute(
         path: '/lotes/:id/edit',
         name: 'lote-edit',
-        builder: (context, state) => LoteFormScreen(
-          loteId: state.pathParameters['id'],
+        pageBuilder: (context, state) => _fadeSlidePage(
+          state: state,
+          child: LoteFormScreen(loteId: state.pathParameters['id']),
         ),
       ),
       GoRoute(
         path: '/formulas',
         name: 'formulas',
-        builder: (_, __) => const FormulasScreen(),
+        pageBuilder: (context, state) =>
+            _fadeSlidePage(state: state, child: const FormulasScreen()),
       ),
       GoRoute(
         path: '/formulas/builder',
         name: 'formula-builder',
-        builder: (_, __) => const FormulaBuilderScreen(),
+        pageBuilder: (context, state) =>
+            _fadeSlidePage(state: state, child: const FormulaBuilderScreen()),
       ),
       GoRoute(
         path: '/insumos',
         name: 'insumos',
-        builder: (_, __) => const InsumosScreen(),
+        pageBuilder: (context, state) =>
+            _fadeSlidePage(state: state, child: const InsumosScreen()),
       ),
       GoRoute(
         path: '/reportes',
         name: 'reportes',
-        builder: (_, __) => const ReportesScreen(),
+        pageBuilder: (context, state) =>
+            _fadeSlidePage(state: state, child: const ReportesScreen()),
       ),
       GoRoute(
         path: '/configuracion',
         name: 'configuracion',
-        builder: (_, __) => const ConfiguracionScreen(),
-      ),
-      GoRoute(
-        path: '/planes',
-        name: 'planes',
-        builder: (_, __) => const PlanesScreen(),
+        pageBuilder: (context, state) =>
+            _fadeSlidePage(state: state, child: const ConfiguracionScreen()),
       ),
     ],
   );

@@ -28,18 +28,20 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final animalesAsync = ref.watch(animalesNotifierProvider);
     final ciclosAsync = ref.watch(ciclosNotifierProvider);
     final eventosAsync = ref.watch(eventosSanitariosNotifierProvider);
-
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Inicio', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppTheme.primary,
+        backgroundColor: theme.brightness == Brightness.dark
+            ? theme.appBarTheme.backgroundColor
+            : AppTheme.primary,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
           IconButton(
             icon: CircleAvatar(
               radius: 16,
-              backgroundColor: Colors.white.withOpacity(0.2),
+              backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
               child: const Icon(Icons.person, color: Colors.white, size: 18),
             ),
             onPressed: () => context.go('/configuracion'),
@@ -156,7 +158,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               loading: () => Container(
                 height: 200,
                 decoration: BoxDecoration(
-                  color: Colors.grey[200],
+                  color: Theme.of(context).cardTheme.color,
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
@@ -167,7 +169,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     height: 200,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [AppTheme.softShadow],
                     ),
@@ -179,7 +181,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   height: 280,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).cardTheme.color,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [AppTheme.softShadow],
                   ),
@@ -237,7 +239,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                           height: 70,
                           margin: const EdgeInsets.only(bottom: 12),
                           decoration: BoxDecoration(
-                            color: Colors.grey[200],
+                            color: Theme.of(context).cardTheme.color,
                             borderRadius: BorderRadius.circular(12),
                           ),
                         )),
@@ -256,7 +258,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Theme.of(context).cardTheme.color,
                           borderRadius: BorderRadius.circular(12),
                           boxShadow: [AppTheme.softShadow],
                         ),
@@ -320,7 +322,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                   return Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardTheme.color,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [AppTheme.softShadow],
                     ),
@@ -342,7 +344,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).cardTheme.color,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [AppTheme.softShadow],
                       ),
@@ -403,7 +405,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     return Container(
       height: 120,
       decoration: BoxDecoration(
-        color: Colors.grey[200],
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
       ),
     );

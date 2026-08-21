@@ -187,7 +187,7 @@ class _AnimalEditSheetState extends ConsumerState<AnimalEditSheet> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: Theme.of(context).colorScheme.outlineVariant,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -209,7 +209,10 @@ class _AnimalEditSheetState extends ConsumerState<AnimalEditSheet> {
                               style: Theme.of(context)
                                   .textTheme
                                   .bodySmall
-                                  ?.copyWith(color: Colors.grey),
+                                  ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant),
                             ),
                           ],
                         ),
@@ -219,16 +222,22 @@ class _AnimalEditSheetState extends ConsumerState<AnimalEditSheet> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppTheme.warning.withOpacity(0.15),
+                            color: Theme.of(context)
+                                .colorScheme
+                                .tertiary
+                                .withOpacity(0.15),
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                                color: AppTheme.warning.withOpacity(0.5)),
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .tertiary
+                                    .withOpacity(0.5)),
                           ),
                           child: Text(
                             'Sin guardar',
                             style: TextStyle(
                                 fontSize: 11,
-                                color: AppTheme.warning,
+                                color: Theme.of(context).colorScheme.tertiary,
                                 fontWeight: FontWeight.w600),
                           ),
                         ).animate().fadeIn(),
@@ -322,13 +331,22 @@ class _AnimalEditSheetState extends ConsumerState<AnimalEditSheet> {
                                       const EdgeInsets.symmetric(vertical: 14),
                                   decoration: BoxDecoration(
                                     color: sel
-                                        ? AppTheme.primary.withOpacity(0.12)
-                                        : Colors.grey[100],
+                                        ? Theme.of(context)
+                                            .colorScheme
+                                            .primary
+                                            .withOpacity(0.12)
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .surfaceVariant,
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color: sel
-                                          ? AppTheme.primary
-                                          : Colors.grey[300]!,
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .outline,
                                       width: sel ? 2 : 1,
                                     ),
                                   ),
@@ -340,8 +358,12 @@ class _AnimalEditSheetState extends ConsumerState<AnimalEditSheet> {
                                             ? FontWeight.bold
                                             : FontWeight.normal,
                                         color: sel
-                                            ? AppTheme.primary
-                                            : Colors.black54,
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .primary
+                                            : Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
                                       ),
                                     ),
                                   ),
@@ -361,15 +383,21 @@ class _AnimalEditSheetState extends ConsumerState<AnimalEditSheet> {
                               label: Text(est),
                               selected: sel,
                               onSelected: (_) => setState(() => _estado = est),
-                              selectedColor: AppTheme.primary.withOpacity(0.2),
+                              selectedColor: Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withOpacity(0.2),
                               labelStyle: TextStyle(
-                                color: sel ? AppTheme.primary : Colors.black87,
+                                color: sel
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context).colorScheme.onSurface,
                                 fontWeight:
                                     sel ? FontWeight.bold : FontWeight.normal,
                               ),
                               side: BorderSide(
-                                color:
-                                    sel ? AppTheme.primary : Colors.grey[300]!,
+                                color: sel
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(context).colorScheme.outline,
                               ),
                             );
                           }).toList(),
@@ -440,13 +468,15 @@ class _AnimalEditSheetState extends ConsumerState<AnimalEditSheet> {
                               child: ElevatedButton(
                                 onPressed: _isLoading ? null : _guardar,
                                 child: _isLoading
-                                    ? const SizedBox(
+                                    ? SizedBox(
                                         height: 20,
                                         width: 20,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
                                           valueColor: AlwaysStoppedAnimation(
-                                              Colors.white),
+                                              Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimary),
                                         ),
                                       )
                                     : const Text('Guardar cambios'),
@@ -486,7 +516,7 @@ class _AnimalEditSheetState extends ConsumerState<AnimalEditSheet> {
             style: Theme.of(context)
                 .textTheme
                 .labelLarge
-                ?.copyWith(color: AppTheme.primary)),
+                ?.copyWith(color: Theme.of(context).colorScheme.primary)),
       ],
     );
   }
@@ -508,7 +538,8 @@ class _AnimalEditSheetState extends ConsumerState<AnimalEditSheet> {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: Icon(icon),
+        prefixIcon:
+            Icon(icon, color: Theme.of(context).colorScheme.onSurfaceVariant),
         errorText: externalError,
       ),
       validator: validator,

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/providers/animales_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/loading_shimmer.dart';
+import '../../widgets/blurred_modal_backdrop.dart';
 import 'animal_form_sheet.dart';
 
 class AnimalesScreen extends ConsumerWidget {
@@ -15,11 +16,13 @@ class AnimalesScreen extends ConsumerWidget {
     final animalesAsync = ref.watch(animalesNotifierProvider);
     final filtros = ref.watch(animalesFilterProvider);
     final estadoFiltro = ref.watch(animalesEstadoFiltroProvider);
-
+    final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Animales', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppTheme.primary,
+        backgroundColor: theme.brightness == Brightness.dark
+            ? theme.appBarTheme.backgroundColor
+            : AppTheme.primary,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
@@ -76,7 +79,9 @@ class AnimalesScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.pets, size: 64, color: Colors.grey[300]),
+                  Icon(Icons.pets,
+                      size: 64,
+                      color: theme.colorScheme.onSurface.withOpacity(0.3)),
                   const SizedBox(height: 16),
                   Text(
                     estadoFiltro == 'activo'
@@ -98,9 +103,9 @@ class AnimalesScreen extends ConsumerWidget {
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: esInactivo ? Colors.grey[100] : Colors.white,
+                  color: theme.cardTheme.color,
                   borderRadius: BorderRadius.circular(12),
-                  boxShadow: [AppTheme.softShadow],
+                  boxShadow: [AppTheme.softShadowFor(theme.brightness)],
                   border: esInactivo
                       ? Border.all(color: Colors.grey[300]!, width: 1)
                       : null,
@@ -142,7 +147,9 @@ class AnimalesScreen extends ConsumerWidget {
             context: context,
             isScrollControlled: true,
             backgroundColor: Colors.transparent,
-            builder: (_) => const AnimalFormSheet(),
+            builder: (_) => const BlurredModalBackdrop(
+              child: AnimalFormSheet(),
+            ),
           );
         },
         child: const Icon(Icons.add),

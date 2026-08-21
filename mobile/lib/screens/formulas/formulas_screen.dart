@@ -71,9 +71,10 @@ class FormulasScreen extends ConsumerWidget {
                         const Spacer(),
                         Text(
                           '\$${dieta.costoEstimadoKg}/kg',
-                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                color: const Color(0xFF064e3b),
-                              ),
+                          style:
+                              Theme.of(context).textTheme.labelLarge?.copyWith(
+                                    color: const Color(0xFF064e3b),
+                                  ),
                         ),
                       ],
                     ),
