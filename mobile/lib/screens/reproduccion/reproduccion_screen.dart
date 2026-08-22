@@ -4,8 +4,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/providers/ciclos_provider.dart';
+import '../../core/models/ciclo_reproductivo.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/loading_shimmer.dart';
+import '../../widgets/blur_bottom_sheet.dart';
 
 class ReproduccionScreen extends ConsumerStatefulWidget {
   const ReproduccionScreen({super.key});
@@ -54,6 +56,131 @@ class _ReproduccionScreenState extends ConsumerState<ReproduccionScreen> {
     } finally {
       if (mounted) setState(() => _registrando.remove(cicloId));
     }
+  }
+
+  void _mostrarDetalleCiclo(CicloReproductivo ciclo) {
+    final theme = Theme.of(context);
+    final estadoColor = switch (ciclo.estado) {
+      'pario' => AppTheme.success,
+      'fallida' => AppTheme.error,
+      'descartada' => AppTheme.warning,
+      _ => Colors.grey,
+    };
+    final estadoLabel = switch (ciclo.estado) {
+      'pario' => 'Parió',
+      'fallida' => 'Fallida',
+      'descartada' => 'Descartada',
+      _ => ciclo.estado,
+    };
+
+    showBlurBottomSheet(
+      context: context,
+      maxHeight: MediaQuery.sizeOf(context).height * 0.8,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: estadoColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.pets, color: estadoColor),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Animal #${ciclo.animal}',
+                          style: theme.textTheme.titleLarge),
+                      Text(estadoLabel,
+                          style: TextStyle(
+                              color: estadoColor,
+                              fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const Divider(height: 24),
+            _detalleRow(
+              'Tipo de servicio',
+              ciclo.tipoServicio == 'natural'
+                  ? 'Monta Natural'
+                  : 'Inseminación Artificial',
+            ),
+            _detalleRow(
+              'Fecha de servicio',
+              DateFormat('dd/MM/yyyy').format(ciclo.fechaServicio),
+            ),
+            _detalleRow(
+              'Fecha estimada de parto',
+              ciclo.fechaEstimadaParto != null
+                  ? DateFormat('dd/MM/yyyy')
+                      .format(ciclo.fechaEstimadaParto!)
+                  : '—',
+            ),
+            _detalleRow(
+              'Fecha de parto real',
+              ciclo.fechaPartoReal != null
+                  ? DateFormat('dd/MM/yyyy')
+                      .format(ciclo.fechaPartoReal!)
+                  : '—',
+            ),
+            _detalleRow('Días de gestación', '${ciclo.diasGestacion}'),
+            if (ciclo.formato != null && ciclo.formato!.isNotEmpty)
+              _detalleRow('Formato', ciclo.formato!),
+            if (ciclo.temporada != null && ciclo.temporada!.isNotEmpty)
+              _detalleRow('Temporada', ciclo.temporada!),
+            if (ciclo.notas != null && ciclo.notas!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text('Notas', style: theme.textTheme.titleSmall),
+              const SizedBox(height: 4),
+              Text(ciclo.notas!, style: theme.textTheme.bodyMedium),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _detalleRow(String label, String value) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 140,
+            child: Text(
+              label,
+              style: TextStyle(
+                color: isDark ? AppTheme.darkTextSecondary : Colors.grey[600],
+                fontSize: 13,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -148,9 +275,15 @@ class _ReproduccionScreenState extends ConsumerState<ReproduccionScreen> {
                         itemBuilder: (context, index) {
                           final ciclo = activos[index];
                           final hoy = DateTime.now();
-                          final diasRestantes = ciclo.fechaEstimadaParto != null
-                              ? ciclo.fechaEstimadaParto!.difference(hoy).inDays
-                              : 0;
+                          final diasCalculados =
+                              ciclo.fechaEstimadaParto != null
+                                  ? ciclo.fechaEstimadaParto!
+                                      .difference(hoy)
+                                      .inDays
+                                  : 0;
+                          final diasRestantes = diasCalculados < 0
+                              ? 0
+                              : diasCalculados;
                           final progreso = (283 - diasRestantes) / 283;
 
                           return Container(
@@ -238,29 +371,36 @@ class _ReproduccionScreenState extends ConsumerState<ReproduccionScreen> {
                                           Theme.of(context).textTheme.bodySmall,
                                     ),
                                     const SizedBox(height: 12),
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: ElevatedButton.icon(
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: FilledButton.icon(
                                         onPressed: _registrando
                                                 .contains(ciclo.id)
                                             ? null
                                             : () => _confirmarParto(ciclo.id),
-                                        icon: _registrando.contains(ciclo.id)
+                                        style: FilledButton.styleFrom(
+                                          backgroundColor: AppTheme.success,
+                                          foregroundColor: Colors.white,
+                                          visualDensity:
+                                              VisualDensity.compact,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 14,
+                                            vertical: 8,
+                                          ),
+                                        ),
+                                        icon: _registrando
+                                                .contains(ciclo.id)
                                             ? const SizedBox(
-                                                width: 18,
-                                                height: 18,
+                                                width: 14,
+                                                height: 14,
                                                 child:
                                                     CircularProgressIndicator(
                                                         strokeWidth: 2),
                                               )
                                             : const Icon(Icons.check_circle,
-                                                size: 20),
+                                                size: 18),
                                         label: const Text(
-                                            'Listo — Registrar Parto'),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: AppTheme.success,
-                                          foregroundColor: Colors.white,
-                                        ),
+                                            'Registrar Parto'),
                                       ),
                                     ),
                                   ],
@@ -305,22 +445,48 @@ class _ReproduccionScreenState extends ConsumerState<ReproduccionScreen> {
                           };
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
                               color: theme.brightness == Brightness.dark
                                   ? AppTheme.darkSurfaceVariant
                                   : Colors.grey[100],
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: ListTile(
-                              title: Text('Animal #${ciclo.animal}',
-                                  style:
-                                      Theme.of(context).textTheme.labelLarge),
-                              subtitle: Text(ciclo.estado),
-                              trailing: Text(
-                                DateFormat('dd/MM/yyyy')
-                                    .format(ciclo.fechaServicio),
-                                style: Theme.of(context).textTheme.bodySmall,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(8),
+                              onTap: () => _mostrarDetalleCiclo(ciclo),
+                              child: Padding(
+                                padding: const EdgeInsets.all(4),
+                                child: ListTile(
+                                  title: Text('Animal #${ciclo.animal}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge),
+                                  subtitle: Text(
+                                    estadoLabel,
+                                    style: TextStyle(
+                                      color: estadoColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  trailing: Column(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        DateFormat('dd/MM/yyyy')
+                                            .format(ciclo.fechaServicio),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodySmall,
+                                      ),
+                                      const Icon(Icons.chevron_right,
+                                          size: 18,
+                                          color: Colors.grey),
+                                    ],
+                                  ),
+                                ),
                               ),
                             ),
                           );

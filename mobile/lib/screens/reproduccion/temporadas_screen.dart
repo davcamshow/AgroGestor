@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../core/models/animal.dart';
 import '../../core/providers/animales_provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/blur_bottom_sheet.dart';
 
 class TemporadasScreen extends ConsumerStatefulWidget {
   const TemporadasScreen({super.key});
@@ -37,7 +37,7 @@ class _TemporadasScreenState extends ConsumerState<TemporadasScreen> {
               .where((a) => a.sexo == 'M' && a.estado == 'activo')
               .toList();
 
-          final grouped = <String, List>{};
+          final grouped = <String, List<Animal>>{};
           for (var a in hembra) {
             if (a.fechaNacimiento == null) continue;
             final mes = a.fechaNacimiento!.month;
@@ -58,13 +58,13 @@ class _TemporadasScreenState extends ConsumerState<TemporadasScreen> {
             padding: const EdgeInsets.all(16),
             children: [
               _buildCard('Primavera', Icons.wb_sunny, Colors.orange,
-                  grouped['Primavera']?.length ?? 0, 'Sept-Nov'),
+                  grouped['Primavera'] ?? [], 'Sept-Nov'),
               _buildCard('Verano', Icons.wb_sunny, Colors.amber,
-                  grouped['Verano']?.length ?? 0, 'Dic-Feb'),
+                  grouped['Verano'] ?? [], 'Dic-Feb'),
               _buildCard('Otono', Icons.park, Colors.brown,
-                  grouped['Otono']?.length ?? 0, 'Mar-May'),
+                  grouped['Otono'] ?? [], 'Mar-May'),
               _buildCard('Invierno', Icons.ac_unit, Colors.blue,
-                  grouped['Invierno']?.length ?? 0, 'Jun-Ago'),
+                  grouped['Invierno'] ?? [], 'Jun-Ago'),
             ],
           );
         },
@@ -72,8 +72,113 @@ class _TemporadasScreenState extends ConsumerState<TemporadasScreen> {
     );
   }
 
+void _mostrarVacas(
+    String temporada, IconData icono, Color color, List<Animal> vacas) {
+  final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
+
+  showBlurBottomSheet(
+    context: context,
+    height: MediaQuery.sizeOf(context).height * 0.5,
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icono, color: color),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Temporada $temporada',
+                        style: theme.textTheme.titleLarge),
+                    Text(
+                      '${vacas.length} ${vacas.length == 1 ? 'vaca asignada' : 'vacas asignadas'}',
+                      style: TextStyle(
+                        color: isDark
+                            ? AppTheme.darkTextSecondary
+                            : Colors.grey[600],
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: Divider(height: 24),
+        ),
+        Expanded(
+          child: vacas.isEmpty
+              ? Center(
+                  child: Text(
+                    'No hay vacas en esta temporada',
+                    style: TextStyle(
+                      color: isDark
+                          ? AppTheme.darkTextSecondary
+                          : Colors.grey[600],
+                    ),
+                  ),
+                )
+              : ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  children: [
+                    for (final vaca in vacas)
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          backgroundColor: color.withValues(alpha: 0.15),
+                          child: Icon(Icons.pets, color: color),
+                        ),
+                        title: Text(
+                          vaca.nombre?.isNotEmpty == true
+                              ? '${vaca.numeroArete} — ${vaca.nombre}'
+                              : vaca.numeroArete,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text(
+                          vaca.raza?.isNotEmpty == true
+                              ? vaca.raza!
+                              : 'Sin raza',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        trailing: vaca.fechaNacimiento != null
+                            ? Text(
+                                DateFormat('dd/MM/yyyy')
+                                    .format(vaca.fechaNacimiento!),
+                                style: const TextStyle(fontSize: 12),
+                              )
+                            : null,
+                      ),
+                  ],
+                ),
+        ),
+      ],
+    ),
+  );
+}
+
   Widget _buildCard(
-      String nombre, IconData icono, Color color, int cantidad, String meses) {
+      String nombre, IconData icono, Color color, List<Animal> vacas,
+      String meses) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -87,10 +192,7 @@ class _TemporadasScreenState extends ConsumerState<TemporadasScreen> {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          // TODO: Implementar la acción al tocar la tarjeta
-          // _showAnimalsModal(nombre, animales);
-        },
+        onTap: () => _mostrarVacas(nombre, icono, color, vacas),
         // Se ha movido el padding adentro del InkWell para que la animación de toque ("ripple")
         // cubra toda la tarjeta correctamente.
         child: Padding(
@@ -137,7 +239,7 @@ class _TemporadasScreenState extends ConsumerState<TemporadasScreen> {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '$cantidad',
+                  '${vacas.length}',
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
