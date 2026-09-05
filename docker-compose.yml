@@ -36,6 +36,7 @@ services:
     volumes:
       - ./backend/logs:/app/logs
       - ./backend/staticfiles:/app/staticfiles
+      - ./backend/media:/app/media
     command: >
       sh -c "python manage.py migrate &&
              python manage.py collectstatic --noinput &&

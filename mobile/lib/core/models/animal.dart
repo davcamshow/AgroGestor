@@ -10,6 +10,7 @@ class Animal {
   final String sexo;
   final DateTime? fechaNacimiento;
   final String? color;
+  final String? fotoUrl;
   final String? pesoNacimientoKg;
   final String estado;
   final DateTime fechaRegistro;
@@ -35,6 +36,7 @@ class Animal {
     required this.sexo,
     this.fechaNacimiento,
     this.color,
+    this.fotoUrl,
     this.pesoNacimientoKg,
     required this.estado,
     required this.fechaRegistro,
@@ -49,6 +51,8 @@ class Animal {
     this.ultimoEvento,
   });
 
+  bool get tieneFoto => fotoUrl != null && fotoUrl!.isNotEmpty;
+
   factory Animal.fromJson(Map<String, dynamic> json) {
     int parseInt(dynamic val) {
       if (val is int) return val;
@@ -61,7 +65,11 @@ class Animal {
       if (val is DateTime) return val;
       if (val is String) {
         if (val.isEmpty) return null;
-        try { return DateTime.parse(val); } catch (_) { return null; }
+        try {
+          return DateTime.parse(val);
+        } catch (_) {
+          return null;
+        }
       }
       return null;
     }
@@ -72,6 +80,8 @@ class Animal {
       if (val is String) return double.tryParse(val) ?? 0;
       return 0;
     }
+
+    final rawFoto = json['foto']?.toString();
 
     return Animal(
       id: parseInt(json['id']),
@@ -85,17 +95,26 @@ class Animal {
       sexo: json['sexo']?.toString() ?? 'M',
       fechaNacimiento: parseDate(json['fecha_nacimiento']),
       color: json['color']?.toString(),
+      fotoUrl: (rawFoto == null || rawFoto.isEmpty || rawFoto == 'null')
+          ? null
+          : rawFoto,
       pesoNacimientoKg: json['peso_nacimiento_kg']?.toString(),
       estado: json['estado']?.toString() ?? 'activo',
       fechaRegistro: parseDate(json['fecha_registro']) ?? DateTime.now(),
       edadDias: json['edad_dias'] != null ? parseInt(json['edad_dias']) : null,
       ultimoPesoKg: json['ultimo_peso_kg']?.toString(),
-      ultimoPeso: json['ultimo_peso'] != null ? parseDouble(json['ultimo_peso']) : null,
+      ultimoPeso:
+          json['ultimo_peso'] != null ? parseDouble(json['ultimo_peso']) : null,
       fechaUltimoPeso: parseDate(json['fecha_ultimo_peso']),
       fechaUltimoParto: parseDate(json['fecha_ultimo_parto']),
-      partosCount: json['partos_count'] != null ? parseInt(json['partos_count']) : null,
-      diasLactancia: json['dias_lactancia'] != null ? parseInt(json['dias_lactancia']) : null,
-      totalEventosSanitarios: json['total_eventos_sanitarios'] != null ? parseInt(json['total_eventos_sanitarios']) : 0,
+      partosCount:
+          json['partos_count'] != null ? parseInt(json['partos_count']) : null,
+      diasLactancia: json['dias_lactancia'] != null
+          ? parseInt(json['dias_lactancia'])
+          : null,
+      totalEventosSanitarios: json['total_eventos_sanitarios'] != null
+          ? parseInt(json['total_eventos_sanitarios'])
+          : 0,
       ultimoEvento: json['ultimo_evento'],
     );
   }
@@ -112,6 +131,7 @@ class Animal {
         'sexo': sexo,
         'fecha_nacimiento': fechaNacimiento?.toIso8601String().split('T')[0],
         'color': color,
+        'foto': fotoUrl,
         'peso_nacimiento_kg': pesoNacimientoKg,
         'estado': estado,
         'fecha_registro': fechaRegistro.toIso8601String(),

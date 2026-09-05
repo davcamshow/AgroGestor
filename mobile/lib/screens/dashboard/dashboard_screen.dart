@@ -12,6 +12,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/providers/registros_peso_provider.dart';
 import '../../widgets/kpi_card.dart';
 import '../../widgets/clima_ganado_card.dart';
+import '../../widgets/animal_avatar.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -264,15 +265,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         ),
                         child: Row(
                           children: [
-                            CircleAvatar(
-                              backgroundColor:
-                                  AppTheme.secondary.withOpacity(0.2),
-                              child: Text(
-                                animal.numeroArete[0].toUpperCase(),
-                                style:
-                                    const TextStyle(color: AppTheme.secondary),
-                              ),
-                            ),
+                            AnimalAvatar(animal: animal),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(

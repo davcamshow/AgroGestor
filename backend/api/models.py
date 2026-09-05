@@ -1,7 +1,18 @@
+import os
+import uuid
+
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import User as AuthUser
 from django.utils import timezone
+
+
+def animal_foto_upload_to(instance, filename):
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in {'.jpg', '.jpeg', '.png', '.webp'}:
+        ext = '.jpg'
+    owner_id = getattr(instance, 'usuario_id', None) or 'sin_usuario'
+    return f'animales/{owner_id}/{uuid.uuid4().hex}{ext}'
 
 
 class PasswordResetOtp(models.Model):
@@ -442,6 +453,7 @@ class Animal(models.Model):
     sexo = models.CharField(max_length=1, choices=SEXOS)
     fecha_nacimiento = models.DateField()  #cambio para que sea obligatorio
     color = models.CharField(max_length=50, blank=True, null=True)
+    foto = models.ImageField(upload_to=animal_foto_upload_to, null=True, blank=True)
     peso_nacimiento_kg = models.DecimalField(max_digits=8, decimal_places=2) #cambio para que sea obligatorio
     estado = models.CharField(max_length=20, choices=ESTADOS, default='activo')
     

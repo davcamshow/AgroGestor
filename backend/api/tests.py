@@ -8,6 +8,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
 from unittest.mock import patch
+from django.core.files.uploadedfile import SimpleUploadedFile
 from .models import Usuario, Lote, Animal, AuditoriaLogin, AuditoriaAnimal, PasswordResetOtp
 
 
@@ -445,3 +446,58 @@ class AnimalBajaTests(APITestCase):
         response = self.client.post(self.url_baja, data, format='json')
         self.assertEqual(response.status_code, 400)
         self.assertIn('error', response.data)
+
+
+_PNG_1X1 = (
+    b'\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01'
+    b'\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15\xc4\x89'
+    b'\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01'
+    b'\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
+)
+
+
+class AnimalFotoTests(APITestCase):
+
+    def setUp(self):
+        self.auth_user = AuthUser.objects.create_user(
+            username='foto@rancho.com',
+            email='foto@rancho.com',
+            password='Password123*',
+        )
+        self.usuario_perfil = Usuario.objects.create(
+            auth_user=self.auth_user,
+            nombre_completo='Foto Tester',
+            email='foto@rancho.com',
+        )
+        self.client.force_authenticate(user=self.auth_user)
+        self.animal = Animal.objects.create(
+            usuario=self.usuario_perfil,
+            numero_arete='FT-001',
+            nombre='Luna',
+            sexo='H',
+            estado='activo',
+        )
+
+    def test_subir_foto_multipart_y_url_absoluta(self):
+        foto = SimpleUploadedFile('luna.png', _PNG_1X1, content_type='image/png')
+        response = self.client.patch(
+            reverse('animal-detail', kwargs={'pk': self.animal.pk}),
+            {'foto': foto},
+            format='multipart',
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data.get('foto'))
+        self.assertIn('/media/', response.data['foto'])
+        self.animal.refresh_from_db()
+        self.assertTrue(self.animal.foto)
+
+    def test_listado_incluye_foto(self):
+        self.animal.foto.save(
+            'luna.png',
+            SimpleUploadedFile('luna.png', _PNG_1X1, content_type='image/png'),
+            save=True,
+        )
+        response = self.client.get('/api/animales/', {'estado': 'todos'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        animal_data = next(item for item in response.data if item['id'] == self.animal.id)
+        self.assertTrue(animal_data.get('foto'))

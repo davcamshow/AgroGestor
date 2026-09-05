@@ -287,6 +287,36 @@ class AnimalSerializer(serializers.ModelSerializer):
         model = Animal
         fields = '__all__'
         read_only_fields = ('usuario', 'fecha_registro')
+        extra_kwargs = {
+            'foto': {'required': False, 'allow_null': True},
+        }
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        if instance.foto:
+            url = instance.foto.url
+            data['foto'] = request.build_absolute_uri(url) if request else url
+        else:
+            data['foto'] = None
+        return data
+
+    def validate_foto(self, value):
+        if not value:
+            return value
+        if value.size > 8 * 1024 * 1024:
+            raise serializers.ValidationError('La foto no puede superar 8 MB.')
+        content_type = getattr(value, 'content_type', '') or ''
+        if content_type and content_type not in {
+            'image/jpeg',
+            'image/jpg',
+            'image/png',
+            'image/webp',
+        }:
+            raise serializers.ValidationError(
+                'Formato de imagen no válido. Usa JPG, PNG o WEBP.'
+            )
+        return value
  
     def get_edad_dias(self, obj):
         if obj.fecha_nacimiento:

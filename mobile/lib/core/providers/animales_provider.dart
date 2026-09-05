@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/animal.dart';
 import '../api/api_client.dart';
@@ -22,16 +24,29 @@ class AnimalesNotifier extends AutoDisposeAsyncNotifier<List<Animal>> {
     return (response.data as List).map((j) => Animal.fromJson(j)).toList();
   }
 
-  Future<int> createAnimal(Map<String, dynamic> data) async {
+  Future<FormData> _asMultipart(Map<String, dynamic> data, File foto) async {
+    final map = <String, dynamic>{};
+    data.forEach((key, value) {
+      if (value != null) map[key] = value.toString();
+    });
+    final filename = foto.path.split(RegExp(r'[\\/]')).last;
+    map['foto'] = await MultipartFile.fromFile(foto.path, filename: filename);
+    return FormData.fromMap(map);
+  }
+
+  Future<int> createAnimal(Map<String, dynamic> data, {File? foto}) async {
     final client = ref.read(apiClientProvider);
-    final response = await client.dio.post('animales/', data: data);
+    final payload = foto != null ? await _asMultipart(data, foto) : data;
+    final response = await client.dio.post('animales/', data: payload);
     ref.invalidateSelf();
     return response.data['id'] as int;
   }
 
-  Future<void> updateAnimal(int id, Map<String, dynamic> data) async {
+  Future<void> updateAnimal(int id, Map<String, dynamic> data,
+      {File? foto}) async {
     final client = ref.read(apiClientProvider);
-    await client.dio.put('animales/$id/', data: data);
+    final payload = foto != null ? await _asMultipart(data, foto) : data;
+    await client.dio.patch('animales/$id/', data: payload);
     ref.invalidateSelf();
   }
 

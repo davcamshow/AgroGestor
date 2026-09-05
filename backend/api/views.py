@@ -21,6 +21,7 @@ import logging
 import random
 from django.db import transaction
 from rest_framework import status
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 logger = logging.getLogger(__name__)
 
 #Importaciones para los viewsets en /api/
@@ -402,6 +403,7 @@ def _get_ip(request):
 class AnimalViewSet(viewsets.ModelViewSet):
     serializer_class = AnimalSerializer
     permission_classes = [IsAuthenticated]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
  
     # Modificación en backend/api/views.py -> AnimalViewSet
     def get_queryset(self):

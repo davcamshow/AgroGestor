@@ -48,6 +48,10 @@ class ApiClient {
           return handler.next(options);
         }
 
+        if (options.data is FormData) {
+          options.headers.remove(Headers.contentTypeHeader);
+        }
+
         final token = await _tokenStorage.getAccessToken();
         if (token != null) {
           options.headers['Authorization'] = 'Bearer $token';

@@ -13,6 +13,7 @@ import '../../core/providers/registros_peso_provider.dart';
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/blurred_modal_backdrop.dart';
+import '../../widgets/animal_avatar.dart';
 import 'animal_form_sheet.dart';
 import 'mover_lote_sheet.dart';
 import 'agregar_registro_sheet.dart';
@@ -863,13 +864,11 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
               radius: 28,
               backgroundColor: color.withOpacity(0.15),
               child: animal != null
-                  ? Text(
-                      animal.numeroArete[0].toUpperCase(),
-                      style: TextStyle(
-                        color: color,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 22,
-                      ),
+                  ? AnimalAvatar(
+                      animal: animal,
+                      radius: 28,
+                      backgroundColor: color.withOpacity(0.15),
+                      foregroundColor: color,
                     )
                   : Icon(icon, color: color.withOpacity(0.4), size: 28),
             ),
@@ -960,15 +959,12 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      CircleAvatar(
+                      AnimalAvatar(
+                        animal: m,
                         radius: 18,
                         backgroundColor: (esMacho ? Colors.blue : Colors.pink)
                             .withOpacity(0.15),
-                        child: Icon(
-                          esMacho ? Icons.male : Icons.female,
-                          size: 18,
-                          color: esMacho ? Colors.blue : Colors.pink,
-                        ),
+                        foregroundColor: esMacho ? Colors.blue : Colors.pink,
                       ),
                       const SizedBox(height: 4),
                       Text(
@@ -1010,15 +1006,10 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
         ),
         title: Row(
           children: [
-            CircleAvatar(
+            AnimalAvatar(
+              animal: animal,
               backgroundColor: theme.colorScheme.primary.withOpacity(0.15),
-              child: Text(
-                animal.numeroArete[0].toUpperCase(),
-                style: TextStyle(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              foregroundColor: theme.colorScheme.primary,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -1129,12 +1120,10 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
               final a = disponibles[index];
               final color = esMadre ? Colors.pink : Colors.blue;
               return ListTile(
-                leading: CircleAvatar(
+                leading: AnimalAvatar(
+                  animal: a,
                   backgroundColor: color.withOpacity(0.15),
-                  child: Icon(
-                    esMadre ? Icons.female : Icons.male,
-                    color: color,
-                  ),
+                  foregroundColor: color,
                 ),
                 title: Text(a.numeroArete),
                 subtitle: Text(a.nombre ?? a.raza ?? ''),
@@ -1455,21 +1444,20 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                 width: 100,
                 height: 100,
                 decoration: BoxDecoration(
-                  gradient: esActivo
-                      ? AppTheme.primaryGradientFor(theme.brightness)
-                      : const LinearGradient(
-                          colors: [Colors.grey, Color(0xFF9E9E9E)]),
+                  gradient: animal.tieneFoto
+                      ? null
+                      : (esActivo
+                          ? AppTheme.primaryGradientFor(theme.brightness)
+                          : const LinearGradient(
+                              colors: [Colors.grey, Color(0xFF9E9E9E)])),
                   borderRadius: BorderRadius.circular(50),
                 ),
-                child: Center(
-                  child: Text(
-                    animal.numeroArete[0].toUpperCase(),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 40,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                child: AnimalAvatar(
+                  animal: animal,
+                  radius: 50,
+                  dimmed: !esActivo,
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: Colors.white,
                 ),
               ),
               if (!esActivo)
