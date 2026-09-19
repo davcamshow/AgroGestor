@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import '../core/models/animal.dart';
 import '../core/theme/app_theme.dart';
 
+
+const String baseUrl = 'http:// 192.168.0.9:8000'; 
+
 class AnimalAvatar extends StatelessWidget {
   final Animal animal;
   final double radius;
@@ -22,6 +25,15 @@ class AnimalAvatar extends StatelessWidget {
     final arete = animal.numeroArete.trim();
     if (arete.isEmpty) return '?';
     return arete[0].toUpperCase();
+  }
+
+  // NUEVO: Método para asegurar que la URL esté completa
+  String _obtenerUrlCompleta(String ruta) {
+    if (ruta.startsWith('http')) {
+      return ruta; // Si ya viene completa desde el backend, la dejamos igual
+    }
+    // Si viene relativa (ej: /media/fotos/img.jpg), le pegamos el dominio/IP
+    return '$baseUrl$ruta';
   }
 
   @override
@@ -45,13 +57,15 @@ class AnimalAvatar extends StatelessWidget {
         );
 
     final foto = animal.fotoUrl;
+    
     final content = (foto == null || foto.isEmpty)
         ? fallback()
         : Image.network(
-            foto,
+            _obtenerUrlCompleta(foto), // Usamos la URL formateada
             width: size,
             height: size,
             fit: BoxFit.cover,
+            // Si hay un error de conexión o la imagen no existe, mostramos la inicial
             errorBuilder: (_, __, ___) => fallback(),
           );
 
