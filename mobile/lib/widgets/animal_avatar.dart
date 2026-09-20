@@ -3,7 +3,7 @@ import '../core/models/animal.dart';
 import '../core/theme/app_theme.dart';
 
 
-const String baseUrl = 'http:// 192.168.0.9:8000'; 
+const String baseUrl = 'http://192.168.0.9:8000'; 
 
 class AnimalAvatar extends StatelessWidget {
   final Animal animal;

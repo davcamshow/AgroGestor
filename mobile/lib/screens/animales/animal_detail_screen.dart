@@ -748,8 +748,13 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.pets, color: Colors.white, size: 20),
-                      const SizedBox(width: 8),
+                      AnimalAvatar(
+                        animal: animal,
+                        radius: 16,
+                        backgroundColor: Colors.white.withOpacity(0.25),
+                        foregroundColor: Colors.white,
+                      ),
+                      const SizedBox(width: 10),
                       Text(
                         animal.numeroArete,
                         style: const TextStyle(
