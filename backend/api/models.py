@@ -272,6 +272,7 @@ class Dieta(models.Model):
 
     ESTADOS = [
         ('activa', 'Activa'),
+        ('inactiva', 'Inactiva'),
         ('revision', 'En revisión'),
         ('archivada', 'Archivada'),
     ]
@@ -394,7 +395,7 @@ class PesajeLote(models.Model):
 
 
 class AlimentacionDiaria(models.Model):
-    lote = models.ForeignKey(Lote, on_delete=models.CASCADE)
+    lote = models.ForeignKey(Lote, on_delete=models.CASCADE, null=True, blank=True)
     dieta = models.ForeignKey(Dieta, on_delete=models.SET_NULL, null=True, blank=True)
     fecha = models.DateField()
     cantidad_servida_kg = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
@@ -405,6 +406,7 @@ class AlimentacionDiaria(models.Model):
         null=True,
         blank=True
     )
+    notas = models.TextField(blank=True, null=True, help_text='Marcador interno (ej. animal_id:12 para dietas especiales)')
 
     class Meta:
         indexes = [
@@ -433,6 +435,14 @@ class Animal(models.Model):
         null=True,
         blank=True,
         related_name='animales'
+    )
+    dieta = models.ForeignKey(
+        Dieta,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='animales_asignados',
+        help_text='Dieta especial individual (enfermo, condición o trato distinto)'
     )
     madre = models.ForeignKey(
         'self',

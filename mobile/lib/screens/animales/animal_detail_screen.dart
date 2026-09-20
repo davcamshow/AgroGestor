@@ -10,6 +10,7 @@ import '../../core/models/registro_peso.dart';
 import '../../core/providers/animales_provider.dart';
 import '../../core/providers/eventos_sanitarios_provider.dart';
 import '../../core/providers/lotes_provider.dart';
+import '../../core/providers/dietas_provider.dart';
 import '../../core/providers/registros_peso_provider.dart';
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
@@ -86,6 +87,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
   Widget build(BuildContext context) {
     final animalesAsync = ref.watch(animalesNotifierProvider);
     final lotesAsync = ref.watch(lotesNotifierProvider);
+    final dietasAsync = ref.watch(dietasNotifierProvider);
     final theme = Theme.of(context);
 
     return animalesAsync.when(
@@ -115,6 +117,10 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
         final esActivo = animal.estado == 'activo';
         final loteNombre = lotesAsync.valueOrNull
             ?.where((l) => l.id == animal.loteId)
+            .firstOrNull
+            ?.nombre;
+        final dietaNombre = dietasAsync.valueOrNull
+            ?.where((d) => d.id == animal.dietaId)
             .firstOrNull
             ?.nombre;
 
@@ -163,7 +169,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
           body: TabBarView(
             controller: _tabController,
             children: [
-              _buildInfoTab(animal, theme, loteNombre: loteNombre),
+              _buildInfoTab(animal, theme, loteNombre: loteNombre, dietaNombre: dietaNombre),
               _buildGenealogiaTab(animal, theme),
               _AuditoriaTab(animalId: animal.id),
             ],
@@ -177,7 +183,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
   // Tab Info
   // ---------------------------------------------------------------------------
   Widget _buildInfoTab(Animal animal, ThemeData theme,
-      {String? loteNombre}) {
+      {String? loteNombre, String? dietaNombre}) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -191,7 +197,8 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                 .slideX(),
             const SizedBox(height: 16),
           ],
-          _buildInfoCard(animal, theme, loteNombre: loteNombre)
+          _buildInfoCard(animal, theme,
+              loteNombre: loteNombre, dietaNombre: dietaNombre)
               .animate()
               .fadeIn(delay: 200.ms)
               .slideX(),
@@ -1504,7 +1511,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
   }
 
   Widget _buildInfoCard(Animal animal, ThemeData theme,
-      {String? loteNombre}) {
+      {String? loteNombre, String? dietaNombre}) {
     return _Card(
       title: 'Información',
       icon: Icons.info_outline,
@@ -1526,6 +1533,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
               animal.fechaNacimiento?.toString().split(' ')[0] ?? 'N/A', theme),
           _Row('Lote',
               loteNombre ?? animal.loteId?.toString() ?? 'Sin lote', theme),
+          _Row('Dieta especial', dietaNombre ?? 'Ración del lote', theme),
         ],
       ),
     );

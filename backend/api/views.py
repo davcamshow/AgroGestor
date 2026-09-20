@@ -13,9 +13,11 @@ from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
-from django.db.models import Sum, Count, Q
+from django.db.models import Sum, Count, Q, Case, When, Value, F, IntegerField
+from django.db.models.functions import Greatest
 from django.utils import timezone
 from datetime import timedelta
+from decimal import Decimal
 import hashlib
 import logging
 import random
@@ -340,6 +342,43 @@ class MovimientoInventarioViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return MovimientoInventario.objects.filter(insumo__usuario=self.request.user.perfil).select_related('insumo')
 
+    @staticmethod
+    def _factor_tipo(tipo_movimiento):
+        return Decimal(1) if tipo_movimiento == 'entrada' else Decimal(-1)
+
+    def _aplicar_delta(self, movimiento, revertir=False):
+        factor = self._factor_tipo(movimiento.tipo_movimiento)
+        if revertir:
+            factor = -factor
+        cantidad = Decimal(movimiento.cantidad_kg)
+
+        if not revertir and factor < 0 and cantidad > movimiento.insumo.cantidad_actual_kg:
+            raise serializers.ValidationError(
+                f'No hay suficiente stock de "{movimiento.insumo.nombre}": '
+                f'disponible {movimiento.insumo.cantidad_actual_kg} kg, se pretenden retirar {cantidad} kg.'
+            )
+
+        insumo = Insumo.objects.select_for_update().get(pk=movimiento.insumo_id)
+        insumo.cantidad_actual_kg += cantidad * factor
+        insumo.save(update_fields=['cantidad_actual_kg', 'fecha_actualizacion'])
+
+    @transaction.atomic
+    def perform_create(self, serializer):
+        movimiento = serializer.save()
+        self._aplicar_delta(movimiento)
+
+    @transaction.atomic
+    def perform_update(self, serializer):
+        viejo = self.get_object()
+        movimiento = serializer.save()
+        self._aplicar_delta(viejo, revertir=True)
+        self._aplicar_delta(movimiento)
+
+    @transaction.atomic
+    def perform_destroy(self, instance):
+        self._aplicar_delta(instance, revertir=True)
+        instance.delete()
+
 
 class DietaViewSet(viewsets.ModelViewSet):
     serializer_class = DietaSerializer
@@ -350,6 +389,17 @@ class DietaViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user.perfil)
+
+    @action(detail=False, methods=['post'], url_path='procesar-consumo')
+    def procesar_consumo(self, request):
+        """Procesa el consumo pendiente de dietas (lotes y animales).
+
+        Respeta la periodicidad (diaria/semanal/quincenal), calcula la ración
+        según cabezas efectivas y descuenta el inventario automáticamente.
+        """
+        from .services.consumo_dietas import procesar_consumos
+        resumen = procesar_consumos(request.user.perfil)
+        return Response(resumen, status=status.HTTP_200_OK)
 
 
 class DietaInsumoViewSet(viewsets.ModelViewSet):
@@ -365,7 +415,21 @@ class LoteViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return Lote.objects.filter(usuario=self.request.user.perfil).select_related('dieta').annotate(animales_count=Count('animales'))
+        return (
+            Lote.objects.filter(usuario=self.request.user.perfil)
+            .select_related('dieta')
+            .annotate(
+                animales_count=Count('animales'),
+                animales_activos=Count('animales', filter=Q(animales__estado='activo')),
+                animales_especiales=Count('animales', filter=Q(animales__estado='activo', animales__dieta__isnull=False)),
+                cabezas_base=Case(
+                    When(animales_activos__gt=0, then=F('animales_activos')),
+                    default=F('cantidad_cabezas'),
+                    output_field=IntegerField(),
+                ),
+                cabezas_efectivas=Greatest(F('cabezas_base') - F('animales_especiales'), Value(0)),
+            )
+        )
 
     def perform_create(self, serializer):
         serializer.save(usuario=self.request.user.perfil)
@@ -384,7 +448,21 @@ class AlimentacionDiariaViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return AlimentacionDiaria.objects.filter(lote__usuario=self.request.user.perfil).select_related('lote', 'dieta', 'usuario_registro')
+        perfil = self.request.user.perfil
+        return AlimentacionDiaria.objects.filter(
+            Q(lote__usuario=perfil) | (Q(notas__startswith='animal_id:') & Q(usuario_registro=perfil))
+        ).select_related('lote', 'dieta', 'usuario_registro')
+
+    @transaction.atomic
+    def perform_create(self, serializer):
+        registro = serializer.save(usuario_registro=self.request.user.perfil)
+        _descontar_racion(registro)
+
+
+def _descontar_racion(registro):
+    """Descuenta del inventario los insumos de una ración (lote o animal)."""
+    from .services.consumo_dietas import aplicar_consumo_registro
+    aplicar_consumo_registro(registro)
 
 
 CAMPOS_AUDITABLES = [
@@ -1031,7 +1109,7 @@ def arbol_genealogico(request, animal_id):
 @permission_classes([IsAuthenticated])
 def reporte_consumo(request):
     from datetime import timedelta
-    from django.db.models import Sum, Avg
+    from django.db.models import Sum, Count
     from django.utils import timezone
 
     usuario = request.user.perfil
@@ -1040,26 +1118,152 @@ def reporte_consumo(request):
 
     fecha_inicio = timezone.now() - timedelta(days=dias)
 
-    query = AlimentacionDiaria.objects.filter(
-        lote__usuario=usuario,
+    raciones = AlimentacionDiaria.objects.filter(
+        Q(lote__usuario=usuario) | (Q(notas__startswith='animal_id:') & Q(usuario_registro=usuario)),
         fecha__gte=fecha_inicio
-    )
+    ).select_related('lote', 'dieta')
 
     if lote_id:
-        query = query.filter(lote_id=lote_id)
+        raciones = raciones.filter(lote_id=lote_id)
 
-    total_kg = query.aggregate(Sum('cantidad_servida_kg'))['cantidad_servida_kg__sum'] or 0
-    costo_total = query.aggregate(Sum('costo_total_racion'))['costo_total_racion__sum'] or 0
+    agregados = raciones.aggregate(
+        total_kg=Sum('cantidad_servida_kg'),
+        costo_total=Sum('costo_total_racion'),
+        registros=Count('id'),
+    )
+    total_kg = agregados['total_kg'] or 0
+    costo_total = agregados['costo_total'] or 0
+    num_raciones = agregados['registros'] or 0
 
-    animales_alimentados = query.values('lote').distinct().count()
+    # Animales atendidos: cabeza-días alimentados (cabezas efectivas o 1 por ración especial)
+    from .services.consumo_dietas import cabezas_efectivas_lote
+    lotes_ids_en_raciones = {r.lote_id for r in raciones if r.lote_id}
+    cabezas_map = {}
+    if lotes_ids_en_raciones:
+        lotes_anotados = Lote.objects.filter(pk__in=lotes_ids_en_raciones).annotate(
+            activos=Count('animales', filter=Q(animales__estado='activo')),
+            especiales=Count('animales', filter=Q(animales__estado='activo', animales__dieta__isnull=False)),
+        )
+        for lote in lotes_anotados:
+            cabezas_map[lote.id] = cabezas_efectivas_lote(
+                lote, activos=lote.activos, especiales=lote.especiales
+            )
+
+    animales_atendidos = sum((cabezas_map.get(r.lote_id, 0) if r.lote_id else 1) for r in raciones)
+
+    promedio_diario_kg = float(total_kg) / dias if dias > 0 else 0
+    costo_promedio_kg = float(costo_total / total_kg) if total_kg > 0 else 0
+
+    # --- Gastos por lote (incluye raciones de dieta especial como "Sin lote") ---
+    por_lote = []
+    lotes_qs = (
+        raciones
+        .values('lote', 'lote__nombre', 'lote__cantidad_cabezas')
+        .annotate(
+            total_kg=Sum('cantidad_servida_kg'),
+            costo_total=Sum('costo_total_racion'),
+            registros=Count('id'),
+        )
+        .order_by('-costo_total')
+    )
+    for fila in lotes_qs:
+        es_especial = fila['lote'] is None
+        cabezas = cabezas_map.get(fila['lote']) if fila['lote'] else (fila['registros'] if es_especial else 0)
+        kg = float(fila['total_kg'] or 0)
+        costo = float(fila['costo_total'] or 0)
+        por_lote.append({
+            'lote_id': fila['lote'],
+            'lote_nombre': (fila['lote__nombre'] or 'Animales con dieta especial'),
+            'es_dieta_especial': es_especial,
+            'cabezas': cabezas,
+            'total_kg': kg,
+            'costo_total': costo,
+            'registros': fila['registros'],
+            'costo_por_kg': round(costo / kg, 2) if kg > 0 else 0,
+            'costo_por_cabeza': round(costo / cabezas, 2) if cabezas > 0 else 0,
+            'kg_por_cabeza': round(kg / cabezas, 2) if cabezas > 0 else 0,
+        })
+
+    # --- Insumos gastados (salidas registradas en el periodo) ---
+    salidas = MovimientoInventario.objects.filter(
+        insumo__usuario=usuario,
+        tipo_movimiento='salida',
+        fecha_movimiento__gte=fecha_inicio,
+    ).select_related('insumo')
+
+    gastados_map = {}
+    for m in salidas:
+        costo_unit = m.costo_unitario_kg if m.costo_unitario_kg else m.insumo.costo_kg
+        entry = gastados_map.get(m.insumo_id)
+        if entry is None:
+            entry = {
+                'insumo_id': m.insumo_id,
+                'nombre': m.insumo.nombre,
+                'kg': Decimal('0'),
+                'costo_total': Decimal('0'),
+                'movimientos': 0,
+            }
+            gastados_map[m.insumo_id] = entry
+        kg = Decimal(m.cantidad_kg)
+        entry['kg'] += kg
+        entry['costo_total'] += kg * Decimal(costo_unit)
+        entry['movimientos'] += 1
+
+    insumos_gastados = [
+        {
+            'insumo_id': e['insumo_id'],
+            'nombre': e['nombre'],
+            'kg': float(e['kg']),
+            'costo_total': float(e['costo_total']),
+            'movimientos': e['movimientos'],
+        }
+        for e in sorted(gastados_map.values(), key=lambda x: x['costo_total'], reverse=True)
+    ]
+
+    total_gastado_kg = sum(e['kg'] for e in insumos_gastados)
+    total_gastado_costo = sum(e['costo_total'] for e in insumos_gastados)
+
+    # --- Insumos disponibles ---
+    insumos_disponibles = []
+    for i in Insumo.objects.filter(usuario=usuario).order_by('nombre'):
+        stock = Decimal(i.cantidad_actual_kg)
+        minimo = Decimal(i.stock_minimo_kg)
+        insumos_disponibles.append({
+            'insumo_id': i.id,
+            'nombre': i.nombre,
+            'stock_kg': float(stock),
+            'stock_minimo_kg': float(minimo),
+            'costo_kg': float(i.costo_kg),
+            'valor_total': float(stock * i.costo_kg),
+            'bajo_stock': stock < minimo,
+        })
+
+    valor_inventario = sum(e['valor_total'] for e in insumos_disponibles)
+    alertas = sum(1 for e in insumos_disponibles if e['bajo_stock'])
 
     return Response({
         'periodo_dias': dias,
+        'desde': fecha_inicio.date().isoformat(),
+        'hasta': timezone.now().date().isoformat(),
+        'actualizado_en': timezone.now().isoformat(),
         'total_kg': float(total_kg),
         'costo_total': float(costo_total),
-        'animales_atendidos': animales_alimentados,
-        'kg_por_animal': float(total_kg / animales_alimentados) if animales_alimentados > 0 else 0,
-        'costo_por_animal': float(costo_total / animales_alimentados) if animales_alimentados > 0 else 0,
+        'registros': num_raciones,
+        'lotes_atendidos': len(por_lote),
+        'animales_atendidos': animales_atendidos,
+        'kg_por_animal': round(float(total_kg) / animales_atendidos, 2) if animales_atendidos > 0 else 0,
+        'costo_por_animal': round(float(costo_total) / animales_atendidos, 2) if animales_atendidos > 0 else 0,
+        'promedio_diario_kg': round(promedio_diario_kg, 2),
+        'costo_promedio_por_kg': round(costo_promedio_kg, 2),
+        'proyeccion_30_dias_kg': round(promedio_diario_kg * 30, 1),
+        'proyeccion_30_dias_costo': round(promedio_diario_kg * 30 * costo_promedio_kg, 2),
+        'por_lote': por_lote,
+        'insumos_gastados': insumos_gastados,
+        'insumos_disponibles': insumos_disponibles,
+        'total_gastado_kg': float(total_gastado_kg),
+        'total_gastado_costo': float(total_gastado_costo),
+        'valor_inventario_actual': valor_inventario,
+        'alerta_insumos': alertas,
     })
 
 

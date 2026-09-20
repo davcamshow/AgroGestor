@@ -93,7 +93,7 @@ class _CalculadoraScreenState extends ConsumerState<CalculadoraScreen> {
                             .map((l) => DropdownMenuItem(
                                   value: l.id,
                                   child: Text(
-                                      '${l.nombre} (${l.cantidadCabezas} cab)'),
+                                      '${l.nombre} (${l.cabezasEfectivas} cab)'),
                                 ))
                             .toList(),
                         onChanged: (v) {
@@ -101,7 +101,7 @@ class _CalculadoraScreenState extends ConsumerState<CalculadoraScreen> {
                             _selectedLoteId = v;
                             final lote = lotes.firstWhere((l) => l.id == v);
                             _animalesController.text =
-                                lote.cantidadCabezas.toString();
+                                lote.cabezasEfectivas.toString();
                             if (lote.pesoPromedioActualKg.isNotEmpty) {
                               _pesoController.text = lote.pesoPromedioActualKg;
                             }

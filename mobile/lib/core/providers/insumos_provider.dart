@@ -60,13 +60,15 @@ class InsumosNotifier extends StateNotifier<AsyncValue<List<Insumo>>> {
     }
   }
 
-  Future<void> addMovimiento(int insumoId, String tipo, double cantidad, {double? costoUnitario}) async {
+  Future<void> addMovimiento(int insumoId, String tipo, double cantidad,
+      {double? costoUnitario, String? notas}) async {
     try {
       await _client.dio.post('movimientos-inventario/', data: {
         'insumo': insumoId,
         'tipo_movimiento': tipo,
         'cantidad_kg': cantidad.toString(),
         if (costoUnitario != null) 'costo_unitario_kg': costoUnitario.toString(),
+        if (notas != null && notas.isNotEmpty) 'notas': notas,
       });
       await fetchInsumos();
     } catch (e) {

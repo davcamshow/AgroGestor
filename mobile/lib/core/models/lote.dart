@@ -12,6 +12,12 @@ class Lote {
   @JsonKey(name: 'cantidad_cabezas')
   final int cantidadCabezas;
 
+  @JsonKey(name: 'animales_activos', defaultValue: 0)
+  final int animalesActivos;
+
+  @JsonKey(name: 'cabezas_efectivas', defaultValue: 0)
+  final int cabezasEfectivas;
+
   @JsonKey(name: 'peso_promedio_actual_kg')
   final String pesoPromedioActualKg;
 
@@ -29,6 +35,8 @@ class Lote {
     this.dieta,
     required this.nombre,
     required this.cantidadCabezas,
+    this.animalesActivos = 0,
+    this.cabezasEfectivas = 0,
     required this.pesoPromedioActualKg,
     required this.etapaProductiva,
     required this.estado,

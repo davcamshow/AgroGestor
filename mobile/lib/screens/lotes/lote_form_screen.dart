@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/models/lote.dart';
 import '../../core/providers/lotes_provider.dart';
 import '../../core/providers/dietas_provider.dart';
+import '../../widgets/loading_dots.dart';
 
 class LoteFormScreen extends ConsumerStatefulWidget {
   final String? loteId;
@@ -19,8 +21,12 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
   late final TextEditingController _avgWeightController;
   String _selectedStage = 'Engorda';
   int? _selectedDiet;
+  String _selectedState = 'activo';
+  Lote? _loteEditado;
   bool _isLoading = false;
   String? _validationError;
+
+  bool get _cabezasAutomaticas => (_loteEditado?.animalesActivos ?? 0) > 0;
 
   static const Map<String, int> CAPACIDADES_MAX = {
     'Destete': 50,
@@ -47,15 +53,19 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
       final lote = lotes.where((l) => l.id == loteId).firstOrNull;
       if (lote == null || !mounted) return;
       _nameController.text = lote.nombre;
-      _headCountController.text = lote.cantidadCabezas.toString();
       _avgWeightController.text = lote.pesoPromedioActualKg;
       setState(() {
+        _loteEditado = lote;
+        _selectedState = lote.estado;
         _selectedStage = CAPACIDADES_MAX.containsKey(lote.etapaProductiva)
             ? lote.etapaProductiva
             : 'Engorda';
         _selectedDiet = lote.dieta;
+        _headCountController.text = lote.animalesActivos > 0
+            ? lote.animalesActivos.toString()
+            : lote.cabezasEfectivas.toString();
       });
-      _validateCapacity(_headCountController.text);
+      if (!_cabezasAutomaticas) _validateCapacity(_headCountController.text);
     } catch (_) {}
   }
 
@@ -88,7 +98,7 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
   }
 
   Future<void> _handleSave() async {
-    if (_validationError != null) {
+    if (_validationError != null && !_cabezasAutomaticas) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(_validationError!),
@@ -102,11 +112,13 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
     try {
       final data = {
         'nombre': _nameController.text,
-        'cantidad_cabezas': int.parse(_headCountController.text),
+        'cantidad_cabezas': _cabezasAutomaticas
+            ? _loteEditado!.animalesActivos
+            : int.parse(_headCountController.text),
         'peso_promedio_actual_kg': _avgWeightController.text,
         'etapa_productiva': _selectedStage,
         'dieta': _selectedDiet,
-        'estado': 'activo',
+        'estado': _selectedState,
       };
       
       if (widget.loteId != null) {
@@ -152,16 +164,20 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
               const SizedBox(height: 16),
               TextField(
                 controller: _headCountController,
+                enabled: !_cabezasAutomaticas,
                 decoration: InputDecoration(
                   labelText: 'Cantidad de Cabezas',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  errorText: _validationError,
-                  helperText: 'Capacidad máxima: ${CAPACIDADES_MAX[_selectedStage] ?? 100} cabezas',
+                  errorText: _cabezasAutomaticas ? null : _validationError,
+                  helperText: _cabezasAutomaticas
+                      ? 'Calculada con el ganado activo del lote (${_loteEditado!.animalesActivos} animales). La ración excluye los de dieta especial.'
+                      : 'Se usará manualmente mientras el lote no tenga animales. '
+                          'Capacidad máxima: ${CAPACIDADES_MAX[_selectedStage] ?? 100} cabezas.',
                 ),
                 keyboardType: TextInputType.number,
-                onChanged: _validateCapacity,
+                onChanged: _cabezasAutomaticas ? null : _validateCapacity,
               ),
               const SizedBox(height: 16),
               TextField(
@@ -197,6 +213,24 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
                 },
               ),
               const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedState,
+                decoration: InputDecoration(
+                  labelText: 'Estado del Lote',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'activo', child: Text('Activo')),
+                  DropdownMenuItem(value: 'vendido', child: Text('Vendido')),
+                  DropdownMenuItem(
+                      value: 'cuarentena', child: Text('Cuarentena')),
+                ],
+                onChanged: (value) =>
+                    setState(() => _selectedState = value ?? 'activo'),
+              ),
+              const SizedBox(height: 16),
               dietasAsync.when(
                 data: (dietas) => DropdownButtonFormField<int?>(
                   value: _selectedDiet,
@@ -218,7 +252,10 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
                   ],
                   onChanged: (value) => setState(() => _selectedDiet = value),
                 ),
-                loading: () => const CircularProgressIndicator(),
+                loading: () => const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Center(child: LoadingDots()),
+                ),
                 error: (error, stack) => Text('Error: $error'),
               ),
               const SizedBox(height: 32),

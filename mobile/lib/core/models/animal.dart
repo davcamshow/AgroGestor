@@ -2,6 +2,7 @@ class Animal {
   final int id;
   final int usuario;
   final int? loteId;
+  final int? dietaId;
   final int? madreId;
   final int? padreId;
   final String numeroArete;
@@ -28,6 +29,7 @@ class Animal {
     required this.id,
     required this.usuario,
     this.loteId,
+    this.dietaId,
     this.madreId,
     this.padreId,
     required this.numeroArete,
@@ -87,6 +89,7 @@ class Animal {
       id: parseInt(json['id']),
       usuario: parseInt(json['usuario']),
       loteId: json['lote'] != null ? parseInt(json['lote']) : null,
+      dietaId: json['dieta'] != null ? parseInt(json['dieta']) : null,
       madreId: json['madre'] != null ? parseInt(json['madre']) : null,
       padreId: json['padre'] != null ? parseInt(json['padre']) : null,
       numeroArete: json['numero_arete']?.toString() ?? '',
@@ -123,6 +126,7 @@ class Animal {
         'id': id,
         'usuario': usuario,
         'lote': loteId,
+        'dieta': dietaId,
         'madre': madreId,
         'padre': padreId,
         'numero_arete': numeroArete,
