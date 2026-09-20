@@ -196,9 +196,7 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
       body: TabBarView(
         controller: _tabController,
           children: [
-            // =========================================================
-            // Tab 1: Dietas
-            // =========================================================
+            // dietas
             dietasAsync.when(
               loading: () => ListView.builder(
                 itemCount: 3,
@@ -278,10 +276,7 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
                 );
               },
             ),
-
-            // =========================================================
-            // Tab 2: Lotes
-            // =========================================================
+            // lotes
             lotesAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(child: Text('Error: $err')),
@@ -363,9 +358,7 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
               },
             ),
 
-            // =========================================================
-            // Tab 3: Insumos
-            // =========================================================
+            // insumos
             insumosAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(child: Text('Error: $err')),

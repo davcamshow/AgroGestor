@@ -483,20 +483,19 @@ class AnimalViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
  
-    # Modificación en backend/api/views.py -> AnimalViewSet
     def get_queryset(self):
         qs = Animal.objects.filter(usuario=self.request.user.perfil)
         lote_id = self.request.query_params.get('lote')
         sexo = self.request.query_params.get('sexo')
         
-        # CAMBIO: Si no se pasa un estado en la URL, filtramos solo los 'activo' por defecto
+
         estado = self.request.query_params.get('estado', 'activo')
         
         if lote_id:
             qs = qs.filter(lote_id=lote_id)
         if sexo:
             qs = qs.filter(sexo=sexo)
-        if estado and estado != 'todos':  # Permite una opción para ver 'todos' si lo deseas en el frontend
+        if estado and estado != 'todos':  
             qs = qs.filter(estado=estado)
             
         return qs.select_related('lote', 'madre', 'padre').prefetch_related('registros_peso')
@@ -507,7 +506,6 @@ class AnimalViewSet(viewsets.ModelViewSet):
     def perform_update(self, serializer):
         animal_antes = self.get_object()
         
-        # Capturar valores anteriores de forma limpia
         valores_antes = {}
         for campo in CAMPOS_AUDITABLES:
             valor = getattr(animal_antes, campo, None)
@@ -1040,7 +1038,7 @@ def temporadas_reproductivas(request):
         'animales': animales_data,
     })
 
-# ==================== Á rbol Genealógico ====================
+# ==================== Árbol Genealógico ====================
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def arbol_genealogico(request, animal_id):
@@ -1184,7 +1182,7 @@ def reporte_consumo(request):
             'kg_por_cabeza': round(kg / cabezas, 2) if cabezas > 0 else 0,
         })
 
-    # --- Insumos gastados (salidas registradas en el periodo) ---
+    #insumos gastados
     salidas = MovimientoInventario.objects.filter(
         insumo__usuario=usuario,
         tipo_movimiento='salida',
@@ -1223,7 +1221,7 @@ def reporte_consumo(request):
     total_gastado_kg = sum(e['kg'] for e in insumos_gastados)
     total_gastado_costo = sum(e['costo_total'] for e in insumos_gastados)
 
-    # --- Insumos disponibles ---
+    # insumos disponibles
     insumos_disponibles = []
     for i in Insumo.objects.filter(usuario=usuario).order_by('nombre'):
         stock = Decimal(i.cantidad_actual_kg)
