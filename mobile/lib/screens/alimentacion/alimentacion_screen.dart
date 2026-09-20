@@ -124,47 +124,82 @@ class AlimentacionScreen extends ConsumerWidget {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(child: Text('Error: $err')),
               data: (lotes) {
-                return lotes.isEmpty
-                    ? const Center(child: Text('Sin lotes'))
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: lotes.length,
-                        itemBuilder: (context, index) {
-                          final lote = lotes[index];
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: theme.cardTheme.color,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: theme.dividerColor),
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: FilledButton.tonalIcon(
+                              onPressed: () => context.push('/lotes/new'),
+                              icon: const Icon(Icons.add),
+                              label: const Text('Nuevo Lote'),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(lote.nombre,
-                                    style: theme.textTheme.labelLarge),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      '${lote.cantidadCabezas} cabezas',
-                                      style: theme.textTheme.bodySmall,
+                          ),
+                          const SizedBox(width: 8),
+                          IconButton(
+                            tooltip: 'Gestionar lotes',
+                            onPressed: () => context.push('/lotes'),
+                            icon: const Icon(Icons.settings_outlined),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: lotes.isEmpty
+                          ? const Center(child: Text('Sin lotes'))
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(16),
+                              itemCount: lotes.length,
+                              itemBuilder: (context, index) {
+                                final lote = lotes[index];
+                                return GestureDetector(
+                                  onTap: () =>
+                                      context.push('/lotes/${lote.id}/edit'),
+                                  child: Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: theme.cardTheme.color,
+                                      borderRadius: BorderRadius.circular(8),
+                                      border:
+                                          Border.all(color: theme.dividerColor),
                                     ),
-                                    Chip(
-                                      label: Text(lote.estado),
-                                      backgroundColor: theme.colorScheme.primary
-                                          .withOpacity(0.2),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(lote.nombre,
+                                            style:
+                                                theme.textTheme.labelLarge),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              '${lote.cantidadCabezas} cabezas',
+                                              style:
+                                                  theme.textTheme.bodySmall,
+                                            ),
+                                            Chip(
+                                              label: Text(lote.estado),
+                                              backgroundColor: theme
+                                                  .colorScheme.primary
+                                                  .withOpacity(0.2),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ],
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      );
+                    ),
+                  ],
+                );
               },
             ),
 

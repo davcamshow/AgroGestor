@@ -8,6 +8,7 @@ import '../../core/models/animal.dart';
 import '../../core/providers/animales_provider.dart';
 import '../../core/providers/ciclos_provider.dart';
 import '../../core/providers/eventos_sanitarios_provider.dart';
+import '../../core/providers/lotes_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/providers/registros_peso_provider.dart';
 import '../../widgets/kpi_card.dart';
@@ -29,6 +30,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     final animalesAsync = ref.watch(animalesNotifierProvider);
     final ciclosAsync = ref.watch(ciclosNotifierProvider);
     final eventosAsync = ref.watch(eventosSanitariosNotifierProvider);
+    final lotesAsync = ref.watch(lotesNotifierProvider);
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
@@ -85,6 +87,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                     }).toList();
                     print('DEBUG: Eventos proximos: ${proximos.length}');
 
+                    final totalLotes = lotesAsync.valueOrNull?.length ?? 0;
+
                     return Column(
                       children: [
                         Row(
@@ -134,15 +138,18 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             ),
                             const SizedBox(width: 16),
                             Expanded(
-                              child: KpiCard(
-                                title: 'Lotes',
-                                value: '0',
-                                icon: Icons.group,
-                                color: AppTheme.warning,
-                              )
-                                  .animate()
-                                  .fadeIn(delay: 400.ms)
-                                  .slideX(begin: 0.3),
+                              child: GestureDetector(
+                                onTap: () => context.go('/lotes'),
+                                child: KpiCard(
+                                  title: 'Lotes',
+                                  value: totalLotes.toString(),
+                                  icon: Icons.group,
+                                  color: AppTheme.warning,
+                                )
+                                    .animate()
+                                    .fadeIn(delay: 400.ms)
+                                    .slideX(begin: 0.3),
+                              ),
                             ),
                           ],
                         ),

@@ -36,6 +36,27 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
     _nameController = TextEditingController();
     _headCountController = TextEditingController();
     _avgWeightController = TextEditingController();
+    _cargarLote();
+  }
+
+  Future<void> _cargarLote() async {
+    final loteId = int.tryParse(widget.loteId ?? '');
+    if (loteId == null) return;
+    try {
+      final lotes = await ref.read(lotesProvider.future);
+      final lote = lotes.where((l) => l.id == loteId).firstOrNull;
+      if (lote == null || !mounted) return;
+      _nameController.text = lote.nombre;
+      _headCountController.text = lote.cantidadCabezas.toString();
+      _avgWeightController.text = lote.pesoPromedioActualKg;
+      setState(() {
+        _selectedStage = CAPACIDADES_MAX.containsKey(lote.etapaProductiva)
+            ? lote.etapaProductiva
+            : 'Engorda';
+        _selectedDiet = lote.dieta;
+      });
+      _validateCapacity(_headCountController.text);
+    } catch (_) {}
   }
 
   @override

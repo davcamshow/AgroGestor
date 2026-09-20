@@ -9,6 +9,7 @@ import '../../core/models/evento_sanitario.dart';
 import '../../core/models/registro_peso.dart';
 import '../../core/providers/animales_provider.dart';
 import '../../core/providers/eventos_sanitarios_provider.dart';
+import '../../core/providers/lotes_provider.dart';
 import '../../core/providers/registros_peso_provider.dart';
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
@@ -84,6 +85,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
   @override
   Widget build(BuildContext context) {
     final animalesAsync = ref.watch(animalesNotifierProvider);
+    final lotesAsync = ref.watch(lotesNotifierProvider);
     final theme = Theme.of(context);
 
     return animalesAsync.when(
@@ -111,6 +113,10 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
         }
 
         final esActivo = animal.estado == 'activo';
+        final loteNombre = lotesAsync.valueOrNull
+            ?.where((l) => l.id == animal.loteId)
+            .firstOrNull
+            ?.nombre;
 
         return Scaffold(
           appBar: AppBar(
@@ -157,7 +163,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
           body: TabBarView(
             controller: _tabController,
             children: [
-              _buildInfoTab(animal, theme),
+              _buildInfoTab(animal, theme, loteNombre: loteNombre),
               _buildGenealogiaTab(animal, theme),
               _AuditoriaTab(animalId: animal.id),
             ],
@@ -170,7 +176,8 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
   // ---------------------------------------------------------------------------
   // Tab Info
   // ---------------------------------------------------------------------------
-  Widget _buildInfoTab(Animal animal, ThemeData theme) {
+  Widget _buildInfoTab(Animal animal, ThemeData theme,
+      {String? loteNombre}) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -184,7 +191,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                 .slideX(),
             const SizedBox(height: 16),
           ],
-          _buildInfoCard(animal, theme)
+          _buildInfoCard(animal, theme, loteNombre: loteNombre)
               .animate()
               .fadeIn(delay: 200.ms)
               .slideX(),
@@ -1491,7 +1498,8 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
     );
   }
 
-  Widget _buildInfoCard(Animal animal, ThemeData theme) {
+  Widget _buildInfoCard(Animal animal, ThemeData theme,
+      {String? loteNombre}) {
     return _Card(
       title: 'Información',
       icon: Icons.info_outline,
@@ -1511,7 +1519,8 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
               theme),
           _Row('Fecha Nac.',
               animal.fechaNacimiento?.toString().split(' ')[0] ?? 'N/A', theme),
-          _Row('Lote', animal.loteId?.toString() ?? 'Sin lote', theme),
+          _Row('Lote',
+              loteNombre ?? animal.loteId?.toString() ?? 'Sin lote', theme),
         ],
       ),
     );

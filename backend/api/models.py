@@ -1,5 +1,7 @@
 import os
 import uuid
+from django.core.exceptions import ValidationError
+from django.db.models import Q
 
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -476,6 +478,49 @@ class Animal(models.Model):
 
     def __str__(self):
         return f"{self.numero_arete} - {self.nombre or 'Sin nombre'}"
+
+    
+    def clean(self):
+        errores = {}
+        
+        # Compatibilidad biológica estricta
+        if self.madre and self.madre.sexo != 'H':
+            errores['madre'] = 'La madre asignada debe ser una hembra.'
+        if self.padre and self.padre.sexo != 'M':
+            errores['padre'] = 'El padre asignado debe ser un macho.'
+            
+        # Prevención de paradojas temporales (un animal no puede ser su propio padre/madre)
+        if self.id and (self.madre_id == self.id or self.padre_id == self.id):
+            errores['genealogia'] = 'Un animal no puede ser su propio progenitor.'
+            
+        if errores:
+            raise ValidationError(errores)
+
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        if self.numero_arete:
+            self.numero_arete = self.numero_arete.upper()
+            
+        self.full_clean() 
+        
+        # guardar en la bd
+        super().save(*args, **kwargs)
+
+    @property
+    def hermanos(self):
+        """Devuelve un QuerySet con hermanos y medios hermanos."""
+        if not self.madre_id and not self.padre_id:
+            return Animal.objects.none()
+            
+        filtro = Q()
+        if self.madre_id:
+            filtro |= Q(madre_id=self.madre_id)
+        if self.padre_id:
+            filtro |= Q(padre_id=self.padre_id)
+            
+        # Excluirse a sí mismo
+        return Animal.objects.filter(filtro).exclude(id=self.id)
 
 
 class CicloReproductivo(models.Model):
