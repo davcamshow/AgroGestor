@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/models/dieta.dart';
 import '../../core/models/dieta_insumo.dart';
+import '../../core/models/insumo.dart';
 import '../../core/providers/dietas_provider.dart';
 import '../../core/providers/insumos_provider.dart';
 
@@ -98,9 +99,9 @@ class _DietaFormScreenState extends ConsumerState<DietaFormScreen> {
     return null;
   }
 
-  Future<void> _cargarIngredientes(List<DietaInsumo> todos) async {
+  Future<void> _cargarIngredientes(
+    List<DietaInsumo> todos, List<Insumo> insumos) async {
     if (!_esEdicion || _listo) return;
-    final insumos = ref.read(insumosProvider).valueOrNull ?? const [];
     final mapa = {for (final i in insumos) i.id: i.nombre};
     for (final di in todos) {
       if (di.dieta != widget.dieta!.id) continue;
@@ -273,17 +274,22 @@ class _DietaFormScreenState extends ConsumerState<DietaFormScreen> {
   Widget build(BuildContext context) {
     final insumosAsync = ref.watch(insumosProvider);
     final dietaInsumosAsync = ref.watch(dietaInsumosProvider);
-    dietaInsumosAsync.when(
-      data: (todos) {
-        if (!_listo) {
-          WidgetsBinding.instance.addPostFrameCallback((_) => _cargarIngredientes(todos));
-        }
-      },
-      error: (e, _) {},
-      loading: () {},
-    );
 
-    final insumos = insumosAsync.valueOrNull ?? const [];
+    final insumos = insumosAsync.valueOrNull ?? const <Insumo>[];
+    final dietaInsumosData =
+        dietaInsumosAsync.valueOrNull ?? const <DietaInsumo>[];
+
+    // Los ingredientes (nombre del insumo + valor) solo pueden poblarse
+    // cuando ambos catálogos ya cargaron: si se corre antes, el insumo
+    // aún no está en la lista y el ingrediente aparece como "Insumo".
+    if (insumosAsync.hasValue && dietaInsumosAsync.hasValue && !_listo) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_listo) {
+          _cargarIngredientes(dietaInsumosData, insumos);
+        }
+      });
+    }
+
     final disponibles = insumos
         .where((i) => !_ingredientes.any((ing) => ing.insumoId == i.id))
         .toList();

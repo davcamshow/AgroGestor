@@ -501,6 +501,18 @@ def _descontar_racion(registro):
     aplicar_consumo_registro(registro)
 
 
+def _recalcular_cabezas_lote(lote):
+    """Mantiene persistido `cantidad_cabezas` alineado con los animales
+    activos del lote (igual que la anotación de `cabezas_efectivas`). Solo
+    se escribe cuando el lote tiene animales registrados."""
+    if lote is None:
+        return
+    activos = lote.animales.filter(estado='activo').count()
+    if lote.cantidad_cabezas != activos:
+        lote.cantidad_cabezas = activos
+        lote.save(update_fields=['cantidad_cabezas'])
+
+
 CAMPOS_AUDITABLES = [
     'numero_arete', 'nombre', 'raza', 'sexo',
     'fecha_nacimiento', 'color', 'peso_nacimiento_kg',
@@ -536,12 +548,13 @@ class AnimalViewSet(viewsets.ModelViewSet):
             
         return qs.select_related('lote', 'madre', 'padre').prefetch_related('registros_peso')
  
-    def perform_create(self, serializer):
-        serializer.save(usuario=self.request.user.perfil)
+def perform_create(self, serializer):
+        animal = serializer.save(usuario=self.request.user.perfil)
+        _recalcular_cabezas_lote(animal.lote)
 
     def perform_update(self, serializer):
         animal_antes = self.get_object()
-        
+
         valores_antes = {}
         for campo in CAMPOS_AUDITABLES:
             valor = getattr(animal_antes, campo, None)
@@ -551,6 +564,9 @@ class AnimalViewSet(viewsets.ModelViewSet):
                 valores_antes[campo] = str(valor) if valor is not None else ''
 
         animal = serializer.save()
+
+        _recalcular_cabezas_lote(animal_antes.lote)
+        _recalcular_cabezas_lote(animal.lote)
 
         try:
             perfil = self.request.user.perfil
@@ -607,11 +623,15 @@ class AnimalViewSet(viewsets.ModelViewSet):
 
         # Almacenar estado anterior para la auditoría
         estado_anterior = animal.estado
+        lote_anterior = animal.lote
 
         # Cambiar estado del animal y sacarlo de su lote actual si corresponde
         animal.estado = causa
         animal.lote = None # Al darse de baja, deja de pertenecer al flujo activo de un lote
         animal.save()
+
+        # Actualizar el contador del lote que se queda sin este animal
+        _recalcular_cabezas_lote(lote_anterior)
 
         # Registrar de forma explícita en la tabla de auditoría de cambios
         try:
@@ -732,13 +752,9 @@ class AnimalViewSet(viewsets.ModelViewSet):
             # 5. Contadores de animales por lote
             # Como tu LoteViewSet utiliza .annotate(animales_count=Count('animales')) de manera dinámica,
             # no es estrictamente obligatorio alterar campos físicos de contadores, sin embargo,
-            # si en tus modelos guardas un valor estático por alguna razón, recalculamos aquí:
-            if hasattr(lote_destino, 'cantidad_cabezas'):
-                lote_destino.cantidad_cabezas = lote_destino.animales.filter(estado='activo').count()
-                lote_destino.save()
-            if lote_origen_previo and hasattr(lote_origen_previo, 'cantidad_cabezas'):
-                lote_origen_previo.cantidad_cabezas = lote_origen_previo.animales.filter(estado='activo').count()
-                lote_origen_previo.save()
+            # recalculamos aquí para dejar el valor persistido consistente.
+            _recalcular_cabezas_lote(lote_destino)
+            _recalcular_cabezas_lote(lote_origen_previo)
 
         return Response({
             'mensaje': f'El animal con arete {animal.numero_arete} se movió exitosamente al lote "{lote_destino.nombre}".',
@@ -1147,8 +1163,17 @@ def reporte_consumo(request):
     from django.utils import timezone
 
     usuario = request.user.perfil
-    dias = int(request.query_params.get('dias', 30))
+    dias_raw = request.query_params.get('dias', 30)
+    try:
+        dias = int(dias_raw)
+    except (TypeError, ValueError):
+        dias = 30
     lote_id = request.query_params.get('lote')
+    if lote_id:
+        try:
+            lote_id = int(lote_id)
+        except (TypeError, ValueError):
+            lote_id = None
 
     fecha_inicio = timezone.now() - timedelta(days=dias)
 
@@ -1228,6 +1253,8 @@ def reporte_consumo(request):
     gastados_map = {}
     for m in salidas:
         costo_unit = m.costo_unitario_kg if m.costo_unitario_kg else m.insumo.costo_kg
+        if m.cantidad_kg is None or costo_unit is None:
+            continue
         entry = gastados_map.get(m.insumo_id)
         if entry is None:
             entry = {
@@ -1260,15 +1287,16 @@ def reporte_consumo(request):
     # insumos disponibles
     insumos_disponibles = []
     for i in Insumo.objects.filter(usuario=usuario).order_by('nombre'):
-        stock = Decimal(i.cantidad_actual_kg)
-        minimo = Decimal(i.stock_minimo_kg)
+        stock = Decimal(i.cantidad_actual_kg) if i.cantidad_actual_kg is not None else Decimal('0')
+        minimo = Decimal(i.stock_minimo_kg) if i.stock_minimo_kg is not None else Decimal('0')
+        costo = Decimal(i.costo_kg) if i.costo_kg is not None else Decimal('0')
         insumos_disponibles.append({
             'insumo_id': i.id,
             'nombre': i.nombre,
             'stock_kg': float(stock),
             'stock_minimo_kg': float(minimo),
-            'costo_kg': float(i.costo_kg),
-            'valor_total': float(stock * i.costo_kg),
+            'costo_kg': float(costo),
+            'valor_total': float(stock * costo),
             'bajo_stock': stock < minimo,
         })
 
