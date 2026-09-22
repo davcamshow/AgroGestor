@@ -9,60 +9,56 @@ class ThemeToggleButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
-    final isSystemMode = themeMode == ThemeMode.system;
-    final isDarkMode = themeMode == ThemeMode.dark ||
-        (isSystemMode &&
-            MediaQuery.of(context).platformBrightness == Brightness.dark);
 
-    // Ícono + color según el modo actual:
-    // - Sistema: ícono neutro "auto" (independiente de si el resultado es claro u oscuro)
-    // - Explícito claro/oscuro: sol / luna, como antes
-    final IconData icon;
-    final Color iconColor;
-    if (isSystemMode) {
-      icon = Icons.brightness_auto_rounded;
-      iconColor = Colors.lightBlueAccent;
-    } else if (isDarkMode) {
-      icon = Icons.nightlight_round;
-      iconColor = Colors.amberAccent;
-    } else {
-      icon = Icons.wb_sunny_rounded;
-      iconColor = Colors.orange;
-    }
+    final (IconData icon, Color iconColor, String tooltipMsg) =
+        switch (themeMode) {
+      ThemeMode.system => (
+          Icons.brightness_auto_rounded,
+          Colors.lightBlueAccent,
+          'Tema: Sistema (Automático)\nToca para cambiar a Claro',
+        ),
+      ThemeMode.light => (
+          Icons.wb_sunny_rounded,
+          Colors.orange,
+          'Tema: Claro\nToca para cambiar a Oscuro',
+        ),
+      ThemeMode.dark => (
+          Icons.nightlight_round,
+          Colors.amberAccent,
+          'Tema: Oscuro\nToca para volver al Sistema',
+        ),
+    };
 
     return Tooltip(
-      message: isSystemMode
-          ? 'Siguiendo el tema del sistema\nMantén presionado para cambiar'
-          : 'Toca para cambiar de tema\nMantén presionado para usar el del sistema',
+      message: tooltipMsg,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(30),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // Efecto Blur
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface.withOpacity(0.3),
+              color:
+                  Theme.of(context).colorScheme.surface.withValues(alpha: 0.3),
               borderRadius: BorderRadius.circular(30),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 width: 1.5,
               ),
             ),
             child: InkWell(
               borderRadius: BorderRadius.circular(30),
-              // Tap: alterna entre claro y oscuro explícitamente
+              // Al tocar, rota y guarda el nuevo estado en storage
               onTap: () {
-                ref.read(themeModeProvider.notifier).setThemeMode(
-                      isDarkMode ? ThemeMode.light : ThemeMode.dark,
-                    );
+                ref.read(themeModeProvider.notifier).cycleTheme();
               },
-              // Mantener presionado: vuelve a seguir el tema del sistema
+              // Si mantienes presionado, restablece y guarda directo en Sistema
               onLongPress: () {
-                ref.read(themeModeProvider.notifier).setThemeMode(
-                      ThemeMode.system,
-                    );
+                ref
+                    .read(themeModeProvider.notifier)
+                    .setThemeMode(ThemeMode.system);
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text('Ahora sigues el tema del sistema'),
+                    content: Text('Tema fijado en Automático (Sistema)'),
                     duration: Duration(seconds: 2),
                   ),
                 );
@@ -73,7 +69,6 @@ class ThemeToggleButton extends ConsumerWidget {
                   duration: const Duration(milliseconds: 400),
                   transitionBuilder:
                       (Widget child, Animation<double> animation) {
-                    // Animación de rotación y desvanecimiento suave
                     return RotationTransition(
                       turns: animation,
                       child: FadeTransition(

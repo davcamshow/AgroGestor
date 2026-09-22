@@ -1,37 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-const _storage = FlutterSecureStorage();
-const _key = 'theme_mode';
+const _themeKey = 'theme_mode';
+
+final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
+  throw UnimplementedError('Debes inicializar SharedPreferences en main()');
+});
 
 final themeModeProvider =
     StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
-  return ThemeModeNotifier();
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return ThemeModeNotifier(prefs);
 });
 
 class ThemeModeNotifier extends StateNotifier<ThemeMode> {
-  ThemeModeNotifier() : super(ThemeMode.system) {
-    _loadThemeMode();
-  }
+  final SharedPreferences _prefs;
 
-  Future<void> _loadThemeMode() async {
-    final saved = await _storage.read(key: _key);
+  ThemeModeNotifier(this._prefs) : super(_getInitialTheme(_prefs));
+
+  static ThemeMode _getInitialTheme(SharedPreferences prefs) {
+    final saved = prefs.getString(_themeKey);
     if (saved != null) {
-      state = ThemeMode.values.firstWhere(
+      return ThemeMode.values.firstWhere(
         (m) => m.name == saved,
         orElse: () => ThemeMode.system,
       );
     }
+    return ThemeMode.system;
   }
 
   Future<void> setThemeMode(ThemeMode mode) async {
     state = mode;
-    await _storage.write(key: _key, value: mode.name);
+    await _prefs.setString(_themeKey, mode.name);
   }
 
-  Future<void> toggle() async {
-    final next = state == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+  Future<void> cycleTheme() async {
+    final next = switch (state) {
+      ThemeMode.system => ThemeMode.light,
+      ThemeMode.light => ThemeMode.dark,
+      ThemeMode.dark => ThemeMode.system,
+    };
     await setThemeMode(next);
   }
 }
