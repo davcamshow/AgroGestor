@@ -8,6 +8,7 @@ class StatusBadge extends StatelessWidget {
   Color _getColor() {
     return switch (status.toLowerCase()) {
       'activo' || 'activa' => Colors.blue,
+      'inactiva' || 'inactivo' => Colors.grey,
       'en revisión' || 'revision' => Colors.amber,
       'archivada' => Colors.grey,
       'crítico' => Colors.red,

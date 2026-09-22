@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,7 +9,8 @@ import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/lotes/lotes_screen.dart';
 import '../screens/lotes/lote_form_screen.dart';
 import '../screens/formulas/formulas_screen.dart';
-import '../screens/formulas/formula_builder_screen.dart';
+import '../screens/formulas/dieta_form_screen.dart';
+import '../core/models/dieta.dart';
 import '../screens/insumos/insumos_screen.dart';
 import '../screens/reportes/reportes_screen.dart';
 import '../screens/configuracion/configuracion_screen.dart';
@@ -273,8 +275,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/formulas/builder',
         name: 'formula-builder',
-        pageBuilder: (context, state) =>
-            _fadeSlidePage(state: state, child: const FormulaBuilderScreen()),
+        pageBuilder: (context, state) => _fadeSlidePage(
+          state: state,
+          child: DietaFormScreen(dieta: state.extra as Dieta?),
+        ),
       ),
       GoRoute(
         path: '/insumos',

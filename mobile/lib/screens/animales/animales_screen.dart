@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/providers/animales_provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/animal_avatar.dart';
 import '../../widgets/loading_shimmer.dart';
 import '../../widgets/blurred_modal_backdrop.dart';
 import 'animal_form_sheet.dart';
@@ -112,18 +113,14 @@ class AnimalesScreen extends ConsumerWidget {
                 ),
                 child: ListTile(
                   onTap: () => context.push('/animales/${animal.id}'),
-                  leading: CircleAvatar(
+                  leading: AnimalAvatar(
+                    animal: animal,
+                    dimmed: esInactivo,
                     backgroundColor: esInactivo
                         ? Colors.grey[300]
                         : AppTheme.secondary.withOpacity(0.2),
-                    child: Text(
-                      animal.numeroArete[0].toUpperCase(),
-                      style: TextStyle(
-                        color:
-                            esInactivo ? Colors.grey[600] : AppTheme.secondary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    foregroundColor:
+                        esInactivo ? Colors.grey[600] : AppTheme.secondary,
                   ),
                   title: Text(
                     animal.nombre ?? animal.numeroArete,

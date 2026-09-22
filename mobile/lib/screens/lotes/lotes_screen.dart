@@ -51,7 +51,7 @@ class LotesScreen extends ConsumerWidget {
                       children: [
                         const SizedBox(height: 4),
                         Text(
-                            '${lote.cantidadCabezas} cabezas • ${lote.pesoPromedioActualKg} kg'),
+                            '${lote.cabezasEfectivas} cabezas • ${lote.pesoPromedioActualKg} kg'),
                         const SizedBox(height: 8),
                         Row(
                           children: [

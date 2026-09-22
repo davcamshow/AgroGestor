@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'dart:io';
 import '../../core/models/animal.dart';
 import '../../core/providers/animales_provider.dart';
+import '../../core/providers/dietas_provider.dart';
 import '../../core/services/bovino_recognition_service.dart';
 import '../../core/theme/app_theme.dart';
 
@@ -28,6 +29,7 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
 
   String _sexoSeleccionado = 'M';
   DateTime? _fechaNacimiento;
+  int? _dietaSeleccionada;
   File? _imagenSeleccionada;
   bool _isLoading = false;
   final ImagePicker _imagePicker = ImagePicker();
@@ -51,6 +53,7 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
       _pesoController.text = a.pesoNacimientoKg?.toString() ?? '';
       _sexoSeleccionado = a.sexo;
       _fechaNacimiento = a.fechaNacimiento;
+      _dietaSeleccionada = a.dietaId;
     }
   }
 
@@ -66,8 +69,11 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
 
   Future<void> _tomarFoto() async {
     try {
-      final XFile? foto =
-          await _imagePicker.pickImage(source: ImageSource.camera);
+      final XFile? foto = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1280,
+        imageQuality: 80,
+      );
       if (foto != null) {
         setState(() => _imagenSeleccionada = File(foto.path));
         _analizarImagen(File(foto.path));
@@ -111,8 +117,11 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
 
   Future<void> _seleccionarFoto() async {
     try {
-      final XFile? foto =
-          await _imagePicker.pickImage(source: ImageSource.gallery);
+      final XFile? foto = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1280,
+        imageQuality: 80,
+      );
       if (foto != null) {
         setState(() => _imagenSeleccionada = File(foto.path));
       }
@@ -139,6 +148,7 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
             _pesoController.text.isNotEmpty ? _pesoController.text : null,
         'fecha_nacimiento': _fechaNacimiento?.toIso8601String().split('T')[0],
         'estado': 'activo',
+        'dieta': _dietaSeleccionada,
       };
 
       late final int animalId;
@@ -146,11 +156,11 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
         animalId = widget.animalToEdit!.id;
         await ref
             .read(animalesNotifierProvider.notifier)
-            .updateAnimal(animalId, data);
+            .updateAnimal(animalId, data, foto: _imagenSeleccionada);
       } else {
         animalId = await ref
             .read(animalesNotifierProvider.notifier)
-            .createAnimal(data);
+            .createAnimal(data, foto: _imagenSeleccionada);
       }
 
       if (mounted) {
@@ -383,6 +393,73 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                               ),
                             ),
                           ).animate().fadeIn(delay: 450.ms).slideX(begin: 0.3),
+                          const SizedBox(height: 16),
+                          // Dieta especial
+                          Consumer(
+                            builder: (context, ref, _) {
+                              final dietasAsync = ref.watch(dietasNotifierProvider);
+                              return dietasAsync.when(
+                                data: (dietas) {
+                                  final nombres = {
+                                    for (final d in dietas) d.id: d.nombre
+                                  };
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Dieta especial (opcional)',
+                                        style: theme.textTheme.labelLarge
+                                            ?.copyWith(
+                                          color: theme.colorScheme.primary,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      DropdownButtonFormField<int?>(
+                                        value: _dietaSeleccionada,
+                                        isExpanded: true,
+                                        decoration: const InputDecoration(
+                                          hintText:
+                                              'Sin dieta (come la ración del lote)',
+                                          prefixIcon: Icon(Icons.restaurant),
+                                        ),
+                                        items: [
+                                          const DropdownMenuItem<int?>(
+                                            value: null,
+                                            child: Text(
+                                                'Sin dieta (ración del lote)'),
+                                          ),
+                                          ...dietas.map((d) => DropdownMenuItem<int?>(
+                                                    value: d.id,
+                                                    child: Text(
+                                                      d.nombre,
+                                                      overflow: TextOverflow
+                                                          .ellipsis,
+                                                    ),
+                                                  )),
+                                        ],
+                                        onChanged: (v) => setState(
+                                            () => _dietaSeleccionada = v),
+                                      ),
+                                      if (_dietaSeleccionada != null &&
+                                          nombres[_dietaSeleccionada] != null)
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 6),
+                                          child: Text(
+                                            'Consumirá "${nombres[_dietaSeleccionada]}" '
+                                            'y quedará excluido de la ración grupal.',
+                                            style: theme.textTheme.bodySmall,
+                                          ),
+                                        ),
+                                    ],
+                                  );
+                                },
+                                loading: () => const LinearProgressIndicator(),
+                                error: (e, _) => Text('Error: $e'),
+                              );
+                            },
+                          ).animate().fadeIn(delay: 470.ms).slideX(begin: 0.3),
                           const SizedBox(height: 28),
                           // Botón guardar
                           SizedBox(
@@ -453,26 +530,19 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
               ),
             ],
           )
+        else if (widget.animalToEdit?.tieneFoto == true)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              widget.animalToEdit!.fotoUrl!,
+              width: double.infinity,
+              height: 200,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _fotoPlaceholder(theme),
+            ),
+          )
         else
-          Container(
-            width: double.infinity,
-            height: 120,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: theme.dividerColor,
-                width: 2,
-              ),
-            ),
-            child: Center(
-              child: Icon(
-                Icons.image_outlined,
-                size: 48,
-                color: theme.textTheme.bodySmall?.color,
-              ),
-            ),
-          ),
+          _fotoPlaceholder(theme),
         const SizedBox(height: 12),
         Row(
           children: [
@@ -494,6 +564,28 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _fotoPlaceholder(ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      height: 120,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: theme.dividerColor,
+          width: 2,
+        ),
+      ),
+      child: Center(
+        child: Icon(
+          Icons.image_outlined,
+          size: 48,
+          color: theme.textTheme.bodySmall?.color,
+        ),
+      ),
     );
   }
 

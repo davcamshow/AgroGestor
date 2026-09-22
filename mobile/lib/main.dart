@@ -10,7 +10,7 @@ import 'core/providers/theme_mode_provider.dart';
 import 'core/services/push_notification_service.dart';
 import 'core/providers/sync_provider.dart';
 
-void main() async {
+void main() => runZonedGuarded(() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await dotenv.load(fileName: '.env');
@@ -35,13 +35,10 @@ void main() async {
     FlutterError.presentError(details);
   };
 
-  runZonedGuarded(
-    () => runApp(const ProviderScope(child: BovionApp())),
-    (error, stack) {
-      debugPrint('Unhandled error: $error\n$stack');
-    },
-  );
-}
+  runApp(const ProviderScope(child: BovionApp()));
+}, (error, stack) {
+  debugPrint('Unhandled error: $error\n$stack');
+});
 
 class BovionApp extends ConsumerWidget {
   const BovionApp({super.key});

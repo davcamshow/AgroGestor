@@ -9,13 +9,17 @@ class DietaInsumo {
   final int insumo;
 
   @JsonKey(name: 'porcentaje_inclusion')
-  final String porcentajeInclusion;
+  final String? porcentajeInclusion;
+
+  @JsonKey(name: 'cantidad_kg')
+  final String? cantidadKg;
 
   const DietaInsumo({
     required this.id,
     required this.dieta,
     required this.insumo,
-    required this.porcentajeInclusion,
+    this.porcentajeInclusion,
+    this.cantidadKg,
   });
 
   factory DietaInsumo.fromJson(Map<String, dynamic> json) => _$DietaInsumoFromJson(json);

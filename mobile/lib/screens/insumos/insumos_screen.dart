@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../core/models/insumo.dart';
 import '../../core/providers/insumos_provider.dart';
 import '../../widgets/status_badge.dart';
 import '../../widgets/empty_state.dart';
+import 'registro_movimiento_sheet.dart';
 
 class InsumosScreen extends ConsumerWidget {
   const InsumosScreen({super.key});
+
+  void _abrirRegistroMovimiento(BuildContext context, Insumo insumo) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => RegistroMovimientoSheet(insumo: insumo),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -15,6 +26,13 @@ class InsumosScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Insumos'),
         backgroundColor: const Color(0xFF064e3b),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.bar_chart),
+            tooltip: 'Reporte de consumo',
+            onPressed: () => context.push('/alimentacion/reporte'),
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -153,8 +171,20 @@ class InsumosScreen extends ConsumerWidget {
                               Text('\$${insumo.costoKg}/kg'),
                             ],
                           ),
-                          trailing: StatusBadge(
-                            status: isCritical ? 'Crítico' : 'Adecuado',
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              StatusBadge(
+                                status: isCritical ? 'Crítico' : 'Adecuado',
+                              ),
+                              const SizedBox(width: 4),
+                              IconButton(
+                                tooltip: 'Registrar entrada/salida',
+                                icon: const Icon(Icons.swap_vert),
+                                onPressed: () => _abrirRegistroMovimiento(
+                                    context, insumo),
+                              ),
+                            ],
                           ),
                         ),
                       );

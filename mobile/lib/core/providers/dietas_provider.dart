@@ -33,10 +33,12 @@ class DietasNotifier extends StateNotifier<AsyncValue<List<Dieta>>> {
     }
   }
 
-  Future<void> createDieta(Map<String, dynamic> data) async {
+  Future<int> createDieta(Map<String, dynamic> data) async {
     try {
-      await _client.dio.post('dietas/', data: data);
+      final response = await _client.dio.post('dietas/', data: data);
+      final id = (response.data as Map)['id'] as int;
       await fetchDietas();
+      return id;
     } catch (e) {
       rethrow;
     }
@@ -60,14 +62,40 @@ class DietasNotifier extends StateNotifier<AsyncValue<List<Dieta>>> {
     }
   }
 
-  Future<void> addInsumoToDieta(int dietaId, int insumoId, double porcentaje) async {
+  Future<void> addInsumoToDieta(int dietaId, int insumoId,
+      {double? porcentaje, double? cantidadKg}) async {
     try {
       await _client.dio.post('dieta-insumos/', data: {
         'dieta': dietaId,
         'insumo': insumoId,
-        'porcentaje_inclusion': porcentaje.toString(),
+        if (porcentaje != null) 'porcentaje_inclusion': porcentaje.toString(),
+        if (cantidadKg != null) 'cantidad_kg': cantidadKg.toString(),
       });
-      await fetchDietas();
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> updateDietaInsumo(int id, Map<String, dynamic> data) async {
+    try {
+      await _client.dio.patch('dieta-insumos/$id/', data: data);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> deleteDietaInsumo(int id) async {
+    try {
+      await _client.dio.delete('dieta-insumos/$id/');
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Map<String, dynamic>> procesarConsumo() async {
+    try {
+      final response = await _client.dio.post('dietas/procesar-consumo/');
+      return Map<String, dynamic>.from(response.data as Map);
     } catch (e) {
       rethrow;
     }

@@ -1,7 +1,20 @@
+import os
+import uuid
+from django.core.exceptions import ValidationError
+from django.db.models import Q
+
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.auth.models import User as AuthUser
 from django.utils import timezone
+
+
+def animal_foto_upload_to(instance, filename):
+    ext = os.path.splitext(filename)[1].lower()
+    if ext not in {'.jpg', '.jpeg', '.png', '.webp'}:
+        ext = '.jpg'
+    owner_id = getattr(instance, 'usuario_id', None) or 'sin_usuario'
+    return f'animales/{owner_id}/{uuid.uuid4().hex}{ext}'
 
 
 class PasswordResetOtp(models.Model):
@@ -259,6 +272,7 @@ class Dieta(models.Model):
 
     ESTADOS = [
         ('activa', 'Activa'),
+        ('inactiva', 'Inactiva'),
         ('revision', 'En revisión'),
         ('archivada', 'Archivada'),
     ]
@@ -381,7 +395,7 @@ class PesajeLote(models.Model):
 
 
 class AlimentacionDiaria(models.Model):
-    lote = models.ForeignKey(Lote, on_delete=models.CASCADE)
+    lote = models.ForeignKey(Lote, on_delete=models.CASCADE, null=True, blank=True)
     dieta = models.ForeignKey(Dieta, on_delete=models.SET_NULL, null=True, blank=True)
     fecha = models.DateField()
     cantidad_servida_kg = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
@@ -392,6 +406,7 @@ class AlimentacionDiaria(models.Model):
         null=True,
         blank=True
     )
+    notas = models.TextField(blank=True, null=True, help_text='Marcador interno (ej. animal_id:12 para dietas especiales)')
 
     class Meta:
         indexes = [
@@ -421,6 +436,14 @@ class Animal(models.Model):
         blank=True,
         related_name='animales'
     )
+    dieta = models.ForeignKey(
+        Dieta,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='animales_asignados',
+        help_text='Dieta especial individual (enfermo, condición o trato distinto)'
+    )
     madre = models.ForeignKey(
         'self',
         on_delete=models.SET_NULL,
@@ -442,6 +465,7 @@ class Animal(models.Model):
     sexo = models.CharField(max_length=1, choices=SEXOS)
     fecha_nacimiento = models.DateField()  #cambio para que sea obligatorio
     color = models.CharField(max_length=50, blank=True, null=True)
+    foto = models.ImageField(upload_to=animal_foto_upload_to, null=True, blank=True)
     peso_nacimiento_kg = models.DecimalField(max_digits=8, decimal_places=2) #cambio para que sea obligatorio
     estado = models.CharField(max_length=20, choices=ESTADOS, default='activo')
     
@@ -464,6 +488,49 @@ class Animal(models.Model):
 
     def __str__(self):
         return f"{self.numero_arete} - {self.nombre or 'Sin nombre'}"
+
+    
+    def clean(self):
+        errores = {}
+        
+        # Compatibilidad biológica estricta
+        if self.madre and self.madre.sexo != 'H':
+            errores['madre'] = 'La madre asignada debe ser una hembra.'
+        if self.padre and self.padre.sexo != 'M':
+            errores['padre'] = 'El padre asignado debe ser un macho.'
+            
+        # Prevención de paradojas temporales (un animal no puede ser su propio padre/madre)
+        if self.id and (self.madre_id == self.id or self.padre_id == self.id):
+            errores['genealogia'] = 'Un animal no puede ser su propio progenitor.'
+            
+        if errores:
+            raise ValidationError(errores)
+
+        super().clean()
+
+    def save(self, *args, **kwargs):
+        if self.numero_arete:
+            self.numero_arete = self.numero_arete.upper()
+            
+        self.full_clean() 
+        
+        # guardar en la bd
+        super().save(*args, **kwargs)
+
+    @property
+    def hermanos(self):
+        """Devuelve un QuerySet con hermanos y medios hermanos."""
+        if not self.madre_id and not self.padre_id:
+            return Animal.objects.none()
+            
+        filtro = Q()
+        if self.madre_id:
+            filtro |= Q(madre_id=self.madre_id)
+        if self.padre_id:
+            filtro |= Q(padre_id=self.padre_id)
+            
+        # Excluirse a sí mismo
+        return Animal.objects.filter(filtro).exclude(id=self.id)
 
 
 class CicloReproductivo(models.Model):

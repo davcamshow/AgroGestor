@@ -226,20 +226,116 @@ class MovimientoInventarioSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ('fecha_movimiento',)
 
+    def validate_tipo_movimiento(self, value):
+        value = (value or '').strip().lower()
+        if value not in {'entrada', 'salida'}:
+            raise serializers.ValidationError(
+                'El tipo de movimiento debe ser "entrada" o "salida".'
+            )
+        return value
+
+    def validate_cantidad_kg(self, value):
+        if value is not None and value <= 0:
+            raise serializers.ValidationError('La cantidad debe ser mayor a 0.')
+        return value
+
 class DietaSerializer(serializers.ModelSerializer):
+    ingredientes_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Dieta
         fields = '__all__'
-        read_only_fields = ('usuario', 'fecha_creacion', 'ultima_modificacion')
+        read_only_fields = ('usuario', 'fecha_creacion', 'ultima_modificacion', 'ingredientes_count')
+
+    def get_ingredientes_count(self, obj):
+        return obj.dietainsumo_set.count()
+
+    def validate_nombre(self, value):
+        value = (value or '').strip()
+        if not value:
+            raise serializers.ValidationError('El nombre de la dieta es obligatorio.')
+        return value
+
+    def validate_objetivo(self, value):
+        value = (value or '').strip()
+        if not value:
+            raise serializers.ValidationError('Indica el objetivo de la dieta (ej. engorda, lactancia, destete).')
+        return value
+
+    def validate_estado(self, value):
+        if value not in dict(Dieta.ESTADOS):
+            raise serializers.ValidationError(f'Estado inválido. Usa: {", ".join(dict(Dieta.ESTADOS))}')
+        return value
+
+    def validate_tipo_formulacion(self, value):
+        if value not in dict(Dieta.TIPOS_FORMULACION):
+            raise serializers.ValidationError('Tipo de formulación inválido (porcentaje o tabla_kg).')
+        return value
+
+    def validate_periodicidad(self, value):
+        if value not in dict(Dieta.PERIODICIDADES):
+            raise serializers.ValidationError('Periodicidad inválida (diaria, semanal o quincenal).')
+        return value
+
+    def validate_costo_estimado_kg(self, value):
+        if value is not None and value < 0:
+            raise serializers.ValidationError('El costo por kg no puede ser negativo.')
+        return value
+
+    def validate_cantidad_kg_cabeza(self, value):
+        if value is not None and value <= 0:
+            raise serializers.ValidationError('La cantidad de kg por cabeza debe ser mayor a 0.')
+        return value
 
 class DietaInsumoSerializer(serializers.ModelSerializer):
     class Meta:
         model = DietaInsumo
         fields = '__all__'
+        # La duplicidad (dieta, insumo) se valida a mano con mensaje amigable
+        validators = []
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        usuario = self.context['request'].user.perfil
+
+        dieta = attrs.get('dieta') or (self.instance.dieta if self.instance else None)
+        insumo = attrs.get('insumo') or (self.instance.insumo if self.instance else None)
+
+        if dieta and dieta.usuario_id != usuario.id:
+            raise serializers.ValidationError({'dieta': 'La dieta no pertenece a tu cuenta.'})
+        if insumo and insumo.usuario_id != usuario.id:
+            raise serializers.ValidationError({'insumo': 'El insumo no pertenece a tu cuenta.'})
+
+        porcentaje = attrs.get('porcentaje_inclusion') or (self.instance.porcentaje_inclusion if self.instance else None)
+        cantidad_kg = attrs.get('cantidad_kg') or (self.instance.cantidad_kg if self.instance else None)
+
+        if not porcentaje and not cantidad_kg:
+            raise serializers.ValidationError(
+                'Indica el porcentaje de inclusión o la cantidad en kg por cabeza.'
+            )
+        if porcentaje is not None:
+            if porcentaje <= 0:
+                raise serializers.ValidationError({'porcentaje_inclusion': 'El porcentaje debe ser mayor a 0.'})
+            if porcentaje > 100:
+                raise serializers.ValidationError({'porcentaje_inclusion': 'El porcentaje máximo es 100%.'})
+        if cantidad_kg is not None and cantidad_kg <= 0:
+            raise serializers.ValidationError({'cantidad_kg': 'La cantidad debe ser mayor a 0.'})
+
+        if dieta and insumo:
+            qs = DietaInsumo.objects.filter(dieta=dieta, insumo=insumo)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                raise serializers.ValidationError(
+                    {'insumo': 'Ese insumo ya está agregado a la dieta. Edítalo o agrégalo una sola vez.'}
+                )
+        return attrs
 
 class LoteSerializer(serializers.ModelSerializer):
     capacidad_maxima = serializers.IntegerField(read_only=True)
-    animales_count = serializers.IntegerField(read_only=True)
+    animales_count = serializers.IntegerField(read_only=True, default=0)
+    animales_activos = serializers.IntegerField(read_only=True, default=0)
+    cabezas_efectivas = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Lote
@@ -283,6 +379,31 @@ class AlimentacionDiariaSerializer(serializers.ModelSerializer):
         model = AlimentacionDiaria
         fields = '__all__'
 
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        usuario = self.context['request'].user.perfil
+
+        lote = attrs.get('lote') or (self.instance.lote if self.instance else None)
+        dieta = attrs.get('dieta') or (self.instance.dieta if self.instance else None)
+
+        if lote and lote.usuario_id != usuario.id:
+            raise serializers.ValidationError({'lote': 'El lote no pertenece a tu cuenta.'})
+        if dieta and dieta.usuario_id != usuario.id:
+            raise serializers.ValidationError({'dieta': 'La dieta no pertenece a tu cuenta.'})
+
+        cantidad = attrs.get('cantidad_servida_kg')
+        if cantidad is not None and cantidad < 0:
+            raise serializers.ValidationError({'cantidad_servida_kg': 'La cantidad no puede ser negativa.'})
+        costo = attrs.get('costo_total_racion')
+        if costo is not None and costo < 0:
+            raise serializers.ValidationError({'costo_total_racion': 'El costo no puede ser negativo.'})
+
+        if not attrs.get('lote') and not attrs.get('notas'):
+            raise serializers.ValidationError(
+                'Una ración debe pertenecer a un lote o llevar el marcador de animal (notas).'
+            )
+        return attrs
+
 
 class AuditoriaAnimalSerializer(serializers.ModelSerializer):
     class Meta:
@@ -300,6 +421,38 @@ class AnimalSerializer(serializers.ModelSerializer):
         model = Animal
         fields = '__all__'
         read_only_fields = ('usuario', 'fecha_registro')
+        extra_kwargs = {
+            'foto': {'required': False, 'allow_null': True},
+            'dieta': {'required': False, 'allow_null': True},
+            'lote': {'required': False, 'allow_null': True},
+        }
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        if instance.foto:
+            url = instance.foto.url
+            data['foto'] = request.build_absolute_uri(url) if request else url
+        else:
+            data['foto'] = None
+        return data
+
+    def validate_foto(self, value):
+        if not value:
+            return value
+        if value.size > 8 * 1024 * 1024:
+            raise serializers.ValidationError('La foto no puede superar 8 MB.')
+        content_type = getattr(value, 'content_type', '') or ''
+        if content_type and content_type not in {
+            'image/jpeg',
+            'image/jpg',
+            'image/png',
+            'image/webp',
+        }:
+            raise serializers.ValidationError(
+                'Formato de imagen no válido. Usa JPG, PNG o WEBP.'
+            )
+        return value
  
     def get_edad_dias(self, obj):
         if obj.fecha_nacimiento:
