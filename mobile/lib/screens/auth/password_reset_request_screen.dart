@@ -11,10 +11,12 @@ class PasswordResetRequestScreen extends ConsumerStatefulWidget {
   const PasswordResetRequestScreen({super.key});
 
   @override
-  ConsumerState<PasswordResetRequestScreen> createState() => _PasswordResetRequestScreenState();
+  ConsumerState<PasswordResetRequestScreen> createState() =>
+      _PasswordResetRequestScreenState();
 }
 
-class _PasswordResetRequestScreenState extends ConsumerState<PasswordResetRequestScreen> {
+class _PasswordResetRequestScreenState
+    extends ConsumerState<PasswordResetRequestScreen> {
   final _emailFormKey = GlobalKey<FormState>();
   final _otpFormKey = GlobalKey<FormState>();
   final _passwordFormKey = GlobalKey<FormState>();
@@ -50,15 +52,22 @@ class _PasswordResetRequestScreenState extends ConsumerState<PasswordResetReques
   }
 
   void _updatePasswordStrength() {
-    setState(() => _passwordStrength = PasswordStrength.from(_passwordController.text));
+    setState(() =>
+        _passwordStrength = PasswordStrength.from(_passwordController.text));
   }
 
   Future<void> _submitEmail() async {
     if (!_emailFormKey.currentState!.validate()) return;
-    setState(() { _isLoading = true; _message = null; _success = false; });
+    setState(() {
+      _isLoading = true;
+      _message = null;
+      _success = false;
+    });
 
     try {
-      await ref.read(authRepositoryProvider).requestPasswordReset(_emailController.text);
+      await ref
+          .read(authRepositoryProvider)
+          .requestPasswordReset(_emailController.text);
       setState(() {
         _step = _ResetStep.verify;
         _message = 'Te hemos enviado un código de 6 dígitos a tu correo.';
@@ -73,13 +82,17 @@ class _PasswordResetRequestScreenState extends ConsumerState<PasswordResetReques
 
   Future<void> _submitOtp() async {
     if (!_otpFormKey.currentState!.validate()) return;
-    setState(() { _isLoading = true; _message = null; _success = false; });
+    setState(() {
+      _isLoading = true;
+      _message = null;
+      _success = false;
+    });
 
     try {
       await ref.read(authRepositoryProvider).verifyPasswordResetOtp(
-        _emailController.text,
-        _otpController.text,
-      );
+            _emailController.text,
+            _otpController.text,
+          );
       setState(() {
         _step = _ResetStep.password;
         _message = 'Código verificado. Ahora define tu nueva contraseña.';
@@ -94,15 +107,19 @@ class _PasswordResetRequestScreenState extends ConsumerState<PasswordResetReques
 
   Future<void> _submitNewPassword() async {
     if (!_passwordFormKey.currentState!.validate()) return;
-    setState(() { _isLoading = true; _message = null; _success = false; });
+    setState(() {
+      _isLoading = true;
+      _message = null;
+      _success = false;
+    });
 
     try {
       await ref.read(authRepositoryProvider).confirmPasswordReset(
-        email: _emailController.text,
-        code: _otpController.text,
-        password: _passwordController.text,
-        passwordConfirm: _confirmController.text,
-      );
+            email: _emailController.text,
+            code: _otpController.text,
+            password: _passwordController.text,
+            passwordConfirm: _confirmController.text,
+          );
       setState(() {
         _message = 'Tu contraseña se actualizó correctamente.';
         _success = true;
@@ -128,7 +145,10 @@ class _PasswordResetRequestScreenState extends ConsumerState<PasswordResetReques
               : _step == _ResetStep.verify
                   ? 'Código de verificación'
                   : 'Nueva contraseña',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context)
+              .textTheme
+              .titleLarge
+              ?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
         Text(
@@ -163,7 +183,11 @@ class _PasswordResetRequestScreenState extends ConsumerState<PasswordResetReques
             ElevatedButton(
               onPressed: _isLoading ? null : _submitEmail,
               child: _isLoading
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
                   : const Text('Enviar código'),
             ),
           ],
@@ -185,13 +209,17 @@ class _PasswordResetRequestScreenState extends ConsumerState<PasswordResetReques
               ),
               keyboardType: TextInputType.number,
               maxLength: 6,
-              validator: (value) => value == null || value.trim().length != 6 ? 'Ingresa el código de 6 dígitos' : null,
+              validator: (value) => value == null || value.trim().length != 6
+                  ? 'Ingresa el código de 6 dígitos'
+                  : null,
             ),
             const SizedBox(height: 16),
             Row(
               children: [
                 TextButton(
-                  onPressed: _isLoading ? null : () => setState(() => _step = _ResetStep.email),
+                  onPressed: _isLoading
+                      ? null
+                      : () => setState(() => _step = _ResetStep.email),
                   child: const Text('Cambiar correo'),
                 ),
                 const Spacer(),
@@ -205,7 +233,11 @@ class _PasswordResetRequestScreenState extends ConsumerState<PasswordResetReques
             ElevatedButton(
               onPressed: _isLoading ? null : _submitOtp,
               child: _isLoading
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2, color: Colors.white))
                   : const Text('Verificar código'),
             ),
           ],
@@ -224,14 +256,18 @@ class _PasswordResetRequestScreenState extends ConsumerState<PasswordResetReques
               labelText: 'Nueva contraseña',
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
-                icon: Icon(_obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                icon: Icon(_obscurePassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined),
+                onPressed: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
               ),
             ),
             obscureText: _obscurePassword,
             validator: PasswordValidator.validatePassword,
           ),
-          if (_passwordController.text.isNotEmpty) PasswordStrengthIndicator(passwordStrength: _passwordStrength),
+          if (_passwordController.text.isNotEmpty)
+            PasswordStrengthIndicator(passwordStrength: _passwordStrength),
           const SizedBox(height: 16),
           TextFormField(
             controller: _confirmController,
@@ -239,18 +275,26 @@ class _PasswordResetRequestScreenState extends ConsumerState<PasswordResetReques
               labelText: 'Confirmar contraseña',
               prefixIcon: const Icon(Icons.lock_outline),
               suffixIcon: IconButton(
-                icon: Icon(_obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined),
-                onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                icon: Icon(_obscureConfirmPassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined),
+                onPressed: () => setState(
+                    () => _obscureConfirmPassword = !_obscureConfirmPassword),
               ),
             ),
             obscureText: _obscureConfirmPassword,
-            validator: (value) => PasswordValidator.validatePasswordMatch(_passwordController.text, value),
+            validator: (value) => PasswordValidator.validatePasswordMatch(
+                _passwordController.text, value),
           ),
           const SizedBox(height: 20),
           ElevatedButton(
             onPressed: _isLoading ? null : _submitNewPassword,
             child: _isLoading
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
                 : const Text('Guardar contraseña'),
           ),
         ],
@@ -260,10 +304,14 @@ class _PasswordResetRequestScreenState extends ConsumerState<PasswordResetReques
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Recuperar contraseña'),
-        backgroundColor: AppTheme.primary,
+        backgroundColor:
+            isDark ? theme.appBarTheme.backgroundColor : AppTheme.primary,
         foregroundColor: Colors.white,
       ),
       body: Center(
@@ -271,7 +319,8 @@ class _PasswordResetRequestScreenState extends ConsumerState<PasswordResetReques
           padding: const EdgeInsets.all(24),
           child: Card(
             elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
@@ -287,7 +336,9 @@ class _PasswordResetRequestScreenState extends ConsumerState<PasswordResetReques
                       _message!,
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: _success ? AppTheme.primary : Colors.red,
+                        color: _success
+                            ? theme.colorScheme.primary
+                            : theme.colorScheme.error,
                         fontWeight: FontWeight.w600,
                       ),
                     ),

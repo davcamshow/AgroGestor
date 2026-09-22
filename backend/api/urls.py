@@ -22,6 +22,7 @@ router.register(r'registros-peso', views.RegistroPesoViewSet, basename='registro
 router.register(r'eventos-sanitarios', views.EventoSanitarioViewSet, basename='evento-sanitario')
 router.register(r'auditoria-login', views.AuditoriaLoginViewSet, basename='auditoria-login')
 router.register(r'nacimientos', views.RegistroNacimientoViewSet, basename='nacimiento')
+router.register(r'notificaciones', views.NotificacionViewSet, basename='notificacion')
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -52,4 +53,5 @@ urlpatterns = [
     path('planes/verificar-limites/', views.verificar_limites, name='verificar-limites'),
     path('colaboradores/', views.gestionar_colaboradores, name='gestionar-colaboradores'),
     path('colaboradores/<int:colaborador_id>/', views.gestionar_colaboradores, name='eliminar-colaborador'),
+     path('preferencias-notificaciones/', views.PreferenciaNotificacionView.as_view(), name='preferencias-notificaciones'),
 ]

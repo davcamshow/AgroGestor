@@ -15,7 +15,20 @@ from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInven
 from django.utils import timezone
 from decimal import Decimal, InvalidOperation
 import math
+from .models import Notificacion, PreferenciaNotificacion
 
+class NotificacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notificacion
+        fields = '__all__'
+        read_only_fields = ('usuario', 'fecha_creacion', 'enviada_push')
+
+
+class PreferenciaNotificacionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PreferenciaNotificacion
+        fields = '__all__'
+        read_only_fields = ('usuario',)
 
 class FiniteCoordinateField(serializers.DecimalField):
     """Decimal estricto que rechaza booleanos, NaN e infinitos."""
