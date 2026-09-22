@@ -156,6 +156,9 @@ final animalesNotifierProvider =
 final animalesEstadoFiltroProvider =
     StateProvider.autoDispose<String>((ref) => 'todos');
 
+/// Texto de búsqueda del listado (filtra por número de arete o nombre).
+final animalesBusquedaProvider = StateProvider.autoDispose<String>((ref) => '');
+
 /// Filtros adicionales (sexo, etc.)
 final animalesFilterProvider =
     StateProvider.autoDispose<Map<String, String>>((ref) => {});

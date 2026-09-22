@@ -18,6 +18,7 @@ class LotesScreen extends ConsumerWidget {
         backgroundColor: const Color(0xFF064e3b),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'fab-lotes',
         onPressed: () => context.go('/lotes/new'),
         backgroundColor: const Color(0xFF064e3b),
         child: const Icon(Icons.add),

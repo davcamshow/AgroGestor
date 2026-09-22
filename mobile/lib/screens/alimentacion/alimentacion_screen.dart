@@ -13,8 +13,7 @@ class AlimentacionScreen extends ConsumerStatefulWidget {
   const AlimentacionScreen({super.key});
 
   @override
-  ConsumerState<AlimentacionScreen> createState() =>
-      _AlimentacionScreenState();
+  ConsumerState<AlimentacionScreen> createState() => _AlimentacionScreenState();
 }
 
 class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
@@ -66,12 +65,11 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
       final animales = resumen['animales_procesados'] as int? ?? 0;
       final lotesProcesados = (resumen['lotes_procesados'] as List? ?? const [])
           .cast<Map<String, dynamic>>();
-      final insumosAgotados = (resumen['insumos_agotados'] as List? ?? const [])
-          .cast<String>();
+      final insumosAgotados =
+          (resumen['insumos_agotados'] as List? ?? const []).cast<String>();
       final avisos = <String>[];
       for (final lote in lotesProcesados) {
-        final avisosLote = (lote['avisos'] as List? ?? const [])
-            .cast<String>();
+        final avisosLote = (lote['avisos'] as List? ?? const []).cast<String>();
         for (final a in avisosLote) {
           avisos.add('${lote['lote_nombre']}: $a');
         }
@@ -102,7 +100,8 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
                 if (raciones > 0) ...[
                   Text('$raciones ración(es) registrada(s).'),
                   Text('$movimientos salida(s) de inventario.'),
-                  if (animales > 0) Text('$animales animal(es) con dieta especial.'),
+                  if (animales > 0)
+                    Text('$animales animal(es) con dieta especial.'),
                 ] else
                   const Text(
                       'Sin consumo pendiente: las dietas ya están al día.'),
@@ -130,7 +129,8 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
         ),
       );
     } catch (e) {
-      messenger.showSnackBar(SnackBar(content: Text('Error al procesar consumo: $e')));
+      messenger.showSnackBar(
+          SnackBar(content: Text('Error al procesar consumo: $e')));
     }
   }
 
@@ -169,7 +169,7 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
               child: Icon(Icons.person,
                   color: theme.appBarTheme.foregroundColor, size: 18),
             ),
-            onPressed: () => context.go('/configuracion'),
+            onPressed: () => context.push('/configuracion'),
             tooltip: 'Perfil de Usuario',
           ),
         ],
@@ -187,6 +187,7 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
         ),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'fab-alimentacion',
         onPressed: _onFabPressed,
         tooltip: _fabTooltip,
         backgroundColor: const Color(0xFF064e3b),
@@ -195,258 +196,250 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
       ),
       body: TabBarView(
         controller: _tabController,
-          children: [
-            // dietas
-            dietasAsync.when(
-              loading: () => ListView.builder(
-                itemCount: 3,
-                itemBuilder: (_, i) => LoadingShimmerListItem(),
-              ),
-              error: (err, _) => Center(child: Text('Error: $err')),
-              data: (dietas) {
-                final activas =
-                    dietas.where((d) => d.estado == 'activa').toList();
-                return RefreshIndicator(
-                  onRefresh: _procesarConsumo,
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: IconButton(
-                            tooltip: 'Gestionar dietas',
-                            onPressed: () => context.push('/formulas'),
-                            icon: const Icon(Icons.settings_outlined),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: activas.isEmpty
-                            ? const Center(
-                                child: Text(
-                                    'Sin dietas activas. Crea una para alimentar tus lotes.'))
-                            : ListView.builder(
-                                padding: const EdgeInsets.all(16),
-                                itemCount: activas.length,
-                                itemBuilder: (context, index) {
-                                  final dieta = activas[index];
-                                  return GestureDetector(
-                                    onTap: () => context.push(
-                                        '/formulas/builder',
-                                        extra: dieta),
-                                    child: Container(
-                                      margin:
-                                          const EdgeInsets.only(bottom: 12),
-                                      decoration: BoxDecoration(
-                                        color: theme.cardTheme.color,
-                                        borderRadius:
-                                            BorderRadius.circular(12),
-                                        border: Border.all(
-                                          color:
-                                              theme.colorScheme.secondary,
-                                          width: 2,
-                                        ),
-                                        boxShadow: [
-                                          AppTheme.softShadowFor(
-                                              theme.brightness)
-                                        ],
-                                      ),
-                                      child: ListTile(
-                                        title: Text(dieta.nombre),
-                                        subtitle: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            const SizedBox(height: 4),
-                                            Text(
-                                                'Objetivo: ${dieta.objetivo}'),
-                                            Text(
-                                                'Costo: \$${dieta.costoEstimadoKg}/kg'),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ).animate().fadeIn().slideX();
-                                },
-                              ),
-                      ),
-                    ],
-                  ),
-                );
-              },
+        children: [
+          // dietas
+          dietasAsync.when(
+            loading: () => ListView.builder(
+              itemCount: 3,
+              itemBuilder: (_, i) => LoadingShimmerListItem(),
             ),
-            // lotes
-            lotesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('Error: $err')),
-              data: (lotes) {
-                return Column(
+            error: (err, _) => Center(child: Text('Error: $err')),
+            data: (dietas) {
+              final activas =
+                  dietas.where((d) => d.estado == 'activa').toList();
+              return RefreshIndicator(
+                onRefresh: _procesarConsumo,
+                child: Column(
                   children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              'Las cabezas se calculan con el ganado activo del lote.',
-                              style: theme.textTheme.bodySmall,
-                            ),
-                          ),
-                          IconButton(
-                            tooltip: 'Gestionar lotes',
-                            onPressed: () => context.push('/lotes'),
-                            icon: const Icon(Icons.settings_outlined),
-                          ),
-                        ],
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: IconButton(
+                          tooltip: 'Gestionar dietas',
+                          onPressed: () => context.push('/formulas'),
+                          icon: const Icon(Icons.settings_outlined),
+                        ),
                       ),
                     ),
                     Expanded(
-                      child: lotes.isEmpty
-                          ? const Center(child: Text('Sin lotes'))
+                      child: activas.isEmpty
+                          ? const Center(
+                              child: Text(
+                                  'Sin dietas activas. Crea una para alimentar tus lotes.'))
                           : ListView.builder(
                               padding: const EdgeInsets.all(16),
-                              itemCount: lotes.length,
+                              itemCount: activas.length,
                               itemBuilder: (context, index) {
-                                final lote = lotes[index];
+                                final dieta = activas[index];
                                 return GestureDetector(
-                                  onTap: () =>
-                                      context.push('/lotes/${lote.id}/edit'),
+                                  onTap: () => context.push('/formulas/builder',
+                                      extra: dieta),
                                   child: Container(
                                     margin: const EdgeInsets.only(bottom: 12),
-                                    padding: const EdgeInsets.all(12),
                                     decoration: BoxDecoration(
                                       color: theme.cardTheme.color,
-                                      borderRadius: BorderRadius.circular(8),
-                                      border:
-                                          Border.all(color: theme.dividerColor),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(lote.nombre,
-                                            style:
-                                                theme.textTheme.labelLarge),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              '${lote.cabezasEfectivas} cabezas',
-                                              style:
-                                                  theme.textTheme.bodySmall,
-                                            ),
-                                            Chip(
-                                              label: Text(lote.estado),
-                                              backgroundColor: theme
-                                                  .colorScheme.primary
-                                                  .withOpacity(0.2),
-                                            ),
-                                          ],
-                                        ),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: theme.colorScheme.secondary,
+                                        width: 2,
+                                      ),
+                                      boxShadow: [
+                                        AppTheme.softShadowFor(theme.brightness)
                                       ],
                                     ),
+                                    child: ListTile(
+                                      title: Text(dieta.nombre),
+                                      subtitle: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const SizedBox(height: 4),
+                                          Text('Objetivo: ${dieta.objetivo}'),
+                                          Text(
+                                              'Costo: \$${dieta.costoEstimadoKg}/kg'),
+                                        ],
+                                      ),
+                                    ),
                                   ),
-                                );
+                                ).animate().fadeIn().slideX();
                               },
                             ),
                     ),
                   ],
-                );
-              },
-            ),
-
-            // insumos
-            insumosAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, _) => Center(child: Text('Error: $err')),
-              data: (insumos) {
-                return insumos.isEmpty
-                    ? const Center(child: Text('Sin insumos'))
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: insumos.length,
-                        itemBuilder: (context, index) {
-                          final insumo = insumos[index];
-                          final actual =
-                              double.tryParse(insumo.cantidadActualKg) ?? 0;
-                          final minimo =
-                              double.tryParse(insumo.stockMinimoKg) ?? 0;
-                          final alerta = actual < minimo;
-                          final progreso = (minimo > 0
-                              ? (actual / minimo).clamp(0.0, 1.0)
-                              : 1.0);
-
-                          return Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: alerta
-                                  ? errorColor.withOpacity(0.1)
-                                  : theme.cardTheme.color,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: alerta ? errorColor : theme.dividerColor,
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Expanded(
-                                      child: Text(insumo.nombre,
-                                          style: theme.textTheme.labelLarge,
-                                          overflow: TextOverflow.ellipsis),
-                                    ),
-                                    if (alerta)
-                                      Chip(
-                                        label: const Text('Bajo stock'),
-                                        backgroundColor:
-                                            errorColor.withOpacity(0.3),
+                ),
+              );
+            },
+          ),
+          // lotes
+          lotesAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Error: $err')),
+            data: (lotes) {
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Las cabezas se calculan con el ganado activo del lote.',
+                            style: theme.textTheme.bodySmall,
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Gestionar lotes',
+                          onPressed: () => context.push('/lotes'),
+                          icon: const Icon(Icons.settings_outlined),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: lotes.isEmpty
+                        ? const Center(child: Text('Sin lotes'))
+                        : ListView.builder(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: lotes.length,
+                            itemBuilder: (context, index) {
+                              final lote = lotes[index];
+                              return GestureDetector(
+                                onTap: () =>
+                                    context.push('/lotes/${lote.id}/edit'),
+                                child: Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: theme.cardTheme.color,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border:
+                                        Border.all(color: theme.dividerColor),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(lote.nombre,
+                                          style: theme.textTheme.labelLarge),
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Text(
+                                            '${lote.cabezasEfectivas} cabezas',
+                                            style: theme.textTheme.bodySmall,
+                                          ),
+                                          Chip(
+                                            label: Text(lote.estado),
+                                            backgroundColor: theme
+                                                .colorScheme.primary
+                                                .withOpacity(0.2),
+                                          ),
+                                        ],
                                       ),
-                                    IconButton(
-                                      tooltip: 'Registrar entrada/salida',
-                                      icon: const Icon(Icons.swap_vert),
-                                      onPressed: () => showModalBottomSheet(
-                                        context: context,
-                                        isScrollControlled: true,
-                                        builder: (_) => RegistroMovimientoSheet(
-                                            insumo: insumo),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(4),
-                                  child: LinearProgressIndicator(
-                                    value: progreso,
-                                    minHeight: 6,
-                                    backgroundColor: theme.dividerColor,
-                                    valueColor: AlwaysStoppedAnimation(
-                                      alerta ? errorColor : successColor,
-                                    ),
+                                    ],
                                   ),
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  '${actual.toStringAsFixed(1)}/${minimo.toStringAsFixed(1)} kg',
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                              ],
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              );
+            },
+          ),
+
+          // insumos
+          insumosAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, _) => Center(child: Text('Error: $err')),
+            data: (insumos) {
+              return insumos.isEmpty
+                  ? const Center(child: Text('Sin insumos'))
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: insumos.length,
+                      itemBuilder: (context, index) {
+                        final insumo = insumos[index];
+                        final actual =
+                            double.tryParse(insumo.cantidadActualKg) ?? 0;
+                        final minimo =
+                            double.tryParse(insumo.stockMinimoKg) ?? 0;
+                        final alerta = actual < minimo;
+                        final progreso = (minimo > 0
+                            ? (actual / minimo).clamp(0.0, 1.0)
+                            : 1.0);
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: alerta
+                                ? errorColor.withOpacity(0.1)
+                                : theme.cardTheme.color,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: alerta ? errorColor : theme.dividerColor,
                             ),
-                          );
-                        },
-                      );
-              },
-            ),
-          ],
-        ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(insumo.nombre,
+                                        style: theme.textTheme.labelLarge,
+                                        overflow: TextOverflow.ellipsis),
+                                  ),
+                                  if (alerta)
+                                    Chip(
+                                      label: const Text('Bajo stock'),
+                                      backgroundColor:
+                                          errorColor.withOpacity(0.3),
+                                    ),
+                                  IconButton(
+                                    tooltip: 'Registrar entrada/salida',
+                                    icon: const Icon(Icons.swap_vert),
+                                    onPressed: () => showModalBottomSheet(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      builder: (_) => RegistroMovimientoSheet(
+                                          insumo: insumo),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: progreso,
+                                  minHeight: 6,
+                                  backgroundColor: theme.dividerColor,
+                                  valueColor: AlwaysStoppedAnimation(
+                                    alerta ? errorColor : successColor,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${actual.toStringAsFixed(1)}/${minimo.toStringAsFixed(1)} kg',
+                                style: theme.textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+            },
+          ),
+        ],
+      ),
     );
   }
 }

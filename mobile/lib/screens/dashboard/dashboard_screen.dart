@@ -15,7 +15,6 @@ import '../../core/providers/registros_peso_provider.dart';
 import '../../widgets/kpi_card.dart';
 import '../../widgets/clima_ganado_card.dart';
 import '../../core/providers/notificaciones_provider.dart';
-import '../../widgets/animal_avatar.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
   const DashboardScreen({super.key});
@@ -84,7 +83,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               backgroundColor: Colors.white.withOpacity(0.2),
               child: const Icon(Icons.person, color: Colors.white, size: 18),
             ),
-            onPressed: () => context.go('/configuracion'),
+            onPressed: () => context.push('/configuracion'),
           ),
         ],
       ),
@@ -127,27 +126,35 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                         Row(
                           children: [
                             Expanded(
-                              child: KpiCard(
-                                title: 'Animales',
-                                value: totalAnimales.toString(),
-                                icon: Icons.pets,
-                                color: AppTheme.secondary,
-                              )
-                                  .animate()
-                                  .fadeIn(delay: 100.ms)
-                                  .slideX(begin: 0.3),
+                              child: GestureDetector(
+                                onTap: () => context.go('/animales'),
+                                child: KpiCard(
+                                  title: 'Animales',
+                                  value: totalAnimales.toString(),
+                                  icon: Icons.pets,
+                                  color: AppTheme.secondary,
+                                  compact: true,
+                                )
+                                    .animate()
+                                    .fadeIn(delay: 100.ms)
+                                    .slideX(begin: 0.3),
+                              ),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
-                              child: KpiCard(
-                                title: 'Gestantes',
-                                value: gestantes.toString(),
-                                icon: Icons.favorite,
-                                color: AppTheme.accent,
-                              )
-                                  .animate()
-                                  .fadeIn(delay: 200.ms)
-                                  .slideX(begin: 0.3),
+                              child: GestureDetector(
+                                onTap: () => context.go('/reproduccion'),
+                                child: KpiCard(
+                                  title: 'Gestantes',
+                                  value: gestantes.toString(),
+                                  icon: Icons.favorite,
+                                  color: AppTheme.accent,
+                                  compact: true,
+                                )
+                                    .animate()
+                                    .fadeIn(delay: 200.ms)
+                                    .slideX(begin: 0.3),
+                              ),
                             ),
                           ],
                         ),
@@ -166,6 +173,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   value: proximos.length.toString(),
                                   icon: Icons.event,
                                   color: AppTheme.info,
+                                  compact: true,
                                 )
                                     .animate()
                                     .fadeIn(delay: 300.ms)
@@ -181,6 +189,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                                   value: totalLotes.toString(),
                                   icon: Icons.group,
                                   color: AppTheme.warning,
+                                  compact: true,
                                 )
                                     .animate()
                                     .fadeIn(delay: 400.ms)
@@ -196,7 +205,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            const ClimaGanadoCard(),
+            const ClimaGanadoCard(compact: true),
             const SizedBox(height: 24),
             animalesAsync.when(
               loading: () => Container(
@@ -270,167 +279,6 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
               },
             ),
             const SizedBox(height: 24),
-            Text(
-              'Últimos Animales Registrados',
-              style: Theme.of(context).textTheme.titleMedium,
-            ).animate().fadeIn(delay: 700.ms),
-            const SizedBox(height: 12),
-            animalesAsync.when(
-              loading: () => Column(
-                children: List.generate(
-                    3,
-                    (_) => Container(
-                          height: 70,
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).cardTheme.color,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        )),
-              ),
-              error: (err, _) => Center(child: Text('Error: $err')),
-              data: (animales) {
-                if (animales.isEmpty) {
-                  return const Center(child: Text('Sin animales registrados'));
-                }
-                final recientes = animales.take(5).toList();
-                return Column(
-                  children: recientes.map((animal) {
-                    return GestureDetector(
-                      onTap: () => context.go('/animales/${animal.id}'),
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardTheme.color,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [AppTheme.softShadow],
-                        ),
-                        child: Row(
-                          children: [
-                            AnimalAvatar(animal: animal),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    animal.numeroArete,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  Text(
-                                    animal.raza ?? 'Sin raza',
-                                    style: TextStyle(
-                                        color: Colors.grey[600], fontSize: 12),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              animal.estado,
-                              style: TextStyle(
-                                color: animal.estado == 'activo'
-                                    ? AppTheme.success
-                                    : Colors.grey,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ).animate().fadeIn().slideX();
-                  }).toList(),
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Últimos Eventos',
-              style: Theme.of(context).textTheme.titleMedium,
-            ).animate().fadeIn(delay: 800.ms),
-            const SizedBox(height: 12),
-            eventosAsync.when(
-              loading: () => const SizedBox.shrink(),
-              error: (err, _) => Center(child: Text('Error: $err')),
-              data: (eventos) {
-                if (eventos.isEmpty) {
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).cardTheme.color,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [AppTheme.softShadow],
-                    ),
-                    child: const Center(
-                      child: Text('Sin eventos registrados',
-                          style: TextStyle(color: Colors.grey)),
-                    ),
-                  );
-                }
-                final recientes = [...eventos]..sort(
-                    (a, b) => b.fechaAplicacion.compareTo(a.fechaAplicacion));
-                final ultimos = recientes.take(5).toList();
-                return Column(
-                  children: ultimos.map((evento) {
-                    final animal = animalesAsync.valueOrNull
-                        ?.where((a) => a.id == evento.animalId)
-                        .firstOrNull;
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardTheme.color,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [AppTheme.softShadow],
-                      ),
-                      child: Row(
-                        children: [
-                          CircleAvatar(
-                            radius: 18,
-                            backgroundColor: AppTheme.info.withOpacity(0.15),
-                            child: Icon(
-                              _getTipoIcon(evento.tipo),
-                              size: 18,
-                              color: AppTheme.info,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  '${_getTipoLabel(evento.tipo)} - ${evento.producto}',
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 13),
-                                ),
-                                Text(
-                                  animal?.numeroArete ??
-                                      'Animal #${evento.animalId}',
-                                  style: TextStyle(
-                                    color: Colors.grey[600],
-                                    fontSize: 11,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Text(
-                            _formatearFecha(evento.fechaAplicacion),
-                            style: TextStyle(
-                              color: Colors.grey[500],
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ).animate().fadeIn().slideX();
-                  }).toList(),
-                );
-              },
-            ),
           ],
         ),
       ),

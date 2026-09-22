@@ -9,7 +9,8 @@ import '../../widgets/empty_state.dart';
 class FormulasScreen extends ConsumerWidget {
   const FormulasScreen({super.key});
 
-  Future<void> _eliminar(BuildContext context, WidgetRef ref, Dieta dieta) async {
+  Future<void> _eliminar(
+      BuildContext context, WidgetRef ref, Dieta dieta) async {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -52,6 +53,7 @@ class FormulasScreen extends ConsumerWidget {
         backgroundColor: const Color(0xFF064e3b),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'fab-formulas',
         onPressed: () => context.push('/formulas/builder'),
         backgroundColor: const Color(0xFF064e3b),
         child: const Icon(Icons.add),
@@ -67,8 +69,7 @@ class FormulasScreen extends ConsumerWidget {
               return EmptyState(
                 icon: Icons.restaurant,
                 title: 'Sin dietas',
-                description:
-                    'Crea tu primera dieta con insumos del inventario',
+                description: 'Crea tu primera dieta con insumos del inventario',
                 actionLabel: 'Nueva Dieta',
                 onActionPressed: () => context.push('/formulas/builder'),
               );
@@ -79,13 +80,13 @@ class FormulasScreen extends ConsumerWidget {
               itemCount: dietas.length,
               itemBuilder: (context, index) {
                 final dieta = dietas[index];
-                final cantidad = conteoInsumos
-                    .where((di) => di.dieta == dieta.id)
-                    .length;
+                final cantidad =
+                    conteoInsumos.where((di) => di.dieta == dieta.id).length;
                 return Card(
                   margin: const EdgeInsets.only(bottom: 10),
                   child: ListTile(
-                    onTap: () => context.push('/formulas/builder', extra: dieta),
+                    onTap: () =>
+                        context.push('/formulas/builder', extra: dieta),
                     isThreeLine: true,
                     title: Row(
                       children: [
