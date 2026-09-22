@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaAnimal
+from .models import Notificacion, PreferenciaNotificacion, Usuario, Proveedor, CategoriaInsumo, Insumo, MovimientoInventario, Dieta, DietaInsumo, Lote, PesajeLote, AlimentacionDiaria, Animal, CicloReproductivo, RegistroPeso, EventoSanitario, AuditoriaAnimal
 # Register your models here.
 
 admin.site.register(Usuario)
@@ -18,3 +18,5 @@ admin.site.register(CicloReproductivo)
 admin.site.register(RegistroPeso)
 admin.site.register(EventoSanitario)
 admin.site.register(AuditoriaAnimal)
+admin.site.register(Notificacion)
+admin.site.register(PreferenciaNotificacion)

@@ -77,6 +77,13 @@ INSTALLED_APPS = [
     'drf_spectacular',  # Para documentación de la API automatizada
     'anymail',
     'api',  # Tu app de API
+    'django_crontab',  # Para tareas programadas
+]
+ONESIGNAL_APP_ID = os.getenv('ONESIGNAL_APP_ID')
+ONESIGNAL_REST_API_KEY = os.getenv('ONESIGNAL_REST_API_KEY')
+
+CRONJOBS = [
+    ('*/30 * * * *', 'api.services.notification_detector.ejecutar_revision_cron'),
 ]
 
 MIDDLEWARE = [

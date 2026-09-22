@@ -29,7 +29,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _passwordController = TextEditingController();
   }
 
-@override
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -74,15 +74,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         // Login falló
         print('[LOGIN] Login falló - credenciales incorrectas');
         if (mounted) {
-            final msg = authState.errorMessage ?? 'Usuario o contraseña incorrectos';
-            _setErrorMessage(msg.replaceFirst('Exception: ', ''));
+          final msg =
+              authState.errorMessage ?? 'Usuario o contraseña incorrectos';
+          _setErrorMessage(msg.replaceFirst('Exception: ', ''));
         }
       }
     } catch (e) {
       print('[LOGIN] Error: $e');
       if (mounted) {
-          final msg = e.toString();
-          _setErrorMessage(msg.replaceFirst('Exception: ', ''));
+        final msg = e.toString();
+        _setErrorMessage(msg.replaceFirst('Exception: ', ''));
       }
     } finally {
       if (mounted) {
@@ -93,19 +94,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       body: Stack(
         children: [
           // Fondo con gradiente
           Container(
-            decoration: const BoxDecoration(
-              gradient: AppTheme.headerGradient,
+            decoration: BoxDecoration(
+              gradient: AppTheme.headerGradientFor(theme.brightness),
             ),
           ),
           SafeArea(
             child: SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -114,7 +118,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       'Bovion',
                       textAlign: TextAlign.center,
                       style: Theme.of(context)
-                          .textTheme.displayLarge
+                          .textTheme
+                          .displayLarge
                           ?.copyWith(color: Colors.white),
                     ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.3),
                     const SizedBox(height: 8),
@@ -122,16 +127,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       'Gestor Ganadero Bovina',
                       textAlign: TextAlign.center,
                       style: Theme.of(context)
-                          .textTheme.titleMedium
+                          .textTheme
+                          .titleMedium
                           ?.copyWith(color: Colors.white70),
                     ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.3),
                     const SizedBox(height: 60),
-                    // Card blanca con formulario
+                    // Card con formulario
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: theme.cardTheme.color,
                         borderRadius: BorderRadius.circular(24),
-                        boxShadow: [AppTheme.mediumShadow],
+                        boxShadow: [AppTheme.mediumShadowFor(theme.brightness)],
                       ),
                       padding: const EdgeInsets.all(28),
                       child: Form(
@@ -143,8 +149,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             Text(
                               'Correo electrónico',
                               style: Theme.of(context)
-                                  .textTheme.labelLarge
-                                  ?.copyWith(color: AppTheme.primary),
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(color: theme.colorScheme.primary),
                             ),
                             const SizedBox(height: 8),
                             TextFormField(
@@ -155,14 +162,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               ),
                               keyboardType: TextInputType.emailAddress,
                               validator: EmailValidator.validateEmail,
-                            ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.5),
+                            )
+                                .animate()
+                                .fadeIn(delay: 200.ms)
+                                .slideY(begin: 0.5),
                             const SizedBox(height: 20),
                             // Password field
                             Text(
                               'Contraseña',
                               style: Theme.of(context)
-                                  .textTheme.labelLarge
-                                  ?.copyWith(color: AppTheme.primary),
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(color: theme.colorScheme.primary),
                             ),
                             const SizedBox(height: 8),
                             TextFormField(
@@ -186,17 +197,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               validator: (value) => value?.isEmpty ?? true
                                   ? 'La contraseña es requerida'
                                   : null,
-                            ).animate().fadeIn(delay: 350.ms).slideY(begin: 0.5),
+                            )
+                                .animate()
+                                .fadeIn(delay: 350.ms)
+                                .slideY(begin: 0.5),
                             const SizedBox(height: 16),
                             if (_errorMessage != null)
                               Text(
                                 _errorMessage!,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: Colors.red,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: theme.colorScheme.error,
                                       fontWeight: FontWeight.w600,
                                     ),
                               ),
-                            if (_errorMessage != null) const SizedBox(height: 16),
+                            if (_errorMessage != null)
+                              const SizedBox(height: 16),
                             // Login button
                             ElevatedButton(
                               onPressed: _isLoading ? null : _handleLogin,
@@ -206,8 +224,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       width: 20,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                            Colors.white),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.white),
                                       ),
                                     )
                                   : const Text('Iniciar sesión'),
@@ -222,7 +241,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 onPressed: () {
                                   Navigator.of(context).push(
                                     MaterialPageRoute(
-                                      builder: (_) => const PasswordResetRequestScreen(),
+                                      builder: (_) =>
+                                          const PasswordResetRequestScreen(),
                                     ),
                                   );
                                 },
@@ -234,20 +254,27 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               onPressed: () async {
                                 try {
                                   setState(() => _isLoading = true);
-                                  await ref.read(authProvider.notifier).loginWithGoogle();
+                                  await ref
+                                      .read(authProvider.notifier)
+                                      .loginWithGoogle();
                                   if (mounted) context.go('/dashboard');
                                 } catch (e) {
                                   _setErrorMessage('Error con Google: $e');
                                 } finally {
-                                  if (mounted) setState(() => _isLoading = false);
+                                  if (mounted)
+                                    setState(() => _isLoading = false);
                                 }
                               },
                               icon: const Icon(Icons.g_mobiledata, size: 24),
                               label: const Text('Continuar con Google'),
                               style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
                               ),
-                            ).animate().fadeIn(delay: 600.ms).slideY(begin: 0.5),
+                            )
+                                .animate()
+                                .fadeIn(delay: 600.ms)
+                                .slideY(begin: 0.5),
                           ],
                         ),
                       ),
@@ -259,26 +286,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       children: [
                         Text(
                           '¿No tienes cuenta? ',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.white,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.white,
+                                  ),
                         ),
                         GestureDetector(
                           onTap: () => context.go('/register'),
                           child: Text(
                             'Registrate',
-                            style:
-                                Theme.of(context).textTheme.labelLarge?.copyWith(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelLarge
+                                ?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                         ),
                       ],
-                    )
-                        .animate()
-                        .fadeIn(delay: 700.ms)
-                        .slideY(begin: 0.5),
+                    ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.5),
                   ],
                 ),
               ),

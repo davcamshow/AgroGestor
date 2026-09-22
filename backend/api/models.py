@@ -762,3 +762,41 @@ class AuditoriaAnimal(models.Model):
     def __str__(self):
         return f"[{self.fecha_cambio}] {self.animal} → {self.campo}: {self.valor_anterior} → {self.valor_nuevo}"
 
+class TipoNotificacion(models.TextChoices):
+    EVENTO_SANITARIO = 'evento_sanitario', 'Evento Sanitario Próximo'
+    PARTO_PROXIMO = 'parto_proximo', 'Parto Próximo'
+    STOCK_BAJO = 'stock_bajo', 'Stock Bajo'
+
+
+class Notificacion(models.Model):
+    usuario = models.ForeignKey(Usuario, on_delete=models.CASCADE, related_name='notificaciones')
+    tipo = models.CharField(max_length=30, choices=TipoNotificacion.choices)
+    titulo = models.CharField(max_length=255)
+    mensaje = models.TextField()
+    referencia_tipo = models.CharField(max_length=50, blank=True, null=True)
+    referencia_id = models.IntegerField(blank=True, null=True)
+    leida = models.BooleanField(default=False)
+    enviada_push = models.BooleanField(default=False)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['usuario', 'leida']),
+            models.Index(fields=['fecha_creacion']),
+        ]
+        ordering = ['-fecha_creacion']
+
+    def __str__(self):
+        return f'{self.titulo} → {self.usuario}'
+
+
+class PreferenciaNotificacion(models.Model):
+    usuario = models.OneToOneField(Usuario, on_delete=models.CASCADE, related_name='preferencia_notificaciones')
+    eventos_sanitarios = models.BooleanField(default=True)
+    partos_proximos = models.BooleanField(default=True)
+    stock_bajo = models.BooleanField(default=True)
+    dias_anticipacion_sanitario = models.IntegerField(default=7)
+    dias_anticipacion_parto = models.IntegerField(default=15)
+
+    def __str__(self):
+        return f'Preferencias de {self.usuario}'

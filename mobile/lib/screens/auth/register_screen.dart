@@ -66,7 +66,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       builder: (context) => AlertDialog(
         title: const Text('✅ ¡Registro Exitoso!'),
         content: const Text(
-          'Tu cuenta ha sido creada correctamente.\nTe hemos enviado un correo para activar tu cuenta. ' 
+          'Tu cuenta ha sido creada correctamente.\nTe hemos enviado un correo para activar tu cuenta. '
           'Solo podrás iniciar sesión después de confirmar el email.',
         ),
         actions: [
@@ -108,8 +108,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             email: _emailController.text,
             password: _passwordController.text,
             nombreCompleto: _nameController.text,
-            telefono: _phoneController.text.isNotEmpty ? _phoneController.text : null,
-            rolProfesional: _roleController.text.isNotEmpty ? _roleController.text : null,
+            telefono:
+                _phoneController.text.isNotEmpty ? _phoneController.text : null,
+            rolProfesional:
+                _roleController.text.isNotEmpty ? _roleController.text : null,
           );
       if (mounted) {
         _showSuccessDialog();
@@ -127,18 +129,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       body: Stack(
         children: [
           Container(
-            decoration: const BoxDecoration(
-              gradient: AppTheme.headerGradient,
+            decoration: BoxDecoration(
+              gradient: AppTheme.headerGradientFor(theme.brightness),
             ),
           ),
           SafeArea(
             child: SingleChildScrollView(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -165,7 +170,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       'Crear Cuenta',
                       textAlign: TextAlign.center,
                       style: Theme.of(context)
-                          .textTheme.displayLarge
+                          .textTheme
+                          .displayLarge
                           ?.copyWith(color: Colors.white),
                     ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.3),
                     const SizedBox(height: 8),
@@ -173,16 +179,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       'Únete a Bovion',
                       textAlign: TextAlign.center,
                       style: Theme.of(context)
-                          .textTheme.titleMedium
+                          .textTheme
+                          .titleMedium
                           ?.copyWith(color: Colors.white70),
                     ).animate().fadeIn(duration: 600.ms).slideY(begin: -0.3),
                     const SizedBox(height: 40),
-                    // Card blanca con formulario
+                    // Card con formulario
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: theme.cardTheme.color,
                         borderRadius: BorderRadius.circular(24),
-                        boxShadow: [AppTheme.mediumShadow],
+                        boxShadow: [AppTheme.mediumShadowFor(theme.brightness)],
                       ),
                       padding: const EdgeInsets.all(28),
                       child: Form(
@@ -191,8 +198,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             // Nombre
-                            const Text('Nombre Completo *',
-                                style: TextStyle(color: AppTheme.primary)),
+                            Text('Nombre Completo *',
+                                style: TextStyle(
+                                    color: theme.colorScheme.primary)),
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _nameController,
@@ -201,12 +209,22 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 prefixIcon: Icon(Icons.person_outline),
                               ),
                               validator: (value) =>
-                                  FieldValidator.validateRequired(value, 'Nombre'),
-                            ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.5),
+                                  FieldValidator.validateRequired(
+                                      value, 'Nombre'),
+                            )
+                                .animate()
+                                .fadeIn(delay: 200.ms)
+                                .slideY(begin: 0.5),
                             const SizedBox(height: 16),
                             // Email
+<<<<<<< HEAD
                             const Text('Correo electrónico *',
                                 style: TextStyle(color: AppTheme.primary)),
+=======
+                            Text('Email *',
+                                style: TextStyle(
+                                    color: theme.colorScheme.primary)),
+>>>>>>> 1d2ed45e69a3dec066bd7e986e7c63df3cb9f72e
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _emailController,
@@ -216,11 +234,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                               ),
                               keyboardType: TextInputType.emailAddress,
                               validator: EmailValidator.validateEmail,
-                            ).animate().fadeIn(delay: 300.ms).slideY(begin: 0.5),
+                            )
+                                .animate()
+                                .fadeIn(delay: 300.ms)
+                                .slideY(begin: 0.5),
                             const SizedBox(height: 16),
                             // Contraseña
-                            const Text('Contraseña *',
-                                style: TextStyle(color: AppTheme.primary)),
+                            Text('Contraseña *',
+                                style: TextStyle(
+                                    color: theme.colorScheme.primary)),
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _passwordController,
@@ -238,22 +260,28 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                         _obscurePassword = !_obscurePassword);
                                   },
                                 ),
-                                errorMaxLines: 4, // Permite hasta 4 líneas mostrando errores de validación
+                                errorMaxLines:
+                                    4, // Permite hasta 4 líneas mostrando errores de validación
                               ),
                               obscureText: _obscurePassword,
                               validator: PasswordValidator.validatePassword,
-                            ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.5),
+                            )
+                                .animate()
+                                .fadeIn(delay: 400.ms)
+                                .slideY(begin: 0.5),
 
                             // Indicador de fortaleza
                             if (_passwordController.text.isNotEmpty)
-                              PasswordStrengthIndicator(passwordStrength: _passwordStrength)
+                              PasswordStrengthIndicator(
+                                      passwordStrength: _passwordStrength)
                                   .animate()
                                   .fadeIn(),
 
                             const SizedBox(height: 16),
                             // Repetir Contraseña
-                            const Text('Repetir Contraseña *',
-                                style: TextStyle(color: AppTheme.primary)),
+                            Text('Repetir Contraseña *',
+                                style: TextStyle(
+                                    color: theme.colorScheme.primary)),
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _confirmPasswordController,
@@ -267,22 +295,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                         : Icons.visibility_off_outlined,
                                   ),
                                   onPressed: () {
-                                    setState(() =>
-                                        _obscureConfirmPassword = !_obscureConfirmPassword);
+                                    setState(() => _obscureConfirmPassword =
+                                        !_obscureConfirmPassword);
                                   },
                                 ),
                               ),
                               obscureText: _obscureConfirmPassword,
                               validator: (value) =>
                                   PasswordValidator.validatePasswordMatch(
-                                    _passwordController.text,
-                                    value,
-                                  ),
-                            ).animate().fadeIn(delay: 450.ms).slideY(begin: 0.5),
+                                _passwordController.text,
+                                value,
+                              ),
+                            )
+                                .animate()
+                                .fadeIn(delay: 450.ms)
+                                .slideY(begin: 0.5),
                             const SizedBox(height: 16),
                             // Teléfono (opcional)
-                            const Text('Teléfono (opcional)',
-                                style: TextStyle(color: AppTheme.primary)),
+                            Text('Teléfono (opcional)',
+                                style: TextStyle(
+                                    color: theme.colorScheme.primary)),
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _phoneController,
@@ -291,11 +323,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 prefixIcon: const Icon(Icons.phone_outlined),
                               ),
                               keyboardType: TextInputType.phone,
-                            ).animate().fadeIn(delay: 500.ms).slideY(begin: 0.5),
+                            )
+                                .animate()
+                                .fadeIn(delay: 500.ms)
+                                .slideY(begin: 0.5),
                             const SizedBox(height: 16),
                             // Rol (opcional)
-                            const Text('Rol Profesional (opcional)',
-                                style: TextStyle(color: AppTheme.primary)),
+                            Text('Rol Profesional (opcional)',
+                                style: TextStyle(
+                                    color: theme.colorScheme.primary)),
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _roleController,
@@ -303,7 +339,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 hintText: 'ej: Veterinario',
                                 prefixIcon: Icon(Icons.work_outline),
                               ),
-                            ).animate().fadeIn(delay: 550.ms).slideY(begin: 0.5),
+                            )
+                                .animate()
+                                .fadeIn(delay: 550.ms)
+                                .slideY(begin: 0.5),
                             const SizedBox(height: 32),
                             // Register button
                             ElevatedButton(
@@ -314,8 +353,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                       width: 20,
                                       child: CircularProgressIndicator(
                                         strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(
-                                            Colors.white),
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                Colors.white),
                                       ),
                                     )
                                   : const Text('Crear Cuenta'),
@@ -337,5 +377,4 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       ),
     );
   }
-
 }

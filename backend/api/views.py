@@ -36,6 +36,42 @@ from .services.weather_service import (
     get_current_weather,
     reverse_geocode,
 )
+from rest_framework.decorators import action
+from .models import Notificacion, PreferenciaNotificacion
+from .serializer import NotificacionSerializer, PreferenciaNotificacionSerializer
+
+
+class NotificacionViewSet(viewsets.ModelViewSet):
+    serializer_class = NotificacionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = Notificacion.objects.filter(usuario=self.request.user.perfil)
+        leida = self.request.query_params.get('leida')
+        if leida is not None:
+            qs = qs.filter(leida=(leida == 'true'))
+        return qs
+
+    @action(detail=False, methods=['post'])
+    def marcar_todas_leidas(self, request):
+        self.get_queryset().update(leida=True)
+        return Response({'status': 'ok'})
+
+    @action(detail=True, methods=['patch'])
+    def marcar_leida(self, request, pk=None):
+        notif = self.get_object()
+        notif.leida = True
+        notif.save(update_fields=['leida'])
+        return Response(self.get_serializer(notif).data)
+
+
+class PreferenciaNotificacionView(generics.RetrieveUpdateAPIView):
+    serializer_class = PreferenciaNotificacionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        obj, _ = PreferenciaNotificacion.objects.get_or_create(usuario=self.request.user.perfil)
+        return obj
 
 @api_view(['GET'])
 @permission_classes([AllowAny])

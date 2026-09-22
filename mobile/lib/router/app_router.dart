@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/auth/auth_state.dart';
 import '../screens/auth/login_screen.dart';
@@ -29,6 +30,7 @@ import '../screens/planes/planes_screen.dart';
 import '../widgets/app_shell.dart';
 import '../screens/clima/ubicacion_rancho_screen.dart';
 import '../screens/salud/salud_screen.dart';
+import '../screens/notificaciones/notificaciones_screen.dart';
 
 /// Duración estándar para las transiciones de pantalla en toda la app.
 const Duration _kTransitionDuration = Duration(milliseconds: 320);
@@ -289,6 +291,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'reportes',
         pageBuilder: (context, state) =>
             _fadeSlidePage(state: state, child: const ReportesScreen()),
+      ),
+      GoRoute(
+        path: '/notificaciones',
+        name: 'notificaciones',
+        builder: (_, __) => const NotificacionesScreen(),
       ),
       GoRoute(
         path: '/configuracion',

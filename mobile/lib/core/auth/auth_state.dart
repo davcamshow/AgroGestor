@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import 'auth_repository.dart';
 import 'google_auth.dart';
 import 'token_storage.dart';
+import '../services/push_notification_service.dart';
 
 enum AuthStatus { unknown, authenticated, unauthenticated }
 
@@ -18,8 +19,7 @@ class AuthState {
     this.errorMessage,
   });
 
-  factory AuthState.unknown() =>
-      const AuthState(status: AuthStatus.unknown);
+  factory AuthState.unknown() => const AuthState(status: AuthStatus.unknown);
 
   factory AuthState.authenticated(Usuario user) =>
       AuthState(status: AuthStatus.authenticated, user: user);
@@ -34,7 +34,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final ApiClient _apiClient;
   final TokenStorage _tokenStorage;
 
-  AuthNotifier(this._repo, this._googleAuth, this._apiClient, this._tokenStorage) : super(AuthState.unknown()) {
+  AuthNotifier(
+      this._repo, this._googleAuth, this._apiClient, this._tokenStorage)
+      : super(AuthState.unknown()) {
     _checkInitialAuth();
   }
 
@@ -44,6 +46,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       try {
         final user = await _repo.getProfile();
         state = AuthState.authenticated(user);
+        await PushNotificationService().loginUsuario(user.id);
       } catch (_) {
         state = AuthState.unauthenticated();
       }
@@ -56,6 +59,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final user = await _repo.login(email, password);
       state = AuthState.authenticated(user);
+      await PushNotificationService().loginUsuario(user.id);
     } catch (e) {
       state = AuthState.unauthenticated(e.toString());
       rethrow;
@@ -86,6 +90,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
+    await PushNotificationService().logoutUsuario();
     await _repo.logout();
     state = AuthState.unauthenticated();
   }
@@ -93,10 +98,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> loginWithGoogle() async {
     try {
       final result = await _googleAuth.signInWithGoogle();
-      
-      if (result.user != null && result.user!.email != null && result.googleIdToken != null) {
+
+      if (result.user != null &&
+          result.user!.email != null &&
+          result.googleIdToken != null) {
         String? djangoAccessToken;
-        
+
         try {
           final response = await _apiClient.dio.post(
             'auth/google/',
@@ -104,7 +111,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
           );
           final accessToken = response.data['access'] as String?;
           final refreshToken = response.data['refresh'] as String?;
-          
+
           if (accessToken != null && refreshToken != null) {
             djangoAccessToken = accessToken;
             await _tokenStorage.saveTokens(accessToken, refreshToken);
@@ -112,7 +119,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         } catch (e) {
           print('Error sincronizando con Django: $e');
         }
-        
+
         // Intentar obtener perfil si tenemos token de Django
         if (djangoAccessToken != null) {
           try {
@@ -123,14 +130,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
             print('Error obteniendo perfil: $e');
           }
         }
-        
+
         // Si no tenemos token de Django, crear estado con usuario de Supabase
         // El usuario podrá usar la app pero necesitará configurar perfil después
         state = AuthState.authenticated(
           Usuario(
             id: 0,
             email: result.user!.email ?? '',
-            nombre_completo: result.user!.userMetadata?['full_name'] ?? result.user!.email?.split('@')[0] ?? '',
+            nombre_completo: result.user!.userMetadata?['full_name'] ??
+                result.user!.email?.split('@')[0] ??
+                '',
           ),
         );
       }

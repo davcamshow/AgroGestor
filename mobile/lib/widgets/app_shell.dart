@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../core/auth/auth_state.dart';
 import '../core/theme/app_theme.dart';
+import '../core/services/connectivity_service.dart';
+import '../core/services/sync_service.dart';
+import '../core/providers/sync_provider.dart';
 
 class AppShell extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
@@ -33,8 +36,34 @@ class AppShell extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final user = authState.user;
 
+    // BP-159: banner de estado de conexión/sincronización, visible en
+    // cualquier pantalla de la app (arriba del contenido, debajo del AppBar
+    // de cada pantalla).
+    final isOnline = ref.watch(connectivityProvider).valueOrNull ?? true;
+    final syncStatus = ref.watch(syncStatusProvider).valueOrNull;
+
+    Widget? banner;
+    if (!isOnline) {
+      banner = const _StatusBanner(
+        icon: Icons.cloud_off,
+        message: 'Sin conexión — los cambios se guardan localmente',
+        color: AppTheme.warning,
+      );
+    } else if (syncStatus == SyncStatus.syncing) {
+      banner = const _StatusBanner(
+        icon: Icons.sync,
+        message: 'Sincronizando cambios pendientes...',
+        color: AppTheme.info,
+      );
+    }
+
     return Scaffold(
-      body: navigationShell,
+      body: Column(
+        children: [
+          if (banner != null) banner,
+          Expanded(child: navigationShell),
+        ],
+      ),
       bottomNavigationBar: BottomNavigationBar(
         type: BottomNavigationBarType.fixed,
         currentIndex: navigationShell.currentIndex,
@@ -65,6 +94,42 @@ class AppShell extends ConsumerWidget {
           BottomNavigationBarItem(
             icon: Icon(Icons.workspace_premium),
             label: 'Suscripción',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusBanner extends StatelessWidget {
+  const _StatusBanner({
+    required this.icon,
+    required this.message,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String message;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      color: color,
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 16, color: Colors.white),
+          const SizedBox(width: 8),
+          Text(
+            message,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

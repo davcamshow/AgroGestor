@@ -13,6 +13,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/providers/registros_peso_provider.dart';
 import '../../widgets/kpi_card.dart';
 import '../../widgets/clima_ganado_card.dart';
+import '../../core/providers/notificaciones_provider.dart';
 import '../../widgets/animal_avatar.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -41,10 +42,44 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         actions: [
+          Consumer(
+            builder: (context, ref, _) {
+              final noLeidasAsync = ref.watch(notificacionesNoLeidasProvider);
+              final count = noLeidasAsync.valueOrNull ?? 0;
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.notifications_outlined,
+                        color: Colors.white),
+                    onPressed: () => context.push('/notificaciones'),
+                  ),
+                  if (count > 0)
+                    Positioned(
+                      right: 6,
+                      top: 6,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                            color: AppTheme.error, shape: BoxShape.circle),
+                        constraints:
+                            const BoxConstraints(minWidth: 16, minHeight: 16),
+                        child: Text(
+                          count > 9 ? '9+' : '$count',
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 10),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
           IconButton(
             icon: CircleAvatar(
               radius: 16,
-              backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+              backgroundColor: Colors.white.withOpacity(0.2),
               child: const Icon(Icons.person, color: Colors.white, size: 18),
             ),
             onPressed: () => context.go('/configuracion'),
