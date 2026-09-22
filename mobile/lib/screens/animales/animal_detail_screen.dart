@@ -169,7 +169,8 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
           body: TabBarView(
             controller: _tabController,
             children: [
-              _buildInfoTab(animal, theme, loteNombre: loteNombre, dietaNombre: dietaNombre),
+              _buildInfoTab(animal, theme,
+                  loteNombre: loteNombre, dietaNombre: dietaNombre),
               _buildGenealogiaTab(animal, theme),
               _AuditoriaTab(animalId: animal.id),
             ],
@@ -198,7 +199,7 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
             const SizedBox(height: 16),
           ],
           _buildInfoCard(animal, theme,
-              loteNombre: loteNombre, dietaNombre: dietaNombre)
+                  loteNombre: loteNombre, dietaNombre: dietaNombre)
               .animate()
               .fadeIn(delay: 200.ms)
               .slideX(),
@@ -1162,12 +1163,11 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
 
     if (seleccionado != null && mounted) {
       try {
-        final client = ref.read(apiClientProvider);
         final field = esMadre ? 'madre' : 'padre';
-        await client.dio.patch('animales/$animalId/', data: {
-          field: seleccionado.id,
-        });
-        ref.invalidate(animalesNotifierProvider);
+        await ref.read(animalesNotifierProvider.notifier).updateAnimal(
+          animalId,
+          {field: seleccionado.id},
+        );
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -1531,8 +1531,8 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
               theme),
           _Row('Fecha Nac.',
               animal.fechaNacimiento?.toString().split(' ')[0] ?? 'N/A', theme),
-          _Row('Lote',
-              loteNombre ?? animal.loteId?.toString() ?? 'Sin lote', theme),
+          _Row('Lote', loteNombre ?? animal.loteId?.toString() ?? 'Sin lote',
+              theme),
           _Row('Dieta especial', dietaNombre ?? 'Ración del lote', theme),
         ],
       ),
