@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/models/dieta.dart';
 import '../../core/providers/dietas_provider.dart';
 import '../../core/providers/lotes_provider.dart';
 import '../../core/providers/insumos_provider.dart';
@@ -51,6 +52,35 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
         1 => 'Nuevo lote',
         _ => 'Gestionar insumos',
       };
+
+  Future<void> _eliminarDieta(Dieta dieta) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar dieta'),
+        content: Text('¿Eliminar "${dieta.nombre}"? '
+            'Los lotes y animales que la usan dejarán de consumirla automáticamente.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(dietasNotifierProvider.notifier).deleteDieta(dieta.id);
+      ref.invalidate(dietaInsumosProvider);
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Error al eliminar: $e')));
+    }
+  }
 
   Future<void> _procesarConsumo() async {
     final messenger = ScaffoldMessenger.of(context);
@@ -189,7 +219,7 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
       floatingActionButton: FloatingActionButton(
         onPressed: _onFabPressed,
         tooltip: _fabTooltip,
-        backgroundColor: const Color(0xFF064e3b),
+        backgroundColor: theme.colorScheme.primary,
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
@@ -265,6 +295,29 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
                                                 'Costo: \$${dieta.costoEstimadoKg}/kg'),
                                           ],
                                         ),
+                                        trailing: PopupMenuButton<String>(
+                                          onSelected: (opcion) {
+                                            if (opcion == 'editar') {
+                                              context.push(
+                                                  '/formulas/builder',
+                                                  extra: dieta);
+                                            } else if (opcion == 'eliminar') {
+                                              _eliminarDieta(dieta);
+                                            }
+                                          },
+                                          itemBuilder: (_) => const [
+                                            PopupMenuItem(
+                                              value: 'editar',
+                                              child: Text('Editar'),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'eliminar',
+                                              child: Text('Eliminar',
+                                                  style: TextStyle(
+                                                      color: Colors.red)),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ).animate().fadeIn().slideX();
@@ -325,9 +378,45 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
-                                        Text(lote.nombre,
-                                            style:
-                                                theme.textTheme.labelLarge),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Expanded(
+                                              child: Text(lote.nombre,
+                                                  style: theme
+                                                      .textTheme.labelLarge,
+                                                  overflow:
+                                                      TextOverflow.ellipsis),
+                                            ),
+                                            PopupMenuButton<String>(
+                                              onSelected: (opcion) {
+                                                if (opcion == 'editar') {
+                                                  context.push(
+                                                      '/lotes/${lote.id}/edit');
+                                                } else if (opcion ==
+                                                    'eliminar') {
+                                                  ref
+                                                      .read(lotesNotifierProvider
+                                                          .notifier)
+                                                      .deleteLote(lote.id);
+                                                }
+                                              },
+                                              itemBuilder: (_) => const [
+                                                PopupMenuItem(
+                                                  value: 'editar',
+                                                  child: Text('Editar'),
+                                                ),
+                                                PopupMenuItem(
+                                                  value: 'eliminar',
+                                                  child: Text('Eliminar',
+                                                      style: TextStyle(
+                                                          color: Colors.red)),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                         const SizedBox(height: 8),
                                         Row(
                                           mainAxisAlignment:

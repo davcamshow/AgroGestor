@@ -204,10 +204,10 @@ class _ConfiguracionScreenState extends ConsumerState<ConfiguracionScreen> {
                 children: [
                   _buildInfoRow('Versión', 'Bovion 1.0.0', theme),
                   const SizedBox(height: 12),
-                  _buildInfoRow('Backend', '192.168.0.104:8000', theme),
+                  _buildInfoRow('Servidor', '192.168.0.104:8000', theme),
                   const SizedBox(height: 12),
                   _buildInfoRow(
-                      'ID Usuario', (user?.id ?? 'N/A').toString(), theme),
+                      'ID de usuario', (user?.id ?? 'No disponible').toString(), theme),
                 ],
               ),
             ).animate().fadeIn(delay: 800.ms).slideY(begin: 0.3),

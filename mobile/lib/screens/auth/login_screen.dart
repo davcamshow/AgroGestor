@@ -141,7 +141,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           children: [
                             // Email field
                             Text(
-                              'Email',
+                              'Correo electrónico',
                               style: Theme.of(context)
                                   .textTheme.labelLarge
                                   ?.copyWith(color: AppTheme.primary),

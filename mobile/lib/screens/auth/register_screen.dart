@@ -75,7 +75,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               Navigator.pop(context);
               context.go('/login');
             },
-            child: const Text('Ir al Login'),
+            child: const Text('Ir al Inicio de Sesión'),
           ),
         ],
       ),
@@ -205,7 +205,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.5),
                             const SizedBox(height: 16),
                             // Email
-                            const Text('Email *',
+                            const Text('Correo electrónico *',
                                 style: TextStyle(color: AppTheme.primary)),
                             const SizedBox(height: 8),
                             TextFormField(

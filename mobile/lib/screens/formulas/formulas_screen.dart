@@ -42,6 +42,7 @@ class FormulasScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final dietasAsync = ref.watch(dietasNotifierProvider);
     final dietaInsumosAsync = ref.watch(dietaInsumosProvider);
     final conteoInsumos = dietaInsumosAsync.valueOrNull ?? const [];
@@ -49,11 +50,10 @@ class FormulasScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dietas'),
-        backgroundColor: const Color(0xFF064e3b),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => context.push('/formulas/builder'),
-        backgroundColor: const Color(0xFF064e3b),
+        backgroundColor: theme.colorScheme.primary,
         child: const Icon(Icons.add),
       ),
       body: RefreshIndicator(
@@ -123,7 +123,8 @@ class FormulasScreen extends ConsumerWidget {
                           const SizedBox(height: 4),
                           Text(
                             '\$${dieta.costoEstimadoKg}/kg',
-                            style: TextStyle(color: const Color(0xFF064e3b)),
+                            style: TextStyle(
+                                color: theme.colorScheme.primary),
                           ),
                         ],
                       ),
@@ -182,13 +183,15 @@ class _Chip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF064e3b).withValues(alpha: 0.08),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: const Color(0xFF064e3b)),
+          Icon(icon,
+              size: 14,
+              color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 4),
           Text(texto, style: Theme.of(context).textTheme.bodySmall),
         ],
