@@ -397,7 +397,8 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                           // Dieta especial
                           Consumer(
                             builder: (context, ref, _) {
-                              final dietasAsync = ref.watch(dietasNotifierProvider);
+                              final dietasAsync =
+                                  ref.watch(dietasNotifierProvider);
                               return dietasAsync.when(
                                 data: (dietas) {
                                   final nombres = {
@@ -429,12 +430,13 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
                                             child: Text(
                                                 'Sin dieta (ración del lote)'),
                                           ),
-                                          ...dietas.map((d) => DropdownMenuItem<int?>(
+                                          ...dietas.map(
+                                              (d) => DropdownMenuItem<int?>(
                                                     value: d.id,
                                                     child: Text(
                                                       d.nombre,
-                                                      overflow: TextOverflow
-                                                          .ellipsis,
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
                                                     ),
                                                   )),
                                         ],

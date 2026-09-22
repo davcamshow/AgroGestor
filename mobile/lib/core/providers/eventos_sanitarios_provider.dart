@@ -1,40 +1,55 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/evento_sanitario.dart';
 import '../api/api_client.dart';
+import '../repositories/offline_repository.dart';
 
-class EventosSanitariosNotifier extends AutoDisposeAsyncNotifier<List<EventoSanitario>> {
+final eventosSanitariosRepositoryProvider =
+    Provider<OfflineRepository<EventoSanitario>>((ref) {
+  final apiClient = ref.read(apiClientProvider);
+  return OfflineRepository<EventoSanitario>(
+    entityType: 'evento_sanitario',
+    endpoint: 'eventos-sanitarios/',
+    apiClient: apiClient,
+    fromJson: EventoSanitario.fromJson,
+    toJson: (e) => e.toJson(),
+    idOf: (e) => e.id,
+  );
+});
+
+class EventosSanitariosNotifier
+    extends AutoDisposeAsyncNotifier<List<EventoSanitario>> {
   @override
   Future<List<EventoSanitario>> build() async {
-    final client = ref.read(apiClientProvider);
-    final response = await client.dio.get('eventos-sanitarios/');
-    return (response.data as List).map((j) => EventoSanitario.fromJson(j)).toList();
+    final repo = ref.read(eventosSanitariosRepositoryProvider);
+    return repo.getAll();
   }
 
   Future<void> createEvento(Map<String, dynamic> data) async {
-    final client = ref.read(apiClientProvider);
-    await client.dio.post('eventos-sanitarios/', data: data);
+    final repo = ref.read(eventosSanitariosRepositoryProvider);
+    await repo.create(data);
     ref.invalidateSelf();
   }
 
   Future<void> updateEvento(int id, Map<String, dynamic> data) async {
-    final client = ref.read(apiClientProvider);
-    await client.dio.put('eventos-sanitarios/$id/', data: data);
+    final repo = ref.read(eventosSanitariosRepositoryProvider);
+    await repo.update(id, data);
     ref.invalidateSelf();
   }
 
   Future<void> deleteEvento(int id) async {
-    final client = ref.read(apiClientProvider);
-    await client.dio.delete('eventos-sanitarios/$id/');
+    final repo = ref.read(eventosSanitariosRepositoryProvider);
+    await repo.delete(id);
     ref.invalidateSelf();
   }
 }
 
-final eventosSanitariosNotifierProvider =
-    AsyncNotifierProvider.autoDispose<EventosSanitariosNotifier, List<EventoSanitario>>(
-        EventosSanitariosNotifier.new);
+final eventosSanitariosNotifierProvider = AsyncNotifierProvider.autoDispose<
+    EventosSanitariosNotifier,
+    List<EventoSanitario>>(EventosSanitariosNotifier.new);
 
 // Provider para eventos próximos (proximos 30 dias)
-final eventosProximosProvider = FutureProvider.autoDispose<List<EventoSanitario>>((ref) async {
+final eventosProximosProvider =
+    FutureProvider.autoDispose<List<EventoSanitario>>((ref) async {
   final eventos = await ref.watch(eventosSanitariosNotifierProvider.future);
   final ahora = DateTime.now();
   return eventos
