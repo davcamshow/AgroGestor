@@ -11,9 +11,12 @@ class GoogleAuthResult {
 }
 
 class GoogleAuthService {
-  static const webClientId = '584722195404-mht3r6jpmtc3t6p5uhs64i7bhr7q5es9.apps.googleusercontent.com';
-  static const iosClientId = '584722195404-mht3r6jpmtc3t6p5uhs64i7bhr7q5es9.apps.googleusercontent.com';
-  static const androidClientId = '584722195404-qsm9qcg1a9kih61vrompdimbonjvup48.apps.googleusercontent.com';
+  static const webClientId =
+      '584722195404-mht3r6jpmtc3t6p5uhs64i7bhr7q5es9.apps.googleusercontent.com';
+  static const iosClientId =
+      '584722195404-mht3r6jpmtc3t6p5uhs64i7bhr7q5es9.apps.googleusercontent.com';
+  static const androidClientId =
+      '584722195404-qsm9qcg1a9kih61vrompdimbonjvup48.apps.googleusercontent.com';
 
   Future<GoogleAuthResult> signInWithGoogle() async {
     final GoogleSignIn signIn = GoogleSignIn(
@@ -23,7 +26,7 @@ class GoogleAuthService {
     try {
       // Forzar a mostrar el selector de cuenta
       await signIn.signOut();
-      
+
       final googleUser = await signIn.signIn();
       if (googleUser == null) {
         print('Google sign-in cancelled by user');
@@ -40,7 +43,7 @@ class GoogleAuthService {
       }
 
       print('Got Google ID token, signing in to Supabase...');
-      
+
       final response = await Supabase.instance.client.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
@@ -65,4 +68,5 @@ class GoogleAuthService {
   }
 }
 
-final googleAuthProvider = Provider<GoogleAuthService>((ref) => GoogleAuthService());
+final googleAuthProvider =
+    Provider<GoogleAuthService>((ref) => GoogleAuthService());

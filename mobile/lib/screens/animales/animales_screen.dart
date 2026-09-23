@@ -140,15 +140,15 @@ class AnimalesScreen extends ConsumerWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          showModalBottomSheet(
-            context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (_) => const BlurredModalBackdrop(
-              child: AnimalFormSheet(),
-            ),
-          );
+          // Tu acción de agregar animal
         },
+        backgroundColor:
+            AppTheme.primary, // o el verde que uses en Reproducción
+        foregroundColor: Colors.white,
+        elevation: 4,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
         child: const Icon(Icons.add),
       ),
     );

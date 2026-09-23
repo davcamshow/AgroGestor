@@ -78,7 +78,8 @@ INSTALLED_APPS = [
     'anymail',
     'api',  # Tu app de API
     'django_crontab',  # Para tareas programadas
-]
+    'django_apscheduler',
+]   
 ONESIGNAL_APP_ID = os.getenv('ONESIGNAL_APP_ID')
 ONESIGNAL_REST_API_KEY = os.getenv('ONESIGNAL_REST_API_KEY')
 

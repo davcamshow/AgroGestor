@@ -1,44 +1,56 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 
-const String oneSignalAppId =
-    'f3e5c1d0-7b8a-4f6e-9c2b-1a2b3c4d5e6f'; // Reemplaza con tu OneSignal App ID
-
-final pushNotificationServiceProvider =
-    Provider<PushNotificationService>((ref) {
-  return PushNotificationService();
-});
-
 class PushNotificationService {
-  bool _initialized = false;
+  static final PushNotificationService _instance =
+      PushNotificationService._internal();
+  factory PushNotificationService() => _instance;
+  PushNotificationService._internal();
 
-  Future<void> init() async {
-    if (_initialized) return;
-    _initialized = true;
-
+  Future<void> init({required String oneSignalAppId}) async {
+    OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
     OneSignal.initialize(oneSignalAppId);
-    await OneSignal.Notifications.requestPermission(true);
 
-    // Notificación recibida con la app en primer plano: se muestra igual
+    // Observer para capturar el Subscription ID en tiempo real
+    OneSignal.User.pushSubscription.addObserver((state) {
+      debugPrint("==================================================");
+      debugPrint("CAMBIO EN PUSH SUBSCRIPTION:");
+      debugPrint("Subscription ID: ${state.current.id}");
+      debugPrint("Token FCM: ${state.current.token}");
+      debugPrint("Opted In: ${state.current.optedIn}");
+      debugPrint("==================================================");
+    });
+
+    // Solicitar permisos de notificación
+    final permission = await OneSignal.Notifications.requestPermission(true);
+    debugPrint("Permiso de notificaciones concedido: $permission");
+
+    // Permitir visualización en primer plano
     OneSignal.Notifications.addForegroundWillDisplayListener((event) {
+      debugPrint(
+          "Notificación recibida en foreground: ${event.notification.title}");
       event.notification.display();
     });
-
-    // Usuario toca la notificación
-    OneSignal.Notifications.addClickListener((event) {
-      final data = event.notification.additionalData;
-      print('[PUSH] Notificación tocada: $data');
-      // Aquí puedes navegar según data?['tipo'] / data?['referencia_id']
-    });
   }
 
-  /// Llamar tras login exitoso — asocia este dispositivo con el usuario Django
-  Future<void> loginUsuario(int usuarioId) async {
-    await OneSignal.login(usuarioId.toString());
+  /// Asocia el ID del usuario de tu backend/BD con OneSignal (External ID)
+  Future<void> loginUsuario(dynamic userId) async {
+    try {
+      final externalId = userId.toString();
+      await OneSignal.login(externalId);
+      debugPrint("OneSignal: Usuario logueado con External ID: $externalId");
+    } catch (e) {
+      debugPrint("Error al loguear usuario en OneSignal: $e");
+    }
   }
 
-  /// Llamar en logout — desasocia el dispositivo del usuario
+  /// Desvincula el usuario actual de OneSignal al cerrar sesión
   Future<void> logoutUsuario() async {
-    await OneSignal.logout();
+    try {
+      await OneSignal.logout();
+      debugPrint("OneSignal: Sesión de usuario cerrada con éxito");
+    } catch (e) {
+      debugPrint("Error al desloguear usuario en OneSignal: $e");
+    }
   }
 }

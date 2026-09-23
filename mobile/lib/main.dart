@@ -13,7 +13,9 @@ import 'core/providers/sync_provider.dart';
 
 void main() => runZonedGuarded(() async {
       WidgetsFlutterBinding.ensureInitialized();
-
+      await PushNotificationService().init(
+        oneSignalAppId: 'ONESIGNAL_APP_ID',
+      );
       // 1. Lee SharedPreferences antes de montar el árbol de widgets
       final prefs = await SharedPreferences.getInstance();
 
@@ -24,8 +26,6 @@ void main() => runZonedGuarded(() async {
         anonKey:
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZjeGR0a2VraXdlb21uZW1md2RrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyODA5MDUsImV4cCI6MjA5NDg1NjkwNX0._zc6NGfUSWE-yB09l_4nVAXjvAPY82pS5_kOwicRRYk',
       );
-
-      await PushNotificationService().init();
 
       SystemChrome.setSystemUIOverlayStyle(
         const SystemUiOverlayStyle(
