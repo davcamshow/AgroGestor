@@ -22,7 +22,7 @@ class SaludScreen extends ConsumerWidget {
               child: Icon(Icons.person,
                   color: theme.appBarTheme.foregroundColor, size: 18),
             ),
-            onPressed: () => context.go('/configuracion'),
+            onPressed: () => context.push('/configuracion'),
           ),
         ],
       ),

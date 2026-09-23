@@ -55,7 +55,7 @@ class PasswordValidator {
     }
 
     if (_commonPasswords.contains(password.toLowerCase())) {
-      return 'La contraseña es demasiado común; elige otra más segura';
+      return 'La contraseña es demasiado común, elige otra más segura';
     }
 
     return null;

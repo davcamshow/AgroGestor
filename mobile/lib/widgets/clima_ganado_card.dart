@@ -7,27 +7,34 @@ import '../core/providers/clima_provider.dart';
 import '../core/theme/app_theme.dart';
 import 'gradient_card.dart';
 import 'status_badge.dart';
+import 'blur_bottom_sheet.dart';
 
 class ClimaGanadoCard extends ConsumerWidget {
-  const ClimaGanadoCard({super.key});
+  /// Modo compacto: menos padding, tipografía e iconos más pequeños.
+  final bool compact;
+
+  const ClimaGanadoCard({this.compact = false, super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(climaProvider);
     return state.when(
-      loading: () => const _LoadingCard(),
-      error: (_, __) =>
-          _ErrorCard(onRetry: () => ref.read(climaProvider.notifier).load()),
+      loading: () => _LoadingCard(compact: compact),
+      error: (_, __) => _ErrorCard(
+          compact: compact,
+          onRetry: () => ref.read(climaProvider.notifier).load()),
       data: (value) {
         if (value is ClimaSinUbicacion) {
-          return const _NoLocationCard();
+          return _NoLocationCard(compact: compact);
         }
         if (value is ClimaError) {
           return _ErrorCard(
               message: value.mensaje,
+              compact: compact,
               onRetry: () => ref.read(climaProvider.notifier).load());
         }
         return _WeatherCard(
             clima: (value as ClimaDisponible).clima,
+            compact: compact,
             onRefresh: () => ref.read(climaProvider.notifier).load());
       },
     );
@@ -35,45 +42,52 @@ class ClimaGanadoCard extends ConsumerWidget {
 }
 
 class _NoLocationCard extends StatelessWidget {
-  const _NoLocationCard();
+  final bool compact;
+  const _NoLocationCard({this.compact = false});
   @override
   Widget build(BuildContext context) => GradientCard(
+        padding: EdgeInsets.all(compact ? 14 : 20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Row(children: [
-            Icon(Icons.location_on_outlined, color: Colors.white, size: 30),
-            SizedBox(width: 12),
+          Row(children: [
+            Icon(Icons.location_on_outlined,
+                color: Colors.white, size: compact ? 22 : 30),
+            SizedBox(width: compact ? 10 : 12),
             Expanded(
                 child: Text('Clima del rancho',
                     style: TextStyle(
                         color: Colors.white,
-                        fontSize: 18,
+                        fontSize: compact ? 15 : 18,
                         fontWeight: FontWeight.bold)))
           ]),
-          const SizedBox(height: 12),
-          const Text(
+          SizedBox(height: compact ? 8 : 12),
+          Text(
               'Configura la ubicación de tu rancho para recibir información del clima y alertas preventivas.',
-              style: TextStyle(color: Colors.white70)),
-          const SizedBox(height: 16),
+              style: TextStyle(
+                  color: Colors.white70, fontSize: compact ? 12 : 14)),
+          SizedBox(height: compact ? 10 : 16),
           FilledButton.tonalIcon(
               onPressed: () => context.push('/clima/ubicacion'),
-              icon: const Icon(Icons.map_outlined),
+              icon: const Icon(Icons.map_outlined, size: 18),
               label: const Text('Establecer ubicación')),
         ]),
       );
 }
 
 class _LoadingCard extends StatelessWidget {
-  const _LoadingCard();
+  final bool compact;
+  const _LoadingCard({this.compact = false});
   @override
-  Widget build(BuildContext context) => const GradientCard(
+  Widget build(BuildContext context) => GradientCard(
+        padding: EdgeInsets.all(compact ? 14 : 20),
         child: SizedBox(
-            height: 150,
+            height: compact ? 90 : 150,
             child: Center(
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
-              CircularProgressIndicator(color: Colors.white),
-              SizedBox(height: 12),
+              const CircularProgressIndicator(color: Colors.white),
+              const SizedBox(height: 12),
               Text('Consultando clima del rancho...',
-                  style: TextStyle(color: Colors.white))
+                  style: TextStyle(
+                      color: Colors.white, fontSize: compact ? 12 : 14))
             ]))),
       );
 }
@@ -81,27 +95,32 @@ class _LoadingCard extends StatelessWidget {
 class _ErrorCard extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
+  final bool compact;
   const _ErrorCard(
       {this.message = 'No fue posible consultar el clima.',
-      required this.onRetry});
+      required this.onRetry,
+      this.compact = false});
   @override
   Widget build(BuildContext context) => GradientCard(
+        padding: EdgeInsets.all(compact ? 14 : 20),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Row(children: [
-            Icon(Icons.cloud_off, color: Colors.white),
+          Row(children: [
+            Icon(Icons.cloud_off, color: Colors.white, size: compact ? 20 : 24),
             SizedBox(width: 10),
             Text('Clima del rancho',
                 style: TextStyle(
                     color: Colors.white,
-                    fontSize: 18,
+                    fontSize: compact ? 15 : 18,
                     fontWeight: FontWeight.bold))
           ]),
-          const SizedBox(height: 12),
-          Text(message, style: const TextStyle(color: Colors.white70)),
-          const SizedBox(height: 12),
+          SizedBox(height: compact ? 8 : 12),
+          Text(message,
+              style: TextStyle(
+                  color: Colors.white70, fontSize: compact ? 12 : 14)),
+          SizedBox(height: compact ? 10 : 12),
           FilledButton.tonalIcon(
               onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(Icons.refresh, size: 18),
               label: const Text('Reintentar')),
         ]),
       );
@@ -110,39 +129,89 @@ class _ErrorCard extends StatelessWidget {
 class _WeatherCard extends StatelessWidget {
   final ClimaRancho clima;
   final VoidCallback onRefresh;
-  const _WeatherCard({required this.clima, required this.onRefresh});
+  final bool compact;
+  const _WeatherCard(
+      {required this.clima, required this.onRefresh, this.compact = false});
 
   void _showRecommendations(BuildContext context) {
-    showModalBottomSheet<void>(
-        context: context,
-        showDragHandle: true,
-        builder: (_) => SafeArea(
-                child: Padding(
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    showBlurBottomSheet<void>(
+      context: context,
+      maxHeight: MediaQuery.sizeOf(context).height * 0.6,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.info.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.health_and_safety_outlined,
+                      color: AppTheme.info),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Recomendaciones',
+                          style: theme.textTheme.titleLarge),
+                      Text(
+                        clima.riesgo.titulo,
+                        style: TextStyle(
+                          color: isDark
+                              ? AppTheme.darkTextSecondary
+                              : Colors.grey[600],
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(height: 24),
+          ),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(clima.riesgo.titulo,
-                        style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 12),
-                    ...clima.riesgo.recomendaciones.map((item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.check_circle_outline,
-                                  size: 18, color: AppTheme.secondary),
-                              const SizedBox(width: 8),
-                              Expanded(child: Text(item))
-                            ]))),
-                    if (clima.riesgo.advertencia != null)
-                      Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(clima.riesgo.advertencia!,
-                              style: Theme.of(context).textTheme.bodySmall)),
-                  ]),
-            )));
+              children: [
+                ...clima.riesgo.recomendaciones.map((item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.check_circle_outline,
+                              size: 18, color: AppTheme.secondary),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(item))
+                        ]))),
+                if (clima.riesgo.advertencia != null)
+                  Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(clima.riesgo.advertencia!,
+                          style: theme.textTheme.bodySmall)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -153,69 +222,80 @@ class _WeatherCard extends StatelessWidget {
           colors: [Color(0xFF256D85), Color(0xFF47B5A4)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight),
+      padding: EdgeInsets.all(compact ? 14 : 20),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          const Expanded(
+          Expanded(
               child: Text('Clima del rancho',
                   style: TextStyle(
                       color: Colors.white,
-                      fontSize: 18,
+                      fontSize: compact ? 15 : 18,
                       fontWeight: FontWeight.bold))),
           IconButton(
               tooltip: 'Actualizar clima',
               onPressed: onRefresh,
-              icon: const Icon(Icons.refresh, color: Colors.white)),
+              visualDensity: VisualDensity.compact,
+              icon: Icon(Icons.refresh,
+                  color: Colors.white, size: compact ? 18 : 24)),
           IconButton(
               tooltip: 'Cambiar ubicación',
               onPressed: () => context.push('/clima/ubicacion'),
-              icon: const Icon(Icons.edit_location_alt_outlined,
-                  color: Colors.white)),
+              visualDensity: VisualDensity.compact,
+              icon: Icon(Icons.edit_location_alt_outlined,
+                  color: Colors.white, size: compact ? 18 : 24)),
         ]),
         Text(clima.ubicacion.direccion ?? 'Ubicación del rancho',
-            maxLines: 2,
+            maxLines: compact ? 1 : 2,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Colors.white70)),
-        const SizedBox(height: 16),
+            style:
+                TextStyle(color: Colors.white70, fontSize: compact ? 11 : 14)),
+        SizedBox(height: compact ? 10 : 16),
         Wrap(
-            spacing: 18,
-            runSpacing: 12,
+            spacing: compact ? 12 : 18,
+            runSpacing: compact ? 8 : 12,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               Icon(_weatherIcon(current.codigoClima),
-                  color: Colors.white, size: 46),
+                  color: Colors.white, size: compact ? 28 : 46),
               Text(
                   current.temperatura == null
                       ? '--°'
                       : '${current.temperatura!.toStringAsFixed(1)}°',
-                  style: const TextStyle(
+                  style: TextStyle(
                       color: Colors.white,
-                      fontSize: 38,
+                      fontSize: compact ? 24 : 38,
                       fontWeight: FontWeight.w600)),
               _Metric(
                   label: 'Sensación',
+                  compact: compact,
                   value: current.sensacionTermica == null
                       ? '--'
                       : '${current.sensacionTermica!.toStringAsFixed(1)}°'),
               _Metric(
                   label: 'Humedad',
+                  compact: compact,
                   value:
                       current.humedad == null ? '--' : '${current.humedad}%'),
               _Metric(
                   label: 'Lluvia',
+                  compact: compact,
                   value: clima.pronostico.probabilidadLluviaMaxima == null
                       ? '--'
                       : '${clima.pronostico.probabilidadLluviaMaxima}%'),
               _Metric(
                   label: 'Viento',
+                  compact: compact,
                   value: current.viento == null
                       ? '--'
                       : '${current.viento!.toStringAsFixed(1)} km/h'),
             ]),
-        const SizedBox(height: 10),
+        SizedBox(height: compact ? 8 : 10),
         Text(current.descripcion,
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w500)),
-        const Divider(color: Colors.white30, height: 26),
+            style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+                fontSize: compact ? 12 : 14)),
+        Divider(color: Colors.white30, height: compact ? 18 : 26),
         Wrap(
             spacing: 10,
             runSpacing: 8,
@@ -223,22 +303,29 @@ class _WeatherCard extends StatelessWidget {
             children: [
               StatusBadge(status: clima.riesgo.nivel),
               Text(clima.riesgo.titulo,
-                  style: const TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold))
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: compact ? 12 : 14))
             ]),
-        const SizedBox(height: 8),
+        SizedBox(height: compact ? 4 : 8),
         Text(clima.riesgo.mensaje,
-            style: const TextStyle(color: Colors.white70)),
+            style:
+                TextStyle(color: Colors.white70, fontSize: compact ? 11 : 14)),
         if (clima.riesgo.recomendaciones.isNotEmpty)
           TextButton.icon(
               onPressed: () => _showRecommendations(context),
-              style: TextButton.styleFrom(foregroundColor: Colors.white),
-              icon: const Icon(Icons.health_and_safety_outlined),
-              label: const Text('Ver recomendaciones')),
+              style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  visualDensity: VisualDensity.compact),
+              icon: const Icon(Icons.health_and_safety_outlined, size: 18),
+              label: Text('Ver recomendaciones',
+                  style: TextStyle(fontSize: compact ? 11 : 14))),
         if (clima.actualizadoEn != null)
           Text(
               'Actualizado ${DateFormat('dd/MM, HH:mm').format(clima.actualizadoEn!.toLocal())}',
-              style: const TextStyle(color: Colors.white60, fontSize: 11)),
+              style: TextStyle(
+                  color: Colors.white60, fontSize: compact ? 10 : 11)),
       ]),
     );
   }
@@ -247,15 +334,20 @@ class _WeatherCard extends StatelessWidget {
 class _Metric extends StatelessWidget {
   final String label;
   final String value;
-  const _Metric({required this.label, required this.value});
+  final bool compact;
+  const _Metric(
+      {required this.label, required this.value, this.compact = false});
   @override
   Widget build(BuildContext context) =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label,
-            style: const TextStyle(color: Colors.white60, fontSize: 11)),
+            style:
+                TextStyle(color: Colors.white60, fontSize: compact ? 9 : 11)),
         Text(value,
-            style: const TextStyle(
-                color: Colors.white, fontWeight: FontWeight.w600))
+            style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: compact ? 11 : 14))
       ]);
 }
 

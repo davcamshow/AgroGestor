@@ -9,6 +9,9 @@ class KpiCard extends StatefulWidget {
   final Color? color;
   final LinearGradient? gradient;
 
+  /// Modo compacto: menos padding, tipografía e iconos más pequeños.
+  final bool compact;
+
   const KpiCard({
     required this.title,
     required this.value,
@@ -16,6 +19,7 @@ class KpiCard extends StatefulWidget {
     this.subtitle,
     this.color,
     this.gradient,
+    this.compact = false,
     super.key,
   });
 
@@ -50,6 +54,7 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
   Widget build(BuildContext context) {
     final gradient = widget.gradient ?? AppTheme.primaryGradient;
     final color = widget.color ?? AppTheme.primary;
+    final compact = widget.compact;
 
     return FadeTransition(
       opacity: _animation,
@@ -60,11 +65,11 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
         child: Container(
           decoration: BoxDecoration(
             gradient: gradient,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(compact ? 14 : 16),
             boxShadow: [AppTheme.softShadow],
           ),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: EdgeInsets.all(compact ? 14 : 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -76,34 +81,35 @@ class _KpiCardState extends State<KpiCard> with SingleTickerProviderStateMixin {
                         widget.title,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               color: Colors.white70,
-                              fontSize: 13,
+                              fontSize: compact ? 11 : 13,
                             ),
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.all(8),
+                      padding: EdgeInsets.all(compact ? 6 : 8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(
                         widget.icon,
                         color: Colors.white,
-                        size: 20,
+                        size: compact ? 16 : 20,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: compact ? 10 : 16),
                 Text(
                   widget.value,
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
+                        fontSize: compact ? 22 : 28,
                       ),
                 ),
                 if (widget.subtitle != null) ...[
-                  const SizedBox(height: 8),
+                  SizedBox(height: compact ? 4 : 8),
                   Text(
                     widget.subtitle!,
                     style: Theme.of(context)

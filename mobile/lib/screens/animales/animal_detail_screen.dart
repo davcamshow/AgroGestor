@@ -14,7 +14,7 @@ import '../../core/providers/dietas_provider.dart';
 import '../../core/providers/registros_peso_provider.dart';
 import '../../core/api/api_client.dart';
 import '../../core/theme/app_theme.dart';
-import '../../widgets/blurred_modal_backdrop.dart';
+import '../../widgets/blur_bottom_sheet.dart';
 import '../../widgets/animal_avatar.dart';
 import 'animal_form_sheet.dart';
 import 'mover_lote_sheet.dart';
@@ -469,31 +469,67 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
   }
 
   void _showYearPickerDialog(DateTime focusedDay, ThemeData theme) {
-    showDialog(
+    var selectedYear = focusedDay.year;
+    var selectedMonth = focusedDay.month;
+    showBlurBottomSheet(
       context: context,
-      builder: (ctx) {
-        int selectedYear = focusedDay.year;
-        int selectedMonth = focusedDay.month;
-        return StatefulBuilder(
-          builder: (ctx, setDialogState) => AlertDialog(
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.chevron_left),
-                  onPressed: () => setDialogState(() => selectedYear--),
-                ),
-                Text('$selectedYear'),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right),
-                  onPressed: () => setDialogState(() => selectedYear++),
-                ),
-              ],
+      maxHeight: MediaQuery.sizeOf(context).height * 0.6,
+      child: StatefulBuilder(
+        builder: (context, setSheetState) => Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 8, 0),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(Icons.calendar_month,
+                        color: theme.colorScheme.primary),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.chevron_left),
+                          onPressed: () => setSheetState(() => selectedYear--),
+                        ),
+                        Expanded(
+                          child: Text(
+                            '$selectedYear',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.titleLarge,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.chevron_right),
+                          onPressed: () => setSheetState(() => selectedYear++),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
             ),
-            content: SizedBox(
-              width: 300,
-              height: 300,
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Divider(height: 24),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
               child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 3,
                   mainAxisSpacing: 8,
@@ -544,15 +580,9 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                 },
               ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Cancelar'),
-              ),
-            ],
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
@@ -586,15 +616,12 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
   }
 
   void _openRegistroSheet(Animal animal, int tabIndex) {
-    showModalBottomSheet(
+    showBlurBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => BlurredModalBackdrop(
-        child: AgregarRegistroSheet(
-          animalId: animal.id,
-          animalArete: animal.numeroArete,
-        ),
+      maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+      child: AgregarRegistroSheet(
+        animalId: animal.id,
+        animalArete: animal.numeroArete,
       ),
     );
   }
@@ -796,8 +823,15 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
                   padding: const EdgeInsets.only(top: 40),
                   child: Column(
                     children: [
-                      Icon(Icons.family_restroom,
-                          size: 64, color: theme.textTheme.bodySmall?.color),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text('🐄', style: const TextStyle(fontSize: 40)),
+                          const SizedBox(width: 4),
+                          Text('🐮', style: const TextStyle(fontSize: 40)),
+                        ],
+                      ),
                       const SizedBox(height: 12),
                       Text(
                         'Sin familia registrada',
@@ -1018,70 +1052,81 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
   }
 
   void _mostrarInfoAnimal(Animal animal, List<Animal>? todos, ThemeData theme) {
-    showDialog(
+    showBlurBottomSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: Row(
-          children: [
-            AnimalAvatar(
-              animal: animal,
-              backgroundColor: theme.colorScheme.primary.withOpacity(0.15),
-              foregroundColor: theme.colorScheme.primary,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                animal.nombre ?? animal.numeroArete,
-                style: const TextStyle(fontSize: 18),
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _infoRow('Arete', animal.numeroArete, theme),
-            _infoRow('Nombre', animal.nombre ?? 'Sin nombre', theme),
-            _infoRow('Sexo', animal.sexo == 'M' ? 'Macho' : 'Hembra', theme),
-            _infoRow('Raza', animal.raza ?? 'No especificada', theme),
-            _infoRow('Color', animal.color ?? 'No especificado', theme),
-            _infoRow(
-                'Fecha Nac.',
-                animal.fechaNacimiento?.toString().split(' ')[0] ?? 'N/A',
-                theme),
-            _infoRow('Estado', animal.estado, theme),
-            if (todos != null) ...[
-              if (animal.madreId != null)
-                _infoRow(
-                  'Madre',
-                  todos
-                          .where((a) => a.id == animal.madreId)
-                          .firstOrNull
-                          ?.numeroArete ??
-                      '#${animal.madreId}',
-                  theme,
+      maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 8, 0),
+            child: Row(
+              children: [
+                AnimalAvatar(
+                  animal: animal,
+                  backgroundColor:
+                      theme.colorScheme.primary.withValues(alpha: 0.15),
+                  foregroundColor: theme.colorScheme.primary,
                 ),
-              if (animal.padreId != null)
-                _infoRow(
-                  'Padre',
-                  todos
-                          .where((a) => a.id == animal.padreId)
-                          .firstOrNull
-                          ?.numeroArete ??
-                      '#${animal.padreId}',
-                  theme,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    animal.nombre ?? animal.numeroArete,
+                    style: theme.textTheme.titleLarge,
+                  ),
                 ),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cerrar'),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(height: 24),
+          ),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+              children: [
+                _infoRow('Arete', animal.numeroArete, theme),
+                _infoRow('Nombre', animal.nombre ?? 'Sin nombre', theme),
+                _infoRow(
+                    'Sexo', animal.sexo == 'M' ? 'Macho' : 'Hembra', theme),
+                _infoRow('Raza', animal.raza ?? 'No especificada', theme),
+                _infoRow('Color', animal.color ?? 'No especificado', theme),
+                _infoRow(
+                    'Fecha Nac.',
+                    animal.fechaNacimiento?.toString().split(' ')[0] ?? 'N/A',
+                    theme),
+                _infoRow('Estado', animal.estado, theme),
+                if (todos != null) ...[
+                  if (animal.madreId != null)
+                    _infoRow(
+                      'Madre',
+                      todos
+                              .where((a) => a.id == animal.madreId)
+                              .firstOrNull
+                              ?.numeroArete ??
+                          '#${animal.madreId}',
+                      theme,
+                    ),
+                  if (animal.padreId != null)
+                    _infoRow(
+                      'Padre',
+                      todos
+                              .where((a) => a.id == animal.padreId)
+                              .firstOrNull
+                              ?.numeroArete ??
+                          '#${animal.padreId}',
+                      theme,
+                    ),
+                ],
+              ],
+            ),
           ),
         ],
       ),
@@ -1127,35 +1172,68 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
 
     if (!mounted) return;
 
-    final seleccionado = await showDialog<Animal>(
+    final seleccionado = await showBlurBottomSheet<Animal>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Asignar ${esMadre ? "Madre" : "Padre"}'),
-        content: SizedBox(
-          width: double.maxFinite,
-          height: 300,
-          child: ListView.builder(
-            itemCount: disponibles.length,
-            itemBuilder: (context, index) {
-              final a = disponibles[index];
-              final color = esMadre ? Colors.pink : Colors.blue;
-              return ListTile(
-                leading: AnimalAvatar(
-                  animal: a,
-                  backgroundColor: color.withOpacity(0.15),
-                  foregroundColor: color,
+      maxHeight: MediaQuery.sizeOf(context).height * 0.6,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 8, 0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: (esMadre ? Colors.pink : Colors.blue)
+                        .withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    esMadre ? Icons.female : Icons.male,
+                    color: esMadre ? Colors.pink : Colors.blue,
+                  ),
                 ),
-                title: Text(a.numeroArete),
-                subtitle: Text(a.nombre ?? a.raza ?? ''),
-                onTap: () => Navigator.pop(ctx, a),
-              );
-            },
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Asignar ${esMadre ? "Madre" : "Padre"}',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancelar'),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(height: 24),
+          ),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+              itemCount: disponibles.length,
+              itemBuilder: (context, index) {
+                final a = disponibles[index];
+                final color = esMadre ? Colors.pink : Colors.blue;
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: AnimalAvatar(
+                    animal: a,
+                    backgroundColor: color.withValues(alpha: 0.15),
+                    foregroundColor: color,
+                  ),
+                  title: Text(a.numeroArete),
+                  subtitle: Text(a.nombre ?? a.raza ?? ''),
+                  onTap: () => Navigator.pop(context, a),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -1557,35 +1635,26 @@ class _AnimalDetailScreenState extends ConsumerState<AnimalDetailScreen>
 
   // Nuevo método para mostrar el AnimalBajaSheet
   void _showBajaSheet(BuildContext context, Animal animal) {
-    showModalBottomSheet(
+    showBlurBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => BlurredModalBackdrop(
-        child: AnimalBajaSheet(animal: animal),
-      ),
+      maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+      child: AnimalBajaSheet(animal: animal),
     );
   }
 
   void _showEditSheet(BuildContext context, Animal animal) {
-    showModalBottomSheet(
+    showBlurBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => BlurredModalBackdrop(
-        child: AnimalFormSheet(animalToEdit: animal),
-      ),
+      maxHeight: MediaQuery.sizeOf(context).height * 0.92,
+      child: AnimalFormSheet(animalToEdit: animal),
     );
   }
 
   void _showMoverLoteSheet(BuildContext context, Animal animal) {
-    showModalBottomSheet(
+    showBlurBottomSheet(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => BlurredModalBackdrop(
-        child: MoverLoteSheet(animal: animal),
-      ),
+      maxHeight: MediaQuery.sizeOf(context).height * 0.8,
+      child: MoverLoteSheet(animal: animal),
     );
   }
 

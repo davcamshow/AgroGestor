@@ -21,10 +21,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   late final TextEditingController _confirmPasswordController;
   late final TextEditingController _phoneController;
   late final TextEditingController _roleController;
+  late final FocusNode _emailFocusNode;
 
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  String? _emailError;
   late PasswordStrength _passwordStrength;
   final _formKey = GlobalKey<FormState>();
 
@@ -37,6 +39,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _confirmPasswordController = TextEditingController();
     _phoneController = TextEditingController();
     _roleController = TextEditingController();
+    _emailFocusNode = FocusNode();
     _passwordStrength = PasswordStrength.from('');
     _passwordController.addListener(_updatePasswordStrength);
   }
@@ -49,6 +52,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _confirmPasswordController.dispose();
     _phoneController.dispose();
     _roleController.dispose();
+    _emailFocusNode.dispose();
     _passwordController.removeListener(_updatePasswordStrength);
     super.dispose();
   }
@@ -64,10 +68,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('✅ ¡Registro Exitoso!'),
+        title: const Text(' ¡Registro Exitoso!'),
         content: const Text(
           'Tu cuenta ha sido creada correctamente.\nTe hemos enviado un correo para activar tu cuenta. '
-          'Solo podrás iniciar sesión después de confirmar el email.',
+          'Solo podrás iniciar sesión después de confirmar el email',
         ),
         actions: [
           TextButton(
@@ -75,7 +79,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               Navigator.pop(context);
               context.go('/login');
             },
-            child: const Text('Ir al Login'),
+            child: const Text('Ir al Inicio de Sesión'),
           ),
         ],
       ),
@@ -98,6 +102,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     );
   }
 
+  bool _isEmailAlreadyRegistered(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('debe ser unico') ||
+        message.contains('debe ser único') ||
+        message.contains('already exists') ||
+        message.contains('unique');
+  }
+
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -118,7 +130,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       }
     } catch (e) {
       if (mounted) {
-        _showErrorDialog('Error al registrar: $e');
+        if (_isEmailAlreadyRegistered(e)) {
+          setState(() {
+            _emailError =
+                'Ya existe un usuario registrado con ese correo';
+          });
+          _formKey.currentState?.validate();
+          _emailFocusNode.requestFocus();
+        } else {
+          _showErrorDialog('Error al registrar: $e');
+        }
       }
     } finally {
       if (mounted) {
@@ -217,18 +238,30 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 .slideY(begin: 0.5),
                             const SizedBox(height: 16),
                             // Email
+
+                            const Text('Correo electrónico *',
+                                style: TextStyle(color: AppTheme.primary)),
                             Text('Email *',
                                 style: TextStyle(
                                     color: theme.colorScheme.primary)),
+
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _emailController,
-                              decoration: const InputDecoration(
+                              focusNode: _emailFocusNode,
+                              decoration: InputDecoration(
                                 hintText: 'tu@email.com',
-                                prefixIcon: Icon(Icons.email_outlined),
+                                prefixIcon: const Icon(Icons.email_outlined),
+                                errorMaxLines: 2,
                               ),
                               keyboardType: TextInputType.emailAddress,
-                              validator: EmailValidator.validateEmail,
+                              onChanged: (_) {
+                                if (_emailError != null) {
+                                  setState(() => _emailError = null);
+                                }
+                              },
+                              validator: (value) => _emailError ??
+                                  EmailValidator.validateEmail(value),
                             )
                                 .animate()
                                 .fadeIn(delay: 300.ms)

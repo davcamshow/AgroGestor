@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/models/dieta.dart';
 import '../../core/models/dieta_insumo.dart';
+import '../../core/models/insumo.dart';
 import '../../core/providers/dietas_provider.dart';
 import '../../core/providers/insumos_provider.dart';
 
@@ -98,9 +99,9 @@ class _DietaFormScreenState extends ConsumerState<DietaFormScreen> {
     return null;
   }
 
-  Future<void> _cargarIngredientes(List<DietaInsumo> todos) async {
+  Future<void> _cargarIngredientes(
+    List<DietaInsumo> todos, List<Insumo> insumos) async {
     if (!_esEdicion || _listo) return;
-    final insumos = ref.read(insumosProvider).valueOrNull ?? const [];
     final mapa = {for (final i in insumos) i.id: i.nombre};
     for (final di in todos) {
       if (di.dieta != widget.dieta!.id) continue;
@@ -132,7 +133,7 @@ class _DietaFormScreenState extends ConsumerState<DietaFormScreen> {
     }
     final insumo = insumos.firstWhere((i) => i.id == insumoId);
     if (_ingredientes.any((i) => i.insumoId == insumoId)) {
-      _mensaje('Ese insumo ya estÃ¡ en la dieta.');
+      _mensaje('Ese insumo ya está en la dieta.');
       return;
     }
     final c = TextEditingController();
@@ -189,7 +190,7 @@ class _DietaFormScreenState extends ConsumerState<DietaFormScreen> {
       return;
     }
     if (_tipoFormulacion == 'porcentaje' && _totalPorcentaje > 100) {
-      _mensaje('Los porcentajes suman mÃ¡s de 100% (actual: ${_totalPorcentaje.toStringAsFixed(2)}%).');
+      _mensaje('Los porcentajes suman más de 100% (actual: ${_totalPorcentaje.toStringAsFixed(2)}%).');
       return;
     }
 
@@ -273,17 +274,22 @@ class _DietaFormScreenState extends ConsumerState<DietaFormScreen> {
   Widget build(BuildContext context) {
     final insumosAsync = ref.watch(insumosProvider);
     final dietaInsumosAsync = ref.watch(dietaInsumosProvider);
-    dietaInsumosAsync.when(
-      data: (todos) {
-        if (!_listo) {
-          WidgetsBinding.instance.addPostFrameCallback((_) => _cargarIngredientes(todos));
-        }
-      },
-      error: (e, _) {},
-      loading: () {},
-    );
 
-    final insumos = insumosAsync.valueOrNull ?? const [];
+    final insumos = insumosAsync.valueOrNull ?? const <Insumo>[];
+    final dietaInsumosData =
+        dietaInsumosAsync.valueOrNull ?? const <DietaInsumo>[];
+
+    // Los ingredientes (nombre del insumo + valor) solo pueden poblarse
+    // cuando ambos catálogos ya cargaron: si se corre antes, el insumo
+    // aún no está en la lista y el ingrediente aparece como "Insumo".
+    if (insumosAsync.hasValue && dietaInsumosAsync.hasValue && !_listo) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_listo) {
+          _cargarIngredientes(dietaInsumosData, insumos);
+        }
+      });
+    }
+
     final disponibles = insumos
         .where((i) => !_ingredientes.any((ing) => ing.insumoId == i.id))
         .toList();
@@ -291,7 +297,6 @@ class _DietaFormScreenState extends ConsumerState<DietaFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(_esEdicion ? 'Editar Dieta' : 'Nueva Dieta'),
-        backgroundColor: const Color(0xFF064e3b),
       ),
       body: insumosAsync.when(
         data: (_) => Form(
@@ -304,7 +309,7 @@ class _DietaFormScreenState extends ConsumerState<DietaFormScreen> {
                 textCapitalization: TextCapitalization.sentences,
                 decoration: const InputDecoration(
                   labelText: 'Nombre de la dieta',
-                  hintText: 'Ej. Engorda cebÃº',
+                  hintText: 'Ej. Engorda cebú',
                   border: OutlineInputBorder(),
                 ),
                 validator: (v) =>
@@ -335,7 +340,7 @@ class _DietaFormScreenState extends ConsumerState<DietaFormScreen> {
                 ),
                 validator: (v) {
                   final d = double.tryParse((v ?? '').replaceAll(',', '.'));
-                  if (d == null || d < 0) return 'Costo invÃ¡lido';
+                  if (d == null || d < 0) return 'Costo inválido';
                   return null;
                 },
               ),
@@ -347,8 +352,8 @@ class _DietaFormScreenState extends ConsumerState<DietaFormScreen> {
                   FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                 ],
                 decoration: const InputDecoration(
-                  labelText: 'Kg por cabeza (raciÃ³n total)',
-                  hintText: 'Opcional. Usado en fÃ³rmulas por porcentaje',
+                  labelText: 'Kg por cabeza (ración total)',
+                  hintText: 'Opcional. Usado en fórmulas por porcentaje',
                   border: OutlineInputBorder(),
                 ),
                 validator: (v) {
@@ -366,9 +371,9 @@ class _DietaFormScreenState extends ConsumerState<DietaFormScreen> {
                   border: OutlineInputBorder(),
                 ),
                 items: const [
-                  DropdownMenuItem(value: 'diaria', child: Text('Diaria (cada dÃ­a)')),
-                  DropdownMenuItem(value: 'semanal', child: Text('Semanal (cada 7 dÃ­as)')),
-                  DropdownMenuItem(value: 'quincenal', child: Text('Quincenal (cada 15 dÃ­as)')),
+                  DropdownMenuItem(value: 'diaria', child: Text('Diaria (cada día)')),
+                  DropdownMenuItem(value: 'semanal', child: Text('Semanal (cada 7 días)')),
+                  DropdownMenuItem(value: 'quincenal', child: Text('Quincenal (cada 15 días)')),
                 ],
                 onChanged: (v) => setState(() => _periodicidad = v ?? 'diaria'),
               ),
@@ -397,7 +402,7 @@ class _DietaFormScreenState extends ConsumerState<DietaFormScreen> {
               const SizedBox(height: 4),
               Text(
                 _tipoFormulacion == 'porcentaje'
-                    ? 'Cada ingrediente se expresa como % del total de la raciÃ³n.'
+                    ? 'Cada ingrediente se expresa como % del total de la ración.'
                     : 'Cada ingrediente indica los kg que come UNA cabeza en cada oportunidad.',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
@@ -489,10 +494,10 @@ class _DietaFormScreenState extends ConsumerState<DietaFormScreen> {
                         Expanded(
                           child: Text(
                             _totalPorcentaje > 100
-                                ? 'Â¡MÃ¡s de 100%! Ajusta los ingredientes.'
+                                ? '¡Más de 100%! Ajusta los ingredientes.'
                                 : (_totalPorcentaje < 100
                                     ? 'Total ${_totalPorcentaje.toStringAsFixed(2)}%. El faltante se cubre con forrajes/forraje o agua.'
-                                    : 'Total 100%. RaciÃ³n balanceada.'),
+                                    : 'Total 100%. Ración balanceada.'),
                             style: Theme.of(context).textTheme.bodySmall,
                           ),
                         ),
@@ -544,7 +549,7 @@ class _DietaFormScreenState extends ConsumerState<DietaFormScreen> {
               ElevatedButton(
                 onPressed: _cargando ? null : _guardar,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF064e3b),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: _cargando

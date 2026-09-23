@@ -5,28 +5,21 @@ import '../../core/models/dieta.dart';
 import '../../core/providers/dietas_provider.dart';
 import '../../widgets/status_badge.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/blur_bottom_sheet.dart';
 
 class FormulasScreen extends ConsumerWidget {
   const FormulasScreen({super.key});
 
-  Future<void> _eliminar(BuildContext context, WidgetRef ref, Dieta dieta) async {
-    final confirmar = await showDialog<bool>(
+  Future<void> _eliminar(
+      BuildContext context, WidgetRef ref, Dieta dieta) async {
+    final confirmar = await showBlurConfirmSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar dieta'),
-        content: Text('¿Eliminar "${dieta.nombre}"? '
-            'Los lotes y animales que la usan dejarán de consumirla automáticamente.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+      title: 'Eliminar dieta',
+      message: '¿Eliminar "${dieta.nombre}"? '
+          'Los lotes y animales que la usan dejarán de consumirla automáticamente.',
+      confirmLabel: 'Eliminar',
+      icon: Icons.delete_outline,
+      destructive: true,
     );
     if (confirmar != true) return;
     try {
@@ -42,6 +35,7 @@ class FormulasScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
     final dietasAsync = ref.watch(dietasNotifierProvider);
     final dietaInsumosAsync = ref.watch(dietaInsumosProvider);
     final conteoInsumos = dietaInsumosAsync.valueOrNull ?? const [];
@@ -49,11 +43,11 @@ class FormulasScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dietas'),
-        backgroundColor: const Color(0xFF064e3b),
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'fab-formulas',
         onPressed: () => context.push('/formulas/builder'),
-        backgroundColor: const Color(0xFF064e3b),
+        backgroundColor: theme.colorScheme.primary,
         child: const Icon(Icons.add),
       ),
       body: RefreshIndicator(
@@ -67,8 +61,7 @@ class FormulasScreen extends ConsumerWidget {
               return EmptyState(
                 icon: Icons.restaurant,
                 title: 'Sin dietas',
-                description:
-                    'Crea tu primera dieta con insumos del inventario',
+                description: 'Crea tu primera dieta con insumos del inventario',
                 actionLabel: 'Nueva Dieta',
                 onActionPressed: () => context.push('/formulas/builder'),
               );
@@ -79,13 +72,13 @@ class FormulasScreen extends ConsumerWidget {
               itemCount: dietas.length,
               itemBuilder: (context, index) {
                 final dieta = dietas[index];
-                final cantidad = conteoInsumos
-                    .where((di) => di.dieta == dieta.id)
-                    .length;
+                final cantidad =
+                    conteoInsumos.where((di) => di.dieta == dieta.id).length;
                 return Card(
                   margin: const EdgeInsets.only(bottom: 10),
                   child: ListTile(
-                    onTap: () => context.push('/formulas/builder', extra: dieta),
+                    onTap: () =>
+                        context.push('/formulas/builder', extra: dieta),
                     isThreeLine: true,
                     title: Row(
                       children: [
@@ -123,7 +116,8 @@ class FormulasScreen extends ConsumerWidget {
                           const SizedBox(height: 4),
                           Text(
                             '\$${dieta.costoEstimadoKg}/kg',
-                            style: TextStyle(color: const Color(0xFF064e3b)),
+                            style: TextStyle(
+                                color: theme.colorScheme.primary),
                           ),
                         ],
                       ),
@@ -182,13 +176,15 @@ class _Chip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF064e3b).withValues(alpha: 0.08),
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: const Color(0xFF064e3b)),
+          Icon(icon,
+              size: 14,
+              color: Theme.of(context).colorScheme.primary),
           const SizedBox(width: 4),
           Text(texto, style: Theme.of(context).textTheme.bodySmall),
         ],

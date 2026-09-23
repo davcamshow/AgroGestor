@@ -9,6 +9,7 @@ import '../../core/providers/animales_provider.dart';
 import '../../core/providers/dietas_provider.dart';
 import '../../core/services/bovino_recognition_service.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/blur_bottom_sheet.dart';
 
 class AnimalFormSheet extends ConsumerStatefulWidget {
   final Animal? animalToEdit;
@@ -167,30 +168,16 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
         Navigator.pop(context);
 
         if (!_isEditing) {
-          final shouldNavigate = await showDialog<bool>(
+          final shouldNavigate = await showBlurConfirmSheet(
             context: context,
-            barrierDismissible: false,
-            builder: (ctx) => AlertDialog(
-              title: const Row(
-                children: [
-                  Icon(Icons.check_circle, color: AppTheme.success),
-                  SizedBox(width: 8),
-                  Text('¡Animal guardado!'),
-                ],
-              ),
-              content: const Text(
-                  '¿Deseas ver los detalles del animal o seguir agregando más?'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx, false),
-                  child: const Text('Agregar otro'),
-                ),
-                ElevatedButton(
-                  onPressed: () => Navigator.pop(ctx, true),
-                  child: const Text('Ver detalles'),
-                ),
-              ],
-            ),
+            title: '¡Animal guardado!',
+            message:
+                '¿Deseas ver los detalles del animal o seguir agregando más?',
+            confirmLabel: 'Ver detalles',
+            cancelLabel: 'Agregar otro',
+            icon: Icons.check_circle,
+            iconColor: AppTheme.success,
+            confirmColor: AppTheme.success,
           );
 
           if (shouldNavigate == true && mounted) {
@@ -224,23 +211,28 @@ class _AnimalFormSheetState extends ConsumerState<AnimalFormSheet> {
       maxChildSize: 0.95,
       minChildSize: 0.5,
       builder: (context, scrollController) {
+        final isDark = theme.brightness == Brightness.dark;
         return Container(
           decoration: BoxDecoration(
-            color: theme.cardTheme.color ?? theme.scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(24),
-              topRight: Radius.circular(24),
+            color: (isDark ? AppTheme.darkSurface : Colors.white)
+                .withValues(alpha: 0.92),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border(
+              top: BorderSide(
+                color: (isDark ? Colors.white : Colors.black)
+                    .withValues(alpha: 0.08),
+              ),
             ),
           ),
           child: Column(
             children: [
               // Handle
               Container(
-                margin: const EdgeInsets.only(top: 12),
+                margin: const EdgeInsets.only(top: 12, bottom: 4),
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: theme.dividerColor,
+                  color: theme.colorScheme.outlineVariant,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),

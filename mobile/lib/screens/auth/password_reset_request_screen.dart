@@ -24,8 +24,10 @@ class _PasswordResetRequestScreenState
   final _otpController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
+  final _passwordFocusNode = FocusNode();
 
   bool _isLoading = false;
+  bool _isResendingCode = false;
   String? _message;
   bool _success = false;
   bool _obscurePassword = true;
@@ -47,6 +49,7 @@ class _PasswordResetRequestScreenState
     _otpController.dispose();
     _passwordController.dispose();
     _confirmController.dispose();
+    _passwordFocusNode.dispose();
     _passwordController.removeListener(_updatePasswordStrength);
     super.dispose();
   }
@@ -95,13 +98,41 @@ class _PasswordResetRequestScreenState
           );
       setState(() {
         _step = _ResetStep.password;
-        _message = 'Código verificado. Ahora define tu nueva contraseña.';
+        _message = 'Código verificado. Ahora define tu nueva contraseña';
         _success = true;
       });
     } catch (e) {
       setState(() => _message = e.toString().replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _resendOtp() async {
+    setState(() {
+      _isLoading = true;
+      _isResendingCode = true;
+      _message = null;
+      _success = false;
+    });
+
+    try {
+      await ref
+          .read(authRepositoryProvider)
+          .requestPasswordReset(_emailController.text);
+      setState(() {
+        _message = 'El código OTP fue reenviado a tu correo.';
+        _success = true;
+      });
+    } catch (e) {
+      setState(() => _message = e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _isResendingCode = false;
+        });
+      }
     }
   }
 
@@ -121,7 +152,7 @@ class _PasswordResetRequestScreenState
             passwordConfirm: _confirmController.text,
           );
       setState(() {
-        _message = 'Tu contraseña se actualizó correctamente.';
+        _message = 'Tu contraseña se actualizó correctamente';
         _success = true;
       });
       await Future.delayed(const Duration(milliseconds: 800));
@@ -129,7 +160,15 @@ class _PasswordResetRequestScreenState
         Navigator.of(context).pop();
       }
     } catch (e) {
-      setState(() => _message = e.toString().replaceFirst('Exception: ', ''));
+      final errorMessage = e.toString().replaceFirst('Exception: ', '');
+      setState(() => _message = errorMessage);
+      if (mounted &&
+          errorMessage.contains(
+              'La nueva contraseña no puede ser la misma que la contraseña actual')) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _passwordFocusNode.requestFocus();
+        });
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -153,10 +192,10 @@ class _PasswordResetRequestScreenState
         const SizedBox(height: 8),
         Text(
           _step == _ResetStep.email
-              ? 'Ingresa tu correo para recibir un código de verificación.'
+              ? 'Ingresa tu correo para recibir un código de verificación'
               : _step == _ResetStep.verify
-                  ? 'Ingresa el código recibido por correo para continuar.'
-                  : 'Crea una nueva contraseña segura para tu cuenta.',
+                  ? 'Ingresa el código recibido por correo para continuar'
+                  : 'Crea una nueva contraseña segura para tu cuenta',
           style: Theme.of(context).textTheme.bodyMedium,
         ),
       ],
@@ -224,8 +263,27 @@ class _PasswordResetRequestScreenState
                 ),
                 const Spacer(),
                 TextButton(
-                  onPressed: _isLoading ? null : _submitEmail,
-                  child: const Text('Reenviar código'),
+                  onPressed: _isLoading ? null : _resendOtp,
+                  style: TextButton.styleFrom(
+                    disabledForegroundColor: Colors.grey,
+                  ),
+                  child: _isResendingCode
+                      ? const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 14,
+                              height: 14,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Text('Reenviando...'),
+                          ],
+                        )
+                      : const Text('Reenviar código'),
                 ),
               ],
             ),
@@ -252,9 +310,19 @@ class _PasswordResetRequestScreenState
         children: [
           TextFormField(
             controller: _passwordController,
+            focusNode: _passwordFocusNode,
             decoration: InputDecoration(
               labelText: 'Nueva contraseña',
               prefixIcon: const Icon(Icons.lock_outline),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                  color: _message != null && !_success
+                      ? Theme.of(context).colorScheme.error
+                      : Theme.of(context).colorScheme.primary,
+                  width: 2,
+                ),
+              ),
               suffixIcon: IconButton(
                 icon: Icon(_obscurePassword
                     ? Icons.visibility_outlined
@@ -266,6 +334,17 @@ class _PasswordResetRequestScreenState
             obscureText: _obscurePassword,
             validator: PasswordValidator.validatePassword,
           ),
+          if (_message != null && !_success)
+            Padding(
+              padding: const EdgeInsets.only(left: 12, top: 6),
+              child: Text(
+                _message!,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           if (_passwordController.text.isNotEmpty)
             PasswordStrengthIndicator(passwordStrength: _passwordStrength),
           const SizedBox(height: 16),
@@ -330,7 +409,8 @@ class _PasswordResetRequestScreenState
                   _buildHeader(),
                   const SizedBox(height: 20),
                   _buildBody(),
-                  if (_message != null) ...[
+                    if (_message != null &&
+                      !(_step == _ResetStep.password && !_success)) ...[
                     const SizedBox(height: 16),
                     Text(
                       _message!,

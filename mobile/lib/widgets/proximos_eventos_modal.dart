@@ -1,178 +1,112 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
+
+import '../core/theme/app_theme.dart';
+import 'blur_bottom_sheet.dart';
 
 void mostrarBottomSheetEventosProximos(
   BuildContext context, {
   required List<dynamic>
       eventos, // Pasa aquí tu lista de eventos (ej: List<EventoModel>)
 }) {
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: Colors.transparent,
-    barrierColor: Colors.black.withValues(alpha: 0.35),
-    isScrollControlled: true,
-    builder: (context) {
-      final theme = Theme.of(context);
-      final isDark = theme.brightness == Brightness.dark;
+  final theme = Theme.of(context);
+  final isDark = theme.brightness == Brightness.dark;
 
-      return ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.75,
-            ),
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface
-                  .withValues(alpha: isDark ? 0.8 : 0.9),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(28)),
-              border: Border(
-                top: BorderSide(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.2)
-                      : Colors.black.withValues(alpha: 0.08),
-                  width: 1.5,
+  showBlurBottomSheet(
+    context: context,
+    maxHeight: MediaQuery.sizeOf(context).height * 0.75,
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Cabecera
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 8, 0),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppTheme.info.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                left: BorderSide(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : Colors.black.withValues(alpha: 0.05),
-                  width: 1.0,
-                ),
-                right: BorderSide(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : Colors.black.withValues(alpha: 0.05),
-                  width: 1.0,
+                child: const Icon(
+                  Icons.event_available_rounded,
+                  color: AppTheme.info,
+                  size: 22,
                 ),
               ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Tirador superior
-                Center(
-                  child: Container(
-                    width: 44,
-                    height: 5,
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withValues(alpha: 0.3)
-                          : Colors.black.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Próximos Eventos',
+                  style: theme.textTheme.titleLarge,
                 ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        ),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: Divider(height: 24),
+        ),
 
-                // Cabecera
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
+        // Lista dinámica o estado vacío
+        Flexible(
+          child: eventos.isEmpty
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 36),
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary
-                                .withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            Icons.event_available_rounded,
-                            color: theme.colorScheme.primary,
-                            size: 22,
-                          ),
+                        Icon(
+                          Icons.event_busy_rounded,
+                          size: 48,
+                          color: theme.colorScheme.onSurface
+                              .withValues(alpha: 0.4),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(height: 12),
                         Text(
-                          'Próximos Eventos',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
+                          'No hay eventos próximos programados',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurface
+                                .withValues(alpha: 0.6),
                           ),
                         ),
                       ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.close_rounded, size: 22),
-                      style: IconButton.styleFrom(
-                        backgroundColor:
-                            theme.colorScheme.onSurface.withValues(alpha: 0.06),
-                      ),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Divider(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.1)
-                      : Colors.black.withValues(alpha: 0.06),
-                ),
-                const SizedBox(height: 8),
+                  ),
+                )
+              : ListView.builder(
+                  shrinkWrap: true,
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                  itemCount: eventos.length,
+                  itemBuilder: (context, index) {
+                    final evento = eventos[index];
 
-                // Lista dinámica o estado vacío
-                Flexible(
-                  child: eventos.isEmpty
-                      ? Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 36),
-                          child: Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.event_busy_rounded,
-                                  size: 48,
-                                  color: theme.colorScheme.onSurface
-                                      .withValues(alpha: 0.4),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'No hay eventos próximos programados',
-                                  style: theme.textTheme.bodyMedium?.copyWith(
-                                    color: theme.colorScheme.onSurface
-                                        .withValues(alpha: 0.6),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      : ListView.builder(
-                          shrinkWrap: true,
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: eventos.length,
-                          itemBuilder: (context, index) {
-                            final evento = eventos[index];
+                    // Mapea los campos de tu modelo/mapa:
+                    final titulo = evento.titulo ??
+                        evento['titulo'] ??
+                        'Evento sin título';
+                    final fecha = evento.fecha ?? evento['fecha'] ?? '';
+                    final tipo = evento.tipo ?? evento['tipo'] ?? 'General';
 
-                            // Mapea los campos de tu modelo/mapa:
-                            final titulo = evento.titulo ??
-                                evento['titulo'] ??
-                                'Evento sin título';
-                            final fecha = evento.fecha ?? evento['fecha'] ?? '';
-                            final tipo =
-                                evento.tipo ?? evento['tipo'] ?? 'General';
-
-                            return _buildEventoItem(
-                              context,
-                              titulo: titulo.toString(),
-                              fecha: fecha.toString(),
-                              tipo: tipo.toString(),
-                            );
-                          },
-                        ),
+                    return _buildEventoItem(
+                      context,
+                      titulo: titulo.toString(),
+                      fecha: fecha.toString(),
+                      tipo: tipo.toString(),
+                    );
+                  },
                 ),
-              ],
-            ),
-          ),
         ),
-      );
-    },
+      ],
+    ),
   );
 }
 

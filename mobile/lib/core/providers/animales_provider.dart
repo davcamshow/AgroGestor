@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/animal.dart';
 import '../api/api_client.dart';
 import '../repositories/offline_repository.dart';
+import 'lotes_provider.dart';
 
 /// Repositorio offline-first para Animal. `usuario` y `fecha_registro` los
 /// asigna el servidor (read_only en el backend); se les da un valor de
@@ -66,11 +67,13 @@ class AnimalesNotifier extends AutoDisposeAsyncNotifier<List<Animal>> {
       final response = await client.dio
           .post('animales/', data: await _asMultipart(data, foto));
       ref.invalidateSelf();
+      _refrescarLotes();
       return response.data['id'] as int;
     }
     final repo = ref.read(animalesRepositoryProvider);
     final animal = await repo.create(data);
     ref.invalidateSelf();
+    _refrescarLotes();
     return animal.id;
   }
 
@@ -81,17 +84,20 @@ class AnimalesNotifier extends AutoDisposeAsyncNotifier<List<Animal>> {
       await client.dio
           .patch('animales/$id/', data: await _asMultipart(data, foto));
       ref.invalidateSelf();
+      _refrescarLotes();
       return;
     }
     final repo = ref.read(animalesRepositoryProvider);
     await repo.update(id, data);
     ref.invalidateSelf();
+    _refrescarLotes();
   }
 
   Future<void> deleteAnimal(int id) async {
     final repo = ref.read(animalesRepositoryProvider);
     await repo.delete(id);
     ref.invalidateSelf();
+    _refrescarLotes();
   }
 
   /// Registra la baja lógica de un animal (venta, muerte, transferencia).
@@ -117,6 +123,7 @@ class AnimalesNotifier extends AutoDisposeAsyncNotifier<List<Animal>> {
       },
     );
     ref.invalidateSelf();
+    _refrescarLotes();
     return response.data as Map<String, dynamic>;
   }
 
@@ -142,7 +149,21 @@ class AnimalesNotifier extends AutoDisposeAsyncNotifier<List<Animal>> {
       },
     );
     ref.invalidateSelf();
+    _refrescarLotes();
     return response.data as Map<String, dynamic>;
+  }
+
+  /// Fuerza una recarga de los lotes tras operaciones que cambian la
+  /// distribución de animales (crear/editar/mover/dar de baja), para que
+  /// las cabezas por lote (cabezas_efectivas / animales_activos) se vean
+  /// actualizadas de inmediato en la UI sin esperar un pull-to-refresh.
+  void _refrescarLotes() {
+    try {
+      ref.read(lotesNotifierProvider.notifier).fetchLotes();
+    } catch (_) {}
+    try {
+      ref.invalidate(lotesProvider);
+    } catch (_) {}
   }
 }
 
@@ -155,6 +176,9 @@ final animalesNotifierProvider =
 /// Estado seleccionado en el listado: 'activo' | 'todos' | 'vendido' | 'muerto' | 'transferido'
 final animalesEstadoFiltroProvider =
     StateProvider.autoDispose<String>((ref) => 'todos');
+
+/// Texto de búsqueda del listado (filtra por número de arete o nombre).
+final animalesBusquedaProvider = StateProvider.autoDispose<String>((ref) => '');
 
 /// Filtros adicionales (sexo, etc.)
 final animalesFilterProvider =

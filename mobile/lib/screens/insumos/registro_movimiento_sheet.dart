@@ -31,7 +31,8 @@ class _RegistroMovimientoSheetState
   }
 
   Future<void> _confirmar() async {
-    final cantidad = double.tryParse(_cantidadCtrl.text.trim().replaceAll(',', '.'));
+    final cantidad =
+        double.tryParse(_cantidadCtrl.text.trim().replaceAll(',', '.'));
     if (cantidad == null || cantidad <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -79,139 +80,120 @@ class _RegistroMovimientoSheetState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
+    return SingleChildScrollView(
       padding: EdgeInsets.only(
         top: 20,
         left: 16,
         right: 16,
         bottom: MediaQuery.of(context).viewInsets.bottom + 24,
       ),
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.outlineVariant,
-                  borderRadius: BorderRadius.circular(2),
-                ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Registrar Movimiento',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${widget.insumo.nombre} — '
+            'Stock actual: ${widget.insumo.cantidadActualKg} kg',
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 20),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(
+                value: 'entrada',
+                label: Text('Entrada'),
+                icon: Icon(Icons.add_circle_outline),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Registrar Movimiento',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
+              ButtonSegment(
+                value: 'salida',
+                label: Text('Salida'),
+                icon: Icon(Icons.remove_circle_outline),
               ),
+            ],
+            selected: {_tipo},
+            onSelectionChanged: _isLoading
+                ? null
+                : (selection) => setState(() => _tipo = selection.first),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _cantidadCtrl,
+            enabled: !_isLoading,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: 'Cantidad (kg)',
+              prefixIcon: const Icon(Icons.scale),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            const SizedBox(height: 4),
-            Text(
-              '${widget.insumo.nombre} — '
-              'Stock actual: ${widget.insumo.cantidadActualKg} kg',
-              style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _costoCtrl,
+            enabled: !_isLoading,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: InputDecoration(
+              labelText: 'Costo unitario (opcional)',
+              prefixIcon: const Icon(Icons.attach_money),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            const SizedBox(height: 20),
-
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(
-                  value: 'entrada',
-                  label: Text('Entrada'),
-                  icon: Icon(Icons.add_circle_outline),
-                ),
-                ButtonSegment(
-                  value: 'salida',
-                  label: Text('Salida'),
-                  icon: Icon(Icons.remove_circle_outline),
-                ),
-              ],
-              selected: {_tipo},
-              onSelectionChanged: _isLoading
-                  ? null
-                  : (selection) => setState(() => _tipo = selection.first),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _notasCtrl,
+            enabled: !_isLoading,
+            maxLines: 2,
+            decoration: InputDecoration(
+              labelText: 'Notas (opcional)',
+              hintText: 'Ej. Compra proveedor, consumo semanal...',
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            const SizedBox(height: 16),
-
-            TextField(
-              controller: _cantidadCtrl,
-              enabled: !_isLoading,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: 'Cantidad (kg)',
-                prefixIcon: const Icon(Icons.scale),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: _isLoading ? null : () => Navigator.pop(context),
+                child: const Text('Cancelar'),
               ),
-            ),
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: _costoCtrl,
-              enabled: !_isLoading,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(
-                labelText: 'Costo unitario (opcional)',
-                prefixIcon: const Icon(Icons.attach_money),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: _notasCtrl,
-              enabled: !_isLoading,
-              maxLines: 2,
-              decoration: InputDecoration(
-                labelText: 'Notas (opcional)',
-                hintText: 'Ej. Compra proveedor, consumo semanal...',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                TextButton(
-                  onPressed: _isLoading ? null : () => Navigator.pop(context),
-                  child: const Text('Cancelar'),
-                ),
-                const SizedBox(width: 12),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: theme.colorScheme.primary,
-                    foregroundColor: theme.colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 12),
+              const SizedBox(width: 12),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: theme.colorScheme.primary,
+                  foregroundColor: theme.colorScheme.onPrimary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  onPressed: _isLoading ? null : _confirmar,
-                  icon: _isLoading
-                      ? SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: theme.colorScheme.onPrimary,
-                          ),
-                        )
-                      : const Icon(Icons.check),
-                  label: const Text('Confirmar'),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
-              ],
-            ),
-          ],
-        ),
+                onPressed: _isLoading ? null : _confirmar,
+                icon: _isLoading
+                    ? SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: theme.colorScheme.onPrimary,
+                        ),
+                      )
+                    : const Icon(Icons.check),
+                label: const Text('Confirmar'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

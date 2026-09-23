@@ -17,6 +17,7 @@ import '../screens/configuracion/configuracion_screen.dart';
 import '../screens/animales/animales_screen.dart';
 import '../screens/animales/animal_detail_screen.dart';
 import '../screens/reproduccion/reproduccion_screen.dart';
+import '../screens/reproduccion/ciclo_form_screen.dart';
 import '../screens/reproduccion/registro_nacimiento_screen.dart';
 import '../screens/reproduccion/kpis_reproduccion_screen.dart';
 import '../screens/reproduccion/arbol_genealogico_screen.dart';
@@ -199,6 +200,11 @@ final routerProvider = Provider<GoRouter>((ref) {
                 name: 'temporadas',
                 builder: (_, __) => const TemporadasScreen(),
               ),
+              GoRoute(
+                path: '/reproduccion/ciclo/new',
+                name: 'ciclo-new',
+                builder: (_, __) => const CicloFormScreen(),
+              ),
             ],
           ),
           // Tab 3: Alimentación
@@ -238,7 +244,24 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+          // Tab 5: Suscripción
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/planes',
+                name: 'planes',
+                pageBuilder: (context, state) =>
+                    _fadePage(state: state, child: const PlanesScreen()),
+              ),
+            ],
+          ),
         ],
+      ),
+      // Ruta raíz: redirige al dashboard (o a login) para evitar
+      // GoException al navegar a '/'.
+      GoRoute(
+        path: '/',
+        redirect: (context, state) => '/dashboard',
       ),
       // Rutas secundarias (fuera del shell)
       GoRoute(

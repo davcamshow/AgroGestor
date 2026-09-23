@@ -109,252 +109,264 @@ class _AnimalBajaSheetState extends ConsumerState<AnimalBajaSheet> {
         minChildSize: 0.5,
         expand: false,
         builder: (context, scrollController) {
-          return Container(
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: Column(
-              children: [
-                // Handle
-                Container(
-                  margin: const EdgeInsets.only(top: 12, bottom: 4),
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                // Header
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Dar de Baja Animal',
-                              style: theme.textTheme.headlineSmall,
+          return Column(
+            children: [
+              // Header
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.error.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.block,
+                        color: theme.colorScheme.error,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Dar de Baja Animal',
+                            style: theme.textTheme.titleLarge,
+                          ),
+                          Text(
+                            'Animal: ${widget.animal.nombre ?? widget.animal.numeroArete}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
-                            Text(
-                              'Animal: ${widget.animal.nombre ?? widget.animal.numeroArete}',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              // Form
+              Expanded(
+                child: Form(
+                  key: _formKey,
+                  child: ListView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                    children: [
+                      _buildSection(
+                          'Motivo de Baja', Icons.info_outline, theme),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _causaOptions.map((opt) {
+                          final (valor, label, icon) = opt;
+                          final seleccionado = _causaSeleccionada == valor;
+
+                          return FilterChip(
+                            elevation: seleccionado ? 2 : 0,
+                            pressElevation: 4,
+                            avatar: Icon(
+                              icon,
+                              size: 16,
+                              color: seleccionado
+                                  ? theme.colorScheme.onPrimary
+                                  : theme.colorScheme.primary,
+                            ),
+                            label: Text(label),
+                            selected: seleccionado,
+                            onSelected: (selected) {
+                              if (selected) {
+                                setState(() => _causaSeleccionada = valor);
+                              }
+                            },
+                            selectedColor: theme.colorScheme.primary,
+                            backgroundColor:
+                                theme.colorScheme.surfaceContainerHighest,
+                            shadowColor:
+                                theme.colorScheme.primary.withOpacity(0.4),
+                            checkmarkColor: theme.colorScheme.onPrimary,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(
+                                color: seleccionado
+                                    ? theme.colorScheme.primary
+                                    : theme.dividerColor,
+                                width: seleccionado ? 1.5 : 1,
                               ),
                             ),
-                          ],
+                            labelStyle: TextStyle(
+                              color: seleccionado
+                                  ? theme.colorScheme.onPrimary
+                                  : theme.textTheme.bodyMedium?.color,
+                              fontWeight: seleccionado
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              fontSize: 13,
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 20),
+                      _buildSection(
+                          'Fecha de Baja', Icons.calendar_today, theme),
+                      const SizedBox(height: 12),
+                      InkWell(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            initialDate: _fechaBaja,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime.now(),
+                            builder: (context, child) {
+                              return Theme(
+                                data: theme.copyWith(
+                                  colorScheme: theme.colorScheme.copyWith(
+                                    primary: theme.colorScheme
+                                        .primary, // Color de fondo del encabezado
+                                    onPrimary: theme.colorScheme
+                                        .onPrimary, // Color del texto del encabezado
+                                    surface: theme.colorScheme
+                                        .surface, // Color de fondo del calendario
+                                    onSurface: theme.colorScheme
+                                        .onSurface, // Color del texto del calendario
+                                  ),
+                                  textButtonTheme: TextButtonThemeData(
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: theme.colorScheme
+                                          .primary, // Color de los botones OK/Cancelar
+                                    ),
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (picked != null) {
+                            setState(() => _fechaBaja = picked);
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: theme.dividerColor),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.calendar_today,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                  size: 20),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  DateFormat('dd/MM/yyyy').format(_fechaBaja),
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      _buildSection(
+                          'Notas (opcional)', Icons.notes_outlined, theme),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _notasCtrl,
+                        maxLines: 3,
+                        style:
+                            theme.textTheme.bodyMedium?.copyWith(fontSize: 14),
+                        decoration: InputDecoration(
+                          hintText: 'Detalle adicional sobre la baja...',
+                          hintStyle:
+                              theme.textTheme.bodySmall?.copyWith(fontSize: 13),
+                          filled: true,
+                          fillColor: theme.colorScheme.surfaceContainerHighest,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: theme.dividerColor),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: theme.dividerColor),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(
+                                color: theme.colorScheme.primary, width: 1.5),
+                          ),
+                          contentPadding: const EdgeInsets.all(12),
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      // Botones: acción principal primero, cancelar abajo
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: _isLoading ? null : _registrarBaja,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.error,
+                            foregroundColor: theme.colorScheme.onError,
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 14, horizontal: 20),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          icon: _isLoading
+                              ? SizedBox(
+                                  height: 18,
+                                  width: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    valueColor: AlwaysStoppedAnimation(
+                                        theme.colorScheme.onError),
+                                  ),
+                                )
+                              : const Icon(Icons.warning_amber_rounded,
+                                  size: 18),
+                          label: const Text(
+                            'Confirmar Baja',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton(
+                          onPressed:
+                              _isLoading ? null : () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 14, horizontal: 20),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Cancelar',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
                         ),
                       ),
                     ],
                   ),
                 ),
-                const Divider(height: 1),
-                // Form
-                Expanded(
-                  child: Form(
-                    key: _formKey,
-                    child: ListView(
-                      controller: scrollController,
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-                      children: [
-                        _buildSection(
-                            'Motivo de Baja', Icons.info_outline, theme),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: _causaOptions.map((opt) {
-                            final (valor, label, icon) = opt;
-                            final seleccionado = _causaSeleccionada == valor;
-
-                            return FilterChip(
-                              elevation: seleccionado ? 2 : 0,
-                              pressElevation: 4,
-                              avatar: Icon(
-                                icon,
-                                size: 16,
-                                color: seleccionado
-                                    ? theme.colorScheme.onPrimary
-                                    : theme.colorScheme.primary,
-                              ),
-                              label: Text(label),
-                              selected: seleccionado,
-                              onSelected: (selected) {
-                                if (selected) {
-                                  setState(() => _causaSeleccionada = valor);
-                                }
-                              },
-                              selectedColor: theme.colorScheme.primary,
-                              backgroundColor:
-                                  theme.colorScheme.surfaceContainerHighest,
-                              shadowColor:
-                                  theme.colorScheme.primary.withOpacity(0.4),
-                              checkmarkColor: theme.colorScheme.onPrimary,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                side: BorderSide(
-                                  color: seleccionado
-                                      ? theme.colorScheme.primary
-                                      : theme.dividerColor,
-                                  width: seleccionado ? 1.5 : 1,
-                                ),
-                              ),
-                              labelStyle: TextStyle(
-                                color: seleccionado
-                                    ? theme.colorScheme.onPrimary
-                                    : theme.textTheme.bodyMedium?.color,
-                                fontWeight: seleccionado
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                                fontSize: 13,
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                        const SizedBox(height: 20),
-                        _buildSection(
-                            'Fecha de Baja', Icons.calendar_today, theme),
-                        const SizedBox(height: 12),
-                        InkWell(
-                          onTap: () async {
-                            final picked = await showDatePicker(
-                              context: context,
-                              initialDate: _fechaBaja,
-                              firstDate: DateTime(2020),
-                              lastDate: DateTime.now(),
-                              builder: (context, child) {
-                                return Theme(
-                                  data: theme.copyWith(
-                                    colorScheme: theme.colorScheme.copyWith(
-                                      primary: theme.colorScheme
-                                          .primary, // Color de fondo del encabezado
-                                      onPrimary: theme.colorScheme
-                                          .onPrimary, // Color del texto del encabezado
-                                      surface: theme.colorScheme
-                                          .surface, // Color de fondo del calendario
-                                      onSurface: theme.colorScheme
-                                          .onSurface, // Color del texto del calendario
-                                    ),
-                                    textButtonTheme: TextButtonThemeData(
-                                      style: TextButton.styleFrom(
-                                        foregroundColor: theme.colorScheme
-                                            .primary, // Color de los botones OK/Cancelar
-                                      ),
-                                    ),
-                                  ),
-                                  child: child!,
-                                );
-                              },
-                            );
-                            if (picked != null) {
-                              setState(() => _fechaBaja = picked);
-                            }
-                          },
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 14),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: theme.dividerColor),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.calendar_today,
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                    size: 20),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    DateFormat('dd/MM/yyyy').format(_fechaBaja),
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: theme.colorScheme.onSurface,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        _buildSection(
-                            'Notas (opcional)', Icons.notes_outlined, theme),
-                        const SizedBox(height: 12),
-                        TextField(
-                          controller: _notasCtrl,
-                          maxLines: 3,
-                          style: theme.textTheme.bodyMedium
-                              ?.copyWith(fontSize: 14),
-                          decoration: InputDecoration(
-                            hintText: 'Detalle adicional sobre la baja...',
-                            hintStyle: theme.textTheme.bodySmall
-                                ?.copyWith(fontSize: 13),
-                            filled: true,
-                            fillColor:
-                                theme.colorScheme.surfaceContainerHighest,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: theme.dividerColor),
-                            ),
-                            enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: theme.dividerColor),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(
-                                  color: theme.colorScheme.primary, width: 1.5),
-                            ),
-                            contentPadding: const EdgeInsets.all(12),
-                          ),
-                        ),
-                        const SizedBox(height: 32),
-                        // Botones
-                        Row(
-                          children: [
-                            Expanded(
-                              child: OutlinedButton(
-                                onPressed: _isLoading
-                                    ? null
-                                    : () => Navigator.pop(context),
-                                child: const Text('Cancelar'),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              flex: 2,
-                              child: ElevatedButton(
-                                onPressed: _isLoading ? null : _registrarBaja,
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: theme.colorScheme.error,
-                                  foregroundColor: theme.colorScheme.onError,
-                                ),
-                                child: _isLoading
-                                    ? SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation(
-                                              theme.colorScheme.onError),
-                                        ),
-                                      )
-                                    : const Text('Confirmar Baja'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           );
         },
       ),

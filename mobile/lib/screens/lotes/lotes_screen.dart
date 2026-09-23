@@ -12,14 +12,20 @@ class LotesScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lotesAsync = ref.watch(lotesNotifierProvider);
 
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Lotes'),
-        backgroundColor: const Color(0xFF064e3b),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.go('/lotes/new'),
-        backgroundColor: const Color(0xFF064e3b),
+        heroTag: 'fab-lotes',
+        onPressed: () => context.push('/lotes/new'),
+        backgroundColor: theme.colorScheme.primary,
         child: const Icon(Icons.add),
       ),
       body: RefreshIndicator(
@@ -34,7 +40,7 @@ class LotesScreen extends ConsumerWidget {
                 title: 'Sin lotes',
                 description: 'Crea tu primer lote para comenzar',
                 actionLabel: 'Crear Lote',
-                onActionPressed: () => context.go('/lotes/new'),
+                onActionPressed: () => context.push('/lotes/new'),
               );
             }
 
@@ -66,7 +72,7 @@ class LotesScreen extends ConsumerWidget {
                       itemBuilder: (context) => [
                         PopupMenuItem(
                           child: const Text('Editar'),
-                          onTap: () => context.go('/lotes/${lote.id}/edit'),
+                          onTap: () => context.push('/lotes/${lote.id}/edit'),
                         ),
                         PopupMenuItem(
                           child: const Text('Eliminar'),
