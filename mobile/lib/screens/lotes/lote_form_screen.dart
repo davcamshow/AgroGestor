@@ -144,7 +144,10 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.loteId == null ? 'Nuevo Lote' : 'Editar Lote'),
-        backgroundColor: const Color(0xFF064e3b),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -262,7 +265,7 @@ class _LoteFormScreenState extends ConsumerState<LoteFormScreen> {
               ElevatedButton(
                 onPressed: _isLoading ? null : _handleSave,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF064e3b),
+                  backgroundColor: Theme.of(context).colorScheme.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
                 child: _isLoading

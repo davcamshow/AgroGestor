@@ -68,7 +68,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text('✅ ¡Registro Exitoso!'),
+        title: const Text(' ¡Registro Exitoso!'),
         content: const Text(
           'Tu cuenta ha sido creada correctamente.\nTe hemos enviado un correo para activar tu cuenta. '
           'Solo podrás iniciar sesión después de confirmar el email',
@@ -79,7 +79,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               Navigator.pop(context);
               context.go('/login');
             },
-            child: const Text('Ir al Login'),
+            child: const Text('Ir al Inicio de Sesión'),
           ),
         ],
       ),
@@ -238,9 +238,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                 .slideY(begin: 0.5),
                             const SizedBox(height: 16),
                             // Email
+
+                            const Text('Correo electrónico *',
+                                style: TextStyle(color: AppTheme.primary)),
                             Text('Email *',
                                 style: TextStyle(
                                     color: theme.colorScheme.primary)),
+
                             const SizedBox(height: 8),
                             TextFormField(
                               controller: _emailController,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import '../../core/models/dieta.dart';
 import '../../core/providers/dietas_provider.dart';
 import '../../core/providers/lotes_provider.dart';
 import '../../core/providers/insumos_provider.dart';
@@ -50,6 +51,35 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
         1 => 'Nuevo lote',
         _ => 'Gestionar insumos',
       };
+
+  Future<void> _eliminarDieta(Dieta dieta) async {
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Eliminar dieta'),
+        content: Text('¿Eliminar "${dieta.nombre}"? '
+            'Los lotes y animales que la usan dejarán de consumirla automáticamente.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+    if (confirmar != true) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await ref.read(dietasNotifierProvider.notifier).deleteDieta(dieta.id);
+      ref.invalidate(dietaInsumosProvider);
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text('Error al eliminar: $e')));
+    }
+  }
 
   Future<void> _procesarConsumo() async {
     final messenger = ScaffoldMessenger.of(context);
@@ -190,18 +220,124 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
         heroTag: 'fab-alimentacion',
         onPressed: _onFabPressed,
         tooltip: _fabTooltip,
-        backgroundColor: const Color(0xFF064e3b),
+        backgroundColor: theme.colorScheme.primary,
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
       body: TabBarView(
         controller: _tabController,
+<<<<<<< HEAD
         children: [
           // dietas
           dietasAsync.when(
             loading: () => ListView.builder(
               itemCount: 3,
               itemBuilder: (_, i) => LoadingShimmerListItem(),
+=======
+          children: [
+            // dietas
+            dietasAsync.when(
+              loading: () => ListView.builder(
+                itemCount: 3,
+                itemBuilder: (_, i) => LoadingShimmerListItem(),
+              ),
+              error: (err, _) => Center(child: Text('Error: $err')),
+              data: (dietas) {
+                final activas =
+                    dietas.where((d) => d.estado == 'activa').toList();
+                return RefreshIndicator(
+                  onRefresh: _procesarConsumo,
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: IconButton(
+                            tooltip: 'Gestionar dietas',
+                            onPressed: () => context.push('/formulas'),
+                            icon: const Icon(Icons.settings_outlined),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: activas.isEmpty
+                            ? const Center(
+                                child: Text(
+                                    'Sin dietas activas. Crea una para alimentar tus lotes.'))
+                            : ListView.builder(
+                                padding: const EdgeInsets.all(16),
+                                itemCount: activas.length,
+                                itemBuilder: (context, index) {
+                                  final dieta = activas[index];
+                                  return GestureDetector(
+                                    onTap: () => context.push(
+                                        '/formulas/builder',
+                                        extra: dieta),
+                                    child: Container(
+                                      margin:
+                                          const EdgeInsets.only(bottom: 12),
+                                      decoration: BoxDecoration(
+                                        color: theme.cardTheme.color,
+                                        borderRadius:
+                                            BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color:
+                                              theme.colorScheme.secondary,
+                                          width: 2,
+                                        ),
+                                        boxShadow: [
+                                          AppTheme.softShadowFor(
+                                              theme.brightness)
+                                        ],
+                                      ),
+                                      child: ListTile(
+                                        title: Text(dieta.nombre),
+                                        subtitle: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const SizedBox(height: 4),
+                                            Text(
+                                                'Objetivo: ${dieta.objetivo}'),
+                                            Text(
+                                                'Costo: \$${dieta.costoEstimadoKg}/kg'),
+                                          ],
+                                        ),
+                                        trailing: PopupMenuButton<String>(
+                                          onSelected: (opcion) {
+                                            if (opcion == 'editar') {
+                                              context.push(
+                                                  '/formulas/builder',
+                                                  extra: dieta);
+                                            } else if (opcion == 'eliminar') {
+                                              _eliminarDieta(dieta);
+                                            }
+                                          },
+                                          itemBuilder: (_) => const [
+                                            PopupMenuItem(
+                                              value: 'editar',
+                                              child: Text('Editar'),
+                                            ),
+                                            PopupMenuItem(
+                                              value: 'eliminar',
+                                              child: Text('Eliminar',
+                                                  style: TextStyle(
+                                                      color: Colors.red)),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ).animate().fadeIn().slideX();
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+>>>>>>> Animals-module
             ),
             error: (err, _) => Center(child: Text('Error: $err')),
             data: (dietas) {
@@ -239,6 +375,7 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
                                     margin: const EdgeInsets.only(bottom: 12),
                                     decoration: BoxDecoration(
                                       color: theme.cardTheme.color,
+<<<<<<< HEAD
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
                                         color: theme.colorScheme.secondary,
@@ -246,6 +383,73 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
                                       ),
                                       boxShadow: [
                                         AppTheme.softShadowFor(theme.brightness)
+=======
+                                      borderRadius: BorderRadius.circular(8),
+                                      border:
+                                          Border.all(color: theme.dividerColor),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Expanded(
+                                              child: Text(lote.nombre,
+                                                  style: theme
+                                                      .textTheme.labelLarge,
+                                                  overflow:
+                                                      TextOverflow.ellipsis),
+                                            ),
+                                            PopupMenuButton<String>(
+                                              onSelected: (opcion) {
+                                                if (opcion == 'editar') {
+                                                  context.push(
+                                                      '/lotes/${lote.id}/edit');
+                                                } else if (opcion ==
+                                                    'eliminar') {
+                                                  ref
+                                                      .read(lotesNotifierProvider
+                                                          .notifier)
+                                                      .deleteLote(lote.id);
+                                                }
+                                              },
+                                              itemBuilder: (_) => const [
+                                                PopupMenuItem(
+                                                  value: 'editar',
+                                                  child: Text('Editar'),
+                                                ),
+                                                PopupMenuItem(
+                                                  value: 'eliminar',
+                                                  child: Text('Eliminar',
+                                                      style: TextStyle(
+                                                          color: Colors.red)),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              '${lote.cabezasEfectivas} cabezas',
+                                              style:
+                                                  theme.textTheme.bodySmall,
+                                            ),
+                                            Chip(
+                                              label: Text(lote.estado),
+                                              backgroundColor: theme
+                                                  .colorScheme.primary
+                                                  .withOpacity(0.2),
+                                            ),
+                                          ],
+                                        ),
+>>>>>>> Animals-module
                                       ],
                                     ),
                                     child: ListTile(

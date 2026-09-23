@@ -183,7 +183,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
                             const SizedBox(width: 16),
                             Expanded(
                               child: GestureDetector(
-                                onTap: () => context.go('/lotes'),
+                                onTap: () => context.push('/lotes'),
                                 child: KpiCard(
                                   title: 'Lotes',
                                   value: totalLotes.toString(),

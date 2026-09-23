@@ -47,17 +47,31 @@ class _ReporteConsumoScreenState extends ConsumerState<ReporteConsumoScreen> {
         endpoint += '&lote=$_loteId';
       }
       final api = ref.read(apiClientProvider);
-      final response = await api.get(endpoint, forceRefresh: true);
+      try {
+        final response = await api.get(endpoint, forceRefresh: true);
+        _aplicarReporte(response);
+      } catch (_) {
+        // Si la red no está disponible (o el refresh falla), se intenta
+        // servir la última respuesta en caché para no terminar en pantalla
+        // de error.
+        final cached = await api.get(endpoint);
+        _aplicarReporte(cached);
+      }
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _aplicarReporte(dynamic response) {
+    if (mounted) {
       setState(() {
         _reporte = response as Map<String, dynamic>;
         _isLoading = false;
         _error = null;
         _ultimaActualizacion = DateTime.now();
-      });
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
       });
     }
   }
@@ -70,7 +84,25 @@ class _ReporteConsumoScreenState extends ConsumerState<ReporteConsumoScreen> {
 
   double _num(String key, {double def = 0}) {
     final v = _reporte?[key];
-    return v is num ? v.toDouble() : def;
+    return _d(v, def: def);
+  }
+
+  double _d(dynamic v, {double def = 0}) {
+    if (v == null) return def;
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v) ?? def;
+    return def;
+  }
+
+  int _i(dynamic v, {int def = 0}) {
+    if (v == null) return def;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    if (v is String) {
+      final n = double.tryParse(v);
+      return n != null ? n.toInt() : def;
+    }
+    return def;
   }
 
   @override
@@ -478,11 +510,11 @@ class _ReporteConsumoScreenState extends ConsumerState<ReporteConsumoScreen> {
     return Column(
       children: porLote.map((lote) {
         final nombre = lote['lote_nombre'] as String? ?? 'Lote';
-        final cabezas = lote['cabezas'] as int? ?? 0;
-        final kg = (lote['total_kg'] as num).toDouble();
-        final costo = (lote['costo_total'] as num).toDouble();
-        final costoPorCabeza = (lote['costo_por_cabeza'] as num).toDouble();
-        final costoPorKg = (lote['costo_por_kg'] as num).toDouble();
+        final cabezas = _i(lote['cabezas']);
+        final kg = _d(lote['total_kg']);
+        final costo = _d(lote['costo_total']);
+        final costoPorCabeza = _d(lote['costo_por_cabeza']);
+        final costoPorKg = _d(lote['costo_por_kg']);
         return Container(
           margin: const EdgeInsets.only(bottom: 12),
           padding: const EdgeInsets.all(16),
@@ -572,15 +604,15 @@ class _ReporteConsumoScreenState extends ConsumerState<ReporteConsumoScreen> {
           'Aún no hay salidas registradas en el período');
     }
     final maxKg = gastados
-        .map((e) => (e['kg'] as num).toDouble())
+        .map((e) => _d(e['kg']))
         .fold(0.0, (a, b) => a > b ? a : b);
 
     return Column(
       children: gastados.map((entry) {
         final nombre = entry['nombre'] as String? ?? 'Insumo';
-        final kg = (entry['kg'] as num).toDouble();
-        final costo = (entry['costo_total'] as num).toDouble();
-        final movs = entry['movimientos'] as int? ?? 0;
+        final kg = _d(entry['kg']);
+        final costo = _d(entry['costo_total']);
+        final movs = _i(entry['movimientos']);
         final progreso = maxKg > 0 ? kg / maxKg : 0.0;
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
@@ -645,10 +677,10 @@ class _ReporteConsumoScreenState extends ConsumerState<ReporteConsumoScreen> {
     return Column(
       children: disponibles.map((entry) {
         final nombre = entry['nombre'] as String? ?? 'Insumo';
-        final stock = (entry['stock_kg'] as num).toDouble();
-        final minimo = (entry['stock_minimo_kg'] as num).toDouble();
-        final costo = (entry['costo_kg'] as num).toDouble();
-        final valor = (entry['valor_total'] as num).toDouble();
+        final stock = _d(entry['stock_kg']);
+        final minimo = _d(entry['stock_minimo_kg']);
+        final costo = _d(entry['costo_kg']);
+        final valor = _d(entry['valor_total']);
         final bajo = entry['bajo_stock'] == true;
         final color = bajo ? warningColor : successColor;
         final progreso = minimo > 0 ? stock / minimo : 1.0;

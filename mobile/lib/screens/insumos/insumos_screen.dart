@@ -25,7 +25,6 @@ class InsumosScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Insumos'),
-        backgroundColor: const Color(0xFF064e3b),
         actions: [
           IconButton(
             icon: const Icon(Icons.bar_chart),
