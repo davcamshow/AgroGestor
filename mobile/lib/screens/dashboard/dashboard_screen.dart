@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -14,6 +13,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/providers/registros_peso_provider.dart';
 import '../../widgets/kpi_card.dart';
 import '../../widgets/clima_ganado_card.dart';
+import '../../widgets/blur_bottom_sheet.dart';
 import '../../core/providers/notificaciones_provider.dart';
 
 class DashboardScreen extends ConsumerStatefulWidget {
@@ -405,233 +405,168 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
 
   void _mostrarEventosProximosModal(BuildContext context,
       List<EventoSanitario> eventos, List<Animal> animales) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent, // Clave para permitir el blur
-      barrierColor: Colors.black.withOpacity(0.35),
-      isScrollControlled: true,
-      builder: (context) {
-        final theme = Theme.of(context);
-        final isDark = theme.brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-        return ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-            child: Container(
-              constraints: BoxConstraints(
-                maxHeight: MediaQuery.of(context).size.height * 0.75,
-              ),
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-              decoration: BoxDecoration(
-                color:
-                    theme.colorScheme.surface.withOpacity(isDark ? 0.8 : 0.9),
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(28)),
-                border: Border(
-                  top: BorderSide(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.2)
-                        : Colors.black.withOpacity(0.08),
-                    width: 1.5,
+    showBlurBottomSheet(
+      context: context,
+      maxHeight: MediaQuery.sizeOf(context).height * 0.75,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Cabecera del modal
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 8, 0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.info.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.event_available_rounded,
+                    color: AppTheme.info,
+                    size: 22,
                   ),
                 ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Tirador superior centrado
-                  Center(
-                    child: Container(
-                      width: 44,
-                      height: 5,
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.white.withOpacity(0.3)
-                            : Colors.black.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Próximos Eventos',
+                    style: theme.textTheme.titleLarge,
                   ),
-
-                  // Cabecera del modal
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(height: 24),
+          ),
+          Flexible(
+            child: eventos.isEmpty
+                ? Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 36),
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppTheme.info.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.event_available_rounded,
-                              color: AppTheme.info,
-                              size: 22,
-                            ),
+                          Icon(
+                            Icons.event_busy_rounded,
+                            size: 48,
+                            color: theme.colorScheme.onSurface.withOpacity(0.4),
                           ),
-                          const SizedBox(width: 12),
+                          const SizedBox(height: 12),
                           Text(
-                            'Próximos Eventos',
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
+                            'No hay eventos próximos',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color:
+                                  theme.colorScheme.onSurface.withOpacity(0.6),
                             ),
                           ),
                         ],
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded, size: 22),
-                        style: IconButton.styleFrom(
-                          backgroundColor:
-                              theme.colorScheme.onSurface.withOpacity(0.06),
-                        ),
-                        onPressed: () => Navigator.pop(context),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Divider(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.1)
-                        : Colors.black.withOpacity(0.06),
-                  ),
-                  const SizedBox(height: 8),
+                    ),
+                  )
+                : ListView.builder(
+                    shrinkWrap: true,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: eventos.length,
+                    itemBuilder: (context, index) {
+                      final evento = eventos[index];
+                      final animal = animales
+                          .where((a) => a.id == evento.animalId)
+                          .firstOrNull;
 
-                  // Lista de eventos
-                  Flexible(
-                    child: eventos.isEmpty
-                        ? Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 36),
-                            child: Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.event_busy_rounded,
-                                    size: 48,
-                                    color: theme.colorScheme.onSurface
-                                        .withOpacity(0.4),
+                      final diasRestantes = evento.proximaAplicacion != null
+                          ? evento.proximaAplicacion!
+                              .difference(DateTime.now())
+                              .inDays
+                          : null;
+
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white.withOpacity(0.05)
+                              : Colors.black.withOpacity(0.03),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: isDark
+                                ? Colors.white.withOpacity(0.08)
+                                : Colors.black.withOpacity(0.04),
+                          ),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 4),
+                          leading: CircleAvatar(
+                            radius: 20,
+                            backgroundColor: AppTheme.info.withOpacity(0.15),
+                            child: Icon(_getTipoIcon(evento.tipo),
+                                color: AppTheme.info, size: 20),
+                          ),
+                          title: Text(
+                            animal?.numeroArete ?? 'Animal #${evento.animalId}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 2),
+                              Text(
+                                  '${_getTipoLabel(evento.tipo)} - ${evento.producto}'),
+                              if (evento.proximaAplicacion != null) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Próxima: ${_formatearFecha(evento.proximaAplicacion!)}',
+                                  style: const TextStyle(
+                                    color: AppTheme.info,
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
                                   ),
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    'No hay eventos próximos',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: theme.colorScheme.onSurface
-                                          .withOpacity(0.6),
+                                ),
+                              ],
+                            ],
+                          ),
+                          trailing: diasRestantes != null
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.info.withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    '$diasRestantes días',
+                                    style: const TextStyle(
+                                      color: AppTheme.info,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
-                          )
-                        : ListView.builder(
-                            shrinkWrap: true,
-                            physics: const BouncingScrollPhysics(),
-                            itemCount: eventos.length,
-                            itemBuilder: (context, index) {
-                              final evento = eventos[index];
-                              final animal = animales
-                                  .where((a) => a.id == evento.animalId)
-                                  .firstOrNull;
-
-                              final diasRestantes =
-                                  evento.proximaAplicacion != null
-                                      ? evento.proximaAplicacion!
-                                          .difference(DateTime.now())
-                                          .inDays
-                                      : null;
-
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 10),
-                                decoration: BoxDecoration(
-                                  color: isDark
-                                      ? Colors.white.withOpacity(0.05)
-                                      : Colors.black.withOpacity(0.03),
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(
-                                    color: isDark
-                                        ? Colors.white.withOpacity(0.08)
-                                        : Colors.black.withOpacity(0.04),
-                                  ),
-                                ),
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 14, vertical: 4),
-                                  leading: CircleAvatar(
-                                    radius: 20,
-                                    backgroundColor:
-                                        AppTheme.info.withOpacity(0.15),
-                                    child: Icon(_getTipoIcon(evento.tipo),
-                                        color: AppTheme.info, size: 20),
-                                  ),
-                                  title: Text(
-                                    animal?.numeroArete ??
-                                        'Animal #${evento.animalId}',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold),
-                                  ),
-                                  subtitle: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const SizedBox(height: 2),
-                                      Text(
-                                          '${_getTipoLabel(evento.tipo)} - ${evento.producto}'),
-                                      if (evento.proximaAplicacion != null) ...[
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          'Próxima: ${_formatearFecha(evento.proximaAplicacion!)}',
-                                          style: const TextStyle(
-                                            color: AppTheme.info,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                  trailing: diasRestantes != null
-                                      ? Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color:
-                                                AppTheme.info.withOpacity(0.15),
-                                            borderRadius:
-                                                BorderRadius.circular(8),
-                                          ),
-                                          child: Text(
-                                            '$diasRestantes días',
-                                            style: const TextStyle(
-                                              color: AppTheme.info,
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        )
-                                      : null,
-                                  onTap: () {
-                                    Navigator.pop(context);
-                                    if (animal != null) {
-                                      context.go('/animales/${animal.id}');
-                                    }
-                                  },
-                                ),
-                              );
-                            },
-                          ),
+                                )
+                              : null,
+                          onTap: () {
+                            Navigator.pop(context);
+                            if (animal != null) {
+                              context.go('/animales/${animal.id}');
+                            }
+                          },
+                        ),
+                      );
+                    },
                   ),
-                ],
-              ),
-            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 

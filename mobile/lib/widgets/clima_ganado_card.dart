@@ -7,6 +7,7 @@ import '../core/providers/clima_provider.dart';
 import '../core/theme/app_theme.dart';
 import 'gradient_card.dart';
 import 'status_badge.dart';
+import 'blur_bottom_sheet.dart';
 
 class ClimaGanadoCard extends ConsumerWidget {
   /// Modo compacto: menos padding, tipografía e iconos más pequeños.
@@ -133,36 +134,84 @@ class _WeatherCard extends StatelessWidget {
       {required this.clima, required this.onRefresh, this.compact = false});
 
   void _showRecommendations(BuildContext context) {
-    showModalBottomSheet<void>(
-        context: context,
-        showDragHandle: true,
-        builder: (_) => SafeArea(
-                child: Padding(
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    showBlurBottomSheet<void>(
+      context: context,
+      maxHeight: MediaQuery.sizeOf(context).height * 0.6,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppTheme.info.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.health_and_safety_outlined,
+                      color: AppTheme.info),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Recomendaciones',
+                          style: theme.textTheme.titleLarge),
+                      Text(
+                        clima.riesgo.titulo,
+                        style: TextStyle(
+                          color: isDark
+                              ? AppTheme.darkTextSecondary
+                              : Colors.grey[600],
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 20),
+            child: Divider(height: 24),
+          ),
+          Flexible(
+            child: ListView(
+              shrinkWrap: true,
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(clima.riesgo.titulo,
-                        style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 12),
-                    ...clima.riesgo.recomendaciones.map((item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Icon(Icons.check_circle_outline,
-                                  size: 18, color: AppTheme.secondary),
-                              const SizedBox(width: 8),
-                              Expanded(child: Text(item))
-                            ]))),
-                    if (clima.riesgo.advertencia != null)
-                      Padding(
-                          padding: const EdgeInsets.only(top: 8),
-                          child: Text(clima.riesgo.advertencia!,
-                              style: Theme.of(context).textTheme.bodySmall)),
-                  ]),
-            )));
+              children: [
+                ...clima.riesgo.recomendaciones.map((item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.check_circle_outline,
+                              size: 18, color: AppTheme.secondary),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(item))
+                        ]))),
+                if (clima.riesgo.advertencia != null)
+                  Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(clima.riesgo.advertencia!,
+                          style: theme.textTheme.bodySmall)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

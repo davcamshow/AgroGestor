@@ -5,29 +5,21 @@ import '../../core/models/dieta.dart';
 import '../../core/providers/dietas_provider.dart';
 import '../../widgets/status_badge.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/blur_bottom_sheet.dart';
 
 class FormulasScreen extends ConsumerWidget {
   const FormulasScreen({super.key});
 
   Future<void> _eliminar(
       BuildContext context, WidgetRef ref, Dieta dieta) async {
-    final confirmar = await showDialog<bool>(
+    final confirmar = await showBlurConfirmSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Eliminar dieta'),
-        content: Text('¿Eliminar "${dieta.nombre}"? '
-            'Los lotes y animales que la usan dejarán de consumirla automáticamente.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+      title: 'Eliminar dieta',
+      message: '¿Eliminar "${dieta.nombre}"? '
+          'Los lotes y animales que la usan dejarán de consumirla automáticamente.',
+      confirmLabel: 'Eliminar',
+      icon: Icons.delete_outline,
+      destructive: true,
     );
     if (confirmar != true) return;
     try {

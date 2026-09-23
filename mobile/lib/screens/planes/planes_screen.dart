@@ -5,6 +5,7 @@ import '../../core/api/api_client.dart';
 import '../../core/models/plan_suscripcion.dart';
 import '../../core/providers/planes_provider.dart';
 import '../../core/theme/app_theme.dart';
+import '../../widgets/blur_bottom_sheet.dart';
 
 class PlanesScreen extends ConsumerWidget {
   const PlanesScreen({super.key});
@@ -318,46 +319,34 @@ class PlanesScreen extends ConsumerWidget {
     );
   }
 
-  void _mostrarDialogoUpgrade(
-      BuildContext context, WidgetRef ref, String planCodigo) {
-    showDialog(
+  Future<void> _mostrarDialogoUpgrade(
+      BuildContext context, WidgetRef ref, String planCodigo) async {
+    final confirmar = await showBlurConfirmSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Cambiar Plan'),
-        content:
-            const Text('¿Estás seguro de que quieres cambiar a este plan?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              try {
-                final client = ref.read(apiClientProvider);
-                await client
-                    .post('planes/cambiar/', data: {'plan_codigo': planCodigo});
-                ref.invalidate(miPlanProvider);
-                ref.invalidate(planesProvider);
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Plan actualizado correctamente')),
-                  );
-                }
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e')),
-                  );
-                }
-              }
-            },
-            child: const Text('Confirmar'),
-          ),
-        ],
-      ),
+      title: 'Cambiar Plan',
+      message: '¿Estás seguro de que quieres cambiar a este plan?',
+      confirmLabel: 'Confirmar',
+      icon: Icons.workspace_premium,
+      iconColor: AppTheme.accent,
+      confirmColor: AppTheme.accent,
     );
+    if (confirmar != true || !context.mounted) return;
+    try {
+      final client = ref.read(apiClientProvider);
+      await client.post('planes/cambiar/', data: {'plan_codigo': planCodigo});
+      ref.invalidate(miPlanProvider);
+      ref.invalidate(planesProvider);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Plan actualizado correctamente')),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    }
   }
 }

@@ -8,6 +8,7 @@ import '../../core/providers/lotes_provider.dart';
 import '../../core/providers/insumos_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/loading_shimmer.dart';
+import '../../widgets/blur_bottom_sheet.dart';
 import '../insumos/registro_movimiento_sheet.dart';
 
 class AlimentacionScreen extends ConsumerStatefulWidget {
@@ -107,53 +108,78 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
 
       final siConsumio = raciones > 0;
       if (!context.mounted) return;
-      showDialog<void>(
+      showBlurBottomSheet<void>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Row(
-            children: [
-              Icon(
-                siConsumio ? Icons.check_circle : Icons.info_outline,
-                color: siConsumio
-                    ? AppTheme.success
-                    : Theme.of(dialogContext).colorScheme.primary,
+        maxHeight: MediaQuery.sizeOf(context).height * 0.7,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 8, 0),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: (siConsumio
+                              ? AppTheme.success
+                              : Theme.of(context).colorScheme.primary)
+                          .withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      siConsumio ? Icons.check_circle : Icons.info_outline,
+                      color: siConsumio
+                          ? AppTheme.success
+                          : Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Consumo procesado',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              const Text('Consumo procesado'),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (raciones > 0) ...[
-                  Text('$raciones ración(es) registrada(s).'),
-                  Text('$movimientos salida(s) de inventario.'),
-                  if (animales > 0)
-                    Text('$animales animal(es) con dieta especial.'),
-                ] else
-                  const Text(
-                      'Sin consumo pendiente: las dietas ya están al día.'),
-                if (insumosAgotados.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  const Text('Insumos agotados:',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  ...insumosAgotados.map((i) => Text('• $i')),
-                ],
-                if (avisos.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  const Text('Avisos:',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  ...avisos.map((a) => Text('• $a')),
-                ],
-              ],
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Entendido'),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Divider(height: 24),
+            ),
+            Flexible(
+              child: ListView(
+                shrinkWrap: true,
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                children: [
+                  if (raciones > 0) ...[
+                    Text('$raciones ración(es) registrada(s).'),
+                    Text('$movimientos salida(s) de inventario.'),
+                    if (animales > 0)
+                      Text('$animales animal(es) con dieta especial.'),
+                  ] else
+                    const Text(
+                        'Sin consumo pendiente: las dietas ya están al día.'),
+                  if (insumosAgotados.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    const Text('Insumos agotados:',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    ...insumosAgotados.map((i) => Text('• $i')),
+                  ],
+                  if (avisos.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    const Text('Avisos:',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    ...avisos.map((a) => Text('• $a')),
+                  ],
+                ],
+              ),
             ),
           ],
         ),
@@ -226,15 +252,7 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
       ),
       body: TabBarView(
         controller: _tabController,
-<<<<<<< HEAD
         children: [
-          // dietas
-          dietasAsync.when(
-            loading: () => ListView.builder(
-              itemCount: 3,
-              itemBuilder: (_, i) => LoadingShimmerListItem(),
-=======
-          children: [
             // dietas
             dietasAsync.when(
               loading: () => ListView.builder(
@@ -337,144 +355,7 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
                   ),
                 );
               },
->>>>>>> Animals-module
-            ),
-            error: (err, _) => Center(child: Text('Error: $err')),
-            data: (dietas) {
-              final activas =
-                  dietas.where((d) => d.estado == 'activa').toList();
-              return RefreshIndicator(
-                onRefresh: _procesarConsumo,
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: IconButton(
-                          tooltip: 'Gestionar dietas',
-                          onPressed: () => context.push('/formulas'),
-                          icon: const Icon(Icons.settings_outlined),
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: activas.isEmpty
-                          ? const Center(
-                              child: Text(
-                                  'Sin dietas activas. Crea una para alimentar tus lotes.'))
-                          : ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: activas.length,
-                              itemBuilder: (context, index) {
-                                final dieta = activas[index];
-                                return GestureDetector(
-                                  onTap: () => context.push('/formulas/builder',
-                                      extra: dieta),
-                                  child: Container(
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    decoration: BoxDecoration(
-                                      color: theme.cardTheme.color,
-<<<<<<< HEAD
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: theme.colorScheme.secondary,
-                                        width: 2,
-                                      ),
-                                      boxShadow: [
-                                        AppTheme.softShadowFor(theme.brightness)
-=======
-                                      borderRadius: BorderRadius.circular(8),
-                                      border:
-                                          Border.all(color: theme.dividerColor),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Text(lote.nombre,
-                                                  style: theme
-                                                      .textTheme.labelLarge,
-                                                  overflow:
-                                                      TextOverflow.ellipsis),
-                                            ),
-                                            PopupMenuButton<String>(
-                                              onSelected: (opcion) {
-                                                if (opcion == 'editar') {
-                                                  context.push(
-                                                      '/lotes/${lote.id}/edit');
-                                                } else if (opcion ==
-                                                    'eliminar') {
-                                                  ref
-                                                      .read(lotesNotifierProvider
-                                                          .notifier)
-                                                      .deleteLote(lote.id);
-                                                }
-                                              },
-                                              itemBuilder: (_) => const [
-                                                PopupMenuItem(
-                                                  value: 'editar',
-                                                  child: Text('Editar'),
-                                                ),
-                                                PopupMenuItem(
-                                                  value: 'eliminar',
-                                                  child: Text('Eliminar',
-                                                      style: TextStyle(
-                                                          color: Colors.red)),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                              '${lote.cabezasEfectivas} cabezas',
-                                              style:
-                                                  theme.textTheme.bodySmall,
-                                            ),
-                                            Chip(
-                                              label: Text(lote.estado),
-                                              backgroundColor: theme
-                                                  .colorScheme.primary
-                                                  .withOpacity(0.2),
-                                            ),
-                                          ],
-                                        ),
->>>>>>> Animals-module
-                                      ],
-                                    ),
-                                    child: ListTile(
-                                      title: Text(dieta.nombre),
-                                      subtitle: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          const SizedBox(height: 4),
-                                          Text('Objetivo: ${dieta.objetivo}'),
-                                          Text(
-                                              'Costo: \$${dieta.costoEstimadoKg}/kg'),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ).animate().fadeIn().slideX();
-                              },
-                            ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+    ),
           // lotes
           lotesAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -609,10 +490,12 @@ class _AlimentacionScreenState extends ConsumerState<AlimentacionScreen>
                                   IconButton(
                                     tooltip: 'Registrar entrada/salida',
                                     icon: const Icon(Icons.swap_vert),
-                                    onPressed: () => showModalBottomSheet(
+                                    onPressed: () => showBlurBottomSheet(
                                       context: context,
-                                      isScrollControlled: true,
-                                      builder: (_) => RegistroMovimientoSheet(
+                                      maxHeight:
+                                          MediaQuery.sizeOf(context).height *
+                                              0.85,
+                                      child: RegistroMovimientoSheet(
                                           insumo: insumo),
                                     ),
                                   ),

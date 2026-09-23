@@ -8,7 +8,7 @@ import '../../core/providers/animales_provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../widgets/animal_avatar.dart';
 import '../../widgets/loading_shimmer.dart';
-import '../../widgets/blurred_modal_backdrop.dart';
+import '../../widgets/blur_bottom_sheet.dart';
 import 'animal_form_sheet.dart';
 
 class AnimalesScreen extends ConsumerWidget {
@@ -186,13 +186,10 @@ class AnimalesScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         heroTag: 'fab-animales',
         onPressed: () {
-          showModalBottomSheet(
+          showBlurBottomSheet(
             context: context,
-            isScrollControlled: true,
-            backgroundColor: Colors.transparent,
-            builder: (_) => const BlurredModalBackdrop(
-              child: AnimalFormSheet(),
-            ),
+            maxHeight: MediaQuery.sizeOf(context).height * 0.92,
+            child: const AnimalFormSheet(),
           );
         },
         child: const Icon(Icons.add),

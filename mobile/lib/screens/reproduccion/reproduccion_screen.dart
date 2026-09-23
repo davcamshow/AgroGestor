@@ -20,21 +20,15 @@ class _ReproduccionScreenState extends ConsumerState<ReproduccionScreen> {
   final Set<int> _registrando = {};
 
   Future<void> _confirmarParto(int cicloId) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await showBlurConfirmSheet(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Registrar Parto'),
-        content: const Text(
-            '¿Confirmas que el parto ocurrió hoy? Se marcará como "Parió" y se registrará la fecha de parto real.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancelar')),
-          FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Confirmar')),
-        ],
-      ),
+      title: 'Registrar Parto',
+      message:
+          '¿Confirmas que el parto ocurrió hoy? Se marcará como "Parió" y se registrará la fecha de parto real.',
+      confirmLabel: 'Confirmar',
+      icon: Icons.pets,
+      iconColor: AppTheme.success,
+      confirmColor: AppTheme.success,
     );
     if (confirm != true) return;
     setState(() => _registrando.add(cicloId));

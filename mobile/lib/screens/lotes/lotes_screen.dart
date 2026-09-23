@@ -23,14 +23,9 @@ class LotesScreen extends ConsumerWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-<<<<<<< HEAD
         heroTag: 'fab-lotes',
-        onPressed: () => context.go('/lotes/new'),
-        backgroundColor: const Color(0xFF064e3b),
-=======
         onPressed: () => context.push('/lotes/new'),
         backgroundColor: theme.colorScheme.primary,
->>>>>>> Animals-module
         child: const Icon(Icons.add),
       ),
       body: RefreshIndicator(

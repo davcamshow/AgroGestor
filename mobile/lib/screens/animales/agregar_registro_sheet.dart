@@ -52,26 +52,12 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+    return SizedBox(
+      height: MediaQuery.of(context).size.height * 0.82,
       child: Column(
         children: [
-          Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              // Drag handle
-              color: Theme.of(context).colorScheme.outlineVariant,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
             child: Row(
               children: [
                 Text(
@@ -81,37 +67,41 @@ class _AgregarRegistroSheetState extends ConsumerState<AgregarRegistroSheet> {
               ],
             ),
           ),
-          Row(
-            children: [
-              Expanded(
-                child: TextButton(
-                  onPressed: () => setState(() => _selectedTab = 0),
-                  style: TextButton.styleFrom(
-                    backgroundColor: _selectedTab == 0
-                        ? Theme.of(context).colorScheme.primary
-                        : null,
-                    foregroundColor: _selectedTab == 0
-                        ? Theme.of(context).colorScheme.onPrimary
-                        : Theme.of(context).colorScheme.primary,
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => setState(() => _selectedTab = 0),
+                    style: TextButton.styleFrom(
+                      backgroundColor: _selectedTab == 0
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                      foregroundColor: _selectedTab == 0
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : Theme.of(context).colorScheme.primary,
+                    ),
+                    child: const Text('Pesaje'),
                   ),
-                  child: const Text('Pesaje'),
                 ),
-              ),
-              Expanded(
-                child: TextButton(
-                  onPressed: () => setState(() => _selectedTab = 1),
-                  style: TextButton.styleFrom(
-                    backgroundColor: _selectedTab == 1
-                        ? AppTheme.info
-                        : null, // AppTheme.info is a custom color, not in ColorScheme
-                    foregroundColor: _selectedTab == 1
-                        ? Theme.of(context).colorScheme.onPrimary
-                        : AppTheme.info,
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => setState(() => _selectedTab = 1),
+                    style: TextButton.styleFrom(
+                      backgroundColor: _selectedTab == 1
+                          ? AppTheme.info
+                          : null, // AppTheme.info is a custom color, not in ColorScheme
+                      foregroundColor: _selectedTab == 1
+                          ? Theme.of(context).colorScheme.onPrimary
+                          : AppTheme.info,
+                    ),
+                    child: const Text('Evento Sanitario'),
                   ),
-                  child: const Text('Evento Sanitario'),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           Expanded(
             child: _selectedTab == 0 ? _buildPesajeForm() : _buildEventoForm(),

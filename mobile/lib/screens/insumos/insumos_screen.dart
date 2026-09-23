@@ -5,16 +5,17 @@ import '../../core/models/insumo.dart';
 import '../../core/providers/insumos_provider.dart';
 import '../../widgets/status_badge.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/blur_bottom_sheet.dart';
 import 'registro_movimiento_sheet.dart';
 
 class InsumosScreen extends ConsumerWidget {
   const InsumosScreen({super.key});
 
   void _abrirRegistroMovimiento(BuildContext context, Insumo insumo) {
-    showModalBottomSheet(
+    showBlurBottomSheet(
       context: context,
-      isScrollControlled: true,
-      builder: (_) => RegistroMovimientoSheet(insumo: insumo),
+      maxHeight: MediaQuery.sizeOf(context).height * 0.85,
+      child: RegistroMovimientoSheet(insumo: insumo),
     );
   }
 
@@ -180,8 +181,8 @@ class InsumosScreen extends ConsumerWidget {
                               IconButton(
                                 tooltip: 'Registrar entrada/salida',
                                 icon: const Icon(Icons.swap_vert),
-                                onPressed: () => _abrirRegistroMovimiento(
-                                    context, insumo),
+                                onPressed: () =>
+                                    _abrirRegistroMovimiento(context, insumo),
                               ),
                             ],
                           ),
