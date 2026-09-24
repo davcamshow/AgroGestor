@@ -13,6 +13,10 @@ staticfiles/
 # ===== LOCAL BACKUPS =====
 backups/
 
+# ===== AWS DEPLOYMENT ARTIFACTS =====
+deploy-keys/
+deployments/
+
 # ===== VENV =====
 venv/
 backend/venv/

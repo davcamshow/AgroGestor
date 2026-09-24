@@ -11,3 +11,9 @@ staticfiles/
 media/
 *.db
 *.sqlite3
+*.zip
+seed_*.py
+e2e_tests.py
+check_*.py
+fix_migration.py
+supabase_init.sql
