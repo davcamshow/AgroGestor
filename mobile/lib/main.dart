@@ -10,6 +10,7 @@ import 'core/theme/app_theme.dart';
 import 'core/providers/theme_mode_provider.dart';
 import 'core/services/push_notification_service.dart';
 import 'core/providers/sync_provider.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 void main() => runZonedGuarded(() async {
       WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +21,21 @@ void main() => runZonedGuarded(() async {
       final prefs = await SharedPreferences.getInstance();
 
       await dotenv.load(fileName: '.env');
+      try {
+        await dotenv.load(fileName: ".env");
+      } catch (e) {
+        debugPrint("Aviso: No se pudo cargar .env: $e");
+      }
 
+      // Obtener App ID asegurando que no sea el placeholder
+      String appId = dotenv.maybeGet('ONESIGNAL_APP_ID')?.trim() ?? '';
+      if (appId.isEmpty || appId == 'ONESIGNAL_APP_ID') {
+        appId = '53284d44-8273-4f11-9d8a-693546975f9e'; // Tu ID real de Bovion
+      }
+
+      // Inicializar OneSignal con el ID resuelto
+      OneSignal.initialize(appId);
+      OneSignal.Notifications.requestPermission(true);
       await Supabase.initialize(
         url: 'https://vcxdtkekiweomnemfwdk.supabase.co',
         anonKey:

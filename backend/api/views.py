@@ -552,44 +552,44 @@ def perform_create(self, serializer):
         animal = serializer.save(usuario=self.request.user.perfil)
         _recalcular_cabezas_lote(animal.lote)
 
-    def perform_update(self, serializer):
-        animal_antes = self.get_object()
+def perform_update(self, serializer):
+    animal_antes = self.get_object()
 
-        valores_antes = {}
-        for campo in CAMPOS_AUDITABLES:
-            valor = getattr(animal_antes, campo, None)
-            if hasattr(valor, 'id'):
-                valores_antes[campo] = str(valor.id)
-            else:
-                valores_antes[campo] = str(valor) if valor is not None else ''
+    valores_antes = {}
+    for campo in CAMPOS_AUDITABLES:
+        valor = getattr(animal_antes, campo, None)
+        if hasattr(valor, 'id'):
+            valores_antes[campo] = str(valor.id)
+        else:
+            valores_antes[campo] = str(valor) if valor is not None else ''
 
-        animal = serializer.save()
+    animal = serializer.save()
 
-        _recalcular_cabezas_lote(animal_antes.lote)
-        _recalcular_cabezas_lote(animal.lote)
+    _recalcular_cabezas_lote(animal_antes.lote)
+    _recalcular_cabezas_lote(animal.lote)
 
-        try:
-            perfil = self.request.user.perfil
-        except Exception:
-            perfil = None
+    try:
+        perfil = self.request.user.perfil
+    except Exception:
+        perfil = None
 
-        ip = _get_ip(self.request)
+    ip = _get_ip(self.request)
 
-        for campo in CAMPOS_AUDITABLES:
-            valor_antes = valores_antes.get(campo, '')
-            nuevo_obj = getattr(animal, campo, None)
-            valor_despues = str(nuevo_obj.id) if hasattr(nuevo_obj, 'id') else (str(nuevo_obj) if nuevo_obj is not None else '')
-            
-            if valor_antes != valor_despues:
-                AuditoriaAnimal.objects.create(
-                    animal=animal,
-                    usuario=perfil,
-                    campo=campo,
-                    valor_anterior=valor_antes,
-                    valor_nuevo=valor_despues,
-                    ip_address=ip,
-                )
- 
+    for campo in CAMPOS_AUDITABLES:
+        valor_antes = valores_antes.get(campo, '')
+        nuevo_obj = getattr(animal, campo, None)
+        valor_despues = str(nuevo_obj.id) if hasattr(nuevo_obj, 'id') else (str(nuevo_obj) if nuevo_obj is not None else '')
+        
+        if valor_antes != valor_despues:
+            AuditoriaAnimal.objects.create(
+                animal=animal,
+                usuario=perfil,
+                campo=campo,
+                valor_anterior=valor_antes,
+                valor_nuevo=valor_despues,
+                ip_address=ip,
+            )
+
     @action(detail=True, methods=['get'], url_path='auditoria')
     def auditoria(self, request, pk=None):
         """Retorna el historial de cambios de un animal."""

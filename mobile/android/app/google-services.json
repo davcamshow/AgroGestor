@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "885463743804",
+    "project_id": "bovion-48b78",
+    "storage_bucket": "bovion-48b78.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:885463743804:android:6c60173ebc5c6429b2b239",
+        "android_client_info": {
+          "package_name": "com.Bovion"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCu7sSzZdlHHxOV-tUxbLBvQWf7iRFrhbQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:885463743804:android:69f05193a52b3562b2b239",
+        "android_client_info": {
+          "package_name": "com.bovion.ap"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCu7sSzZdlHHxOV-tUxbLBvQWf7iRFrhbQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:885463743804:android:1427d3cf37259b1cb2b239",
+        "android_client_info": {
+          "package_name": "com.bovion.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCu7sSzZdlHHxOV-tUxbLBvQWf7iRFrhbQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

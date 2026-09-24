@@ -119,13 +119,13 @@ def crear_planes():
     planes = {}
     datos = [
         dict(codigo='basico', nombre='Básico', descripcion='Para ganaderías pequeñas.',
-             precio_mxn=299, precio_anual=2990, limite_animales=50, limite_usuarios=1,
+             precio_mxn=149, precio_anual=2990, limite_animales=50, limite_usuarios=1,
              incluye_reportes_avanzados=False, incluye_api=False, soporte_prioritario=False),
         dict(codigo='productor', nombre='Productor', descripcion='Para productores en crecimiento.',
-             precio_mxn=499, precio_anual=4990, limite_animales=150, limite_usuarios=3,
+             precio_mxn=299, precio_anual=4990, limite_animales=150, limite_usuarios=3,
              incluye_reportes_avanzados=True, incluye_api=False, soporte_prioritario=False),
         dict(codigo='empresarial', nombre='Empresarial', descripcion='Para operaciones grandes.',
-             precio_mxn=899, precio_anual=8990, limite_animales=1000, limite_usuarios=10,
+             precio_mxn=599, precio_anual=8990, limite_animales=1000, limite_usuarios=10,
              incluye_reportes_avanzados=True, incluye_api=True, soporte_prioritario=True),
     ]
     for d in datos:
