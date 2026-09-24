@@ -2,6 +2,14 @@
 
 Esta guía despliega AgroGestor en una VM con Docker Compose. La base de datos permanece en Supabase y el backend se publica directamente en el puerto `8000`.
 
+Para crear un reemplazo desde Windows, validando primero la nueva instancia y terminando las anteriores cuyo tag `Name` empiece por `agrogestor`, usa:
+
+```powershell
+.\scripts\deploy-ec2.ps1 -ReplaceExisting -ForceReplacement -UseElasticIp -ReleaseOldElasticIps
+```
+
+El script usa el código y el `.env` de la máquina local. Si omites `-ForceReplacement`, solicitará confirmación antes de continuar.
+
 ## 1. Requisitos
 
 - Linux con Docker Engine y Docker Compose v2.
