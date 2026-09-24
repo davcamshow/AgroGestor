@@ -329,14 +329,20 @@ class AnimalEdicionAuditoriaTests(APITestCase):
             usuario=self.usuario_perfil,
             numero_arete='RE-001',
             nombre='Vaca Lola',
+            raza='Angus',
             sexo='H',
+            fecha_nacimiento='2024-01-01',
+            peso_nacimiento_kg='25',
             estado='activo'
         )
         self.animal2 = Animal.objects.create(
             usuario=self.usuario_perfil,
             numero_arete='RE-002',
             nombre='Toro Ferd',
+            raza='Hereford',
             sexo='M',
+            fecha_nacimiento='2024-02-01',
+            peso_nacimiento_kg='30',
             estado='activo'
         )
         self.url_detalle = reverse('animal-detail', kwargs={'pk': self.animal1.pk})
@@ -347,6 +353,8 @@ class AnimalEdicionAuditoriaTests(APITestCase):
             'nombre': 'Lola Modificada',
             'raza': 'Angus',
             'sexo': 'H',
+            'fecha_nacimiento': '2024-01-01',
+            'peso_nacimiento_kg': '25',
             'estado': 'activo'
         }
         response = self.client.put(self.url_detalle, data, format='json')
@@ -394,7 +402,10 @@ class AnimalBajaTests(APITestCase):
             usuario=self.usuario_perfil,
             numero_arete='MX-999888',
             nombre='Bailadora',
+            raza='Holstein',
             sexo='H',
+            fecha_nacimiento='2024-03-01',
+            peso_nacimiento_kg='28',
             estado='activo'
         )
         
@@ -477,7 +488,10 @@ class AnimalFotoTests(APITestCase):
             usuario=self.usuario_perfil,
             numero_arete='FT-001',
             nombre='Luna',
+            raza='Angus',
             sexo='H',
+            fecha_nacimiento='2024-04-01',
+            peso_nacimiento_kg='25',
             estado='activo',
         )
 

@@ -1,5 +1,7 @@
 # Deploy a Google Cloud Platform
 
+> Para la POC actual en una VM con Docker Compose, consulta primero `DOCKER_DEPLOY.md`. Este documento describe el despliegue serverless histórico en Cloud Run.
+
 ## Prerequisitos
 
 ```bash

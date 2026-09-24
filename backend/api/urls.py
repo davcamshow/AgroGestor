@@ -27,6 +27,7 @@ router.register(r'notificaciones', views.NotificacionViewSet, basename='notifica
 urlpatterns = [
     path('', include(router.urls)),
     path('health/', views.health_check, name='health_check'),
+    path('ready/', views.readiness_check, name='readiness_check'),
     # Auth endpoints
     path('auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),

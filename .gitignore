@@ -10,6 +10,9 @@ db.sqlite3
 media/
 staticfiles/
 
+# ===== LOCAL BACKUPS =====
+backups/
+
 # ===== VENV =====
 venv/
 backend/venv/

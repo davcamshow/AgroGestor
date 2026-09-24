@@ -13,14 +13,21 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 from pathlib import Path
 import os
 from datetime import timedelta
+from logging.handlers import RotatingFileHandler
 from dotenv import load_dotenv
 from django.core.exceptions import ImproperlyConfigured
 
-# Cargar variables de entorno
-load_dotenv()
+
+def env_bool(name, default=False):
+    return os.getenv(name, str(default)).strip().lower() in ('true', '1', 'yes', 'on')
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Carga el .env traditional cuando se ejecuta Django fuera de Docker.
+# Compose inyecta las mismas variables dentro del contenedor.
+load_dotenv(BASE_DIR / '.env')
 
 # Crear carpeta de logs si no existe
 LOGS_DIR = BASE_DIR / 'logs'
@@ -30,13 +37,21 @@ LOGS_DIR.mkdir(exist_ok=True)
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-r0ps7o_+9un$-h)%42r#mve)xs(-xzwjj*t4&w%ia-&zf(p(#k'
+SECRET_KEY = os.getenv(
+    'DJANGO_SECRET_KEY',
+    os.getenv('SECRET_KEY', 'django-insecure-local-development-key'),
+)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env_bool('DJANGO_DEBUG', env_bool('DEBUG', True))
 
-ALLOWED_HOSTS = ['*']  # Aceptar desde cualquier IP (desarrollo)
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv(
+        'DJANGO_ALLOWED_HOSTS',
+        os.getenv('ALLOWED_HOSTS', '*'),
+    ).split(',')
+    if host.strip()
+]
 
 # Define la URL del backend para envio de correos de verificación y otros propósitos
 BACKEND_URL = os.getenv(
@@ -177,7 +192,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'static'),  # Donde Vite construirá los archivos
+    path for path in [os.path.join(BASE_DIR, 'static')]
+    if os.path.isdir(path)
 ]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
@@ -261,7 +277,6 @@ if not DEBUG:
         raise ImproperlyConfigured('Missing required email configuration for production: ' + ', '.join(missing))
 
 # Logging
-import logging.handlers
 
 LOGGING = {
     'version': 1,
@@ -282,7 +297,7 @@ LOGGING = {
             'formatter': 'simple',
         },
         'file': {
-            'class': 'logging.handlers.RotatingFileHandler',
+            'class': RotatingFileHandler,
             'filename': LOGS_DIR / 'agrogestor.log',
             'maxBytes': 10 * 1024 * 1024,
             'backupCount': 30,

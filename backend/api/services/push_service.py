@@ -1,6 +1,7 @@
 import requests
 from django.conf import settings
 
+
 def enviar_notificacion_push(user_ids, titulo, cuerpo, datos=None):
     """
     Envía notificaciones push a uno o varios usuarios a través de OneSignal
@@ -32,13 +33,13 @@ def enviar_notificacion_push(user_ids, titulo, cuerpo, datos=None):
         "headings": {"en": titulo, "es": titulo},
         "contents": {"en": cuerpo, "es": cuerpo},
         "data": datos or {},
-        "priority": 10
+        "priority": 10,
     }
 
     try:
         headers = {
             "Authorization": f"{prefijo} {api_key}",
-            "Content-Type": "application/json; charset=utf-8"
+            "Content-Type": "application/json; charset=utf-8",
         }
         response = requests.post(url, json=payload, headers=headers, timeout=10)
 
@@ -51,3 +52,24 @@ def enviar_notificacion_push(user_ids, titulo, cuerpo, datos=None):
         return response.json()
     except Exception as e:
         return {"error": str(e)}
+
+
+class PushService:
+    """Adaptador para enviar una notificación al perfil de un usuario."""
+
+    @staticmethod
+    def enviar_a_usuario(usuario, titulo, mensaje, datos=None):
+        resultado = enviar_notificacion_push(usuario.id, titulo, mensaje, datos)
+        if 'error' in resultado:
+            return {'enviados': 0, 'error': resultado['error']}
+
+        recipients = resultado.get('recipients', 0)
+        try:
+            enviados = int(recipients)
+        except (TypeError, ValueError):
+            enviados = 0
+
+        return {
+            'enviados': enviados,
+            'respuesta': resultado,
+        }

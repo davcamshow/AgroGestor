@@ -13,6 +13,7 @@ from django.shortcuts import render
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.db import connection
 from django.db.models import Sum, Count, Q, Case, When, Value, F, IntegerField
 from django.db.models.functions import Greatest
 from django.utils import timezone
@@ -78,7 +79,27 @@ class PreferenciaNotificacionView(generics.RetrieveUpdateAPIView):
 def health_check(request):
     return Response({
         'status': 'ok',
-        'message': '¡AgroGestor backend funcionando!'
+        'message': '¡AgroGestor backend funcionando!',
+    })
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def readiness_check(request):
+    try:
+        connection.ensure_connection()
+    except Exception:
+        logger.exception('Readiness check sin conexión a la base de datos')
+        return Response({
+            'status': 'error',
+            'message': 'La base de datos no está disponible.',
+            'database': 'unavailable',
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    return Response({
+        'status': 'ok',
+        'message': 'La base de datos está disponible.',
+        'database': 'ok',
     })
 
 
@@ -548,47 +569,47 @@ class AnimalViewSet(viewsets.ModelViewSet):
             
         return qs.select_related('lote', 'madre', 'padre').prefetch_related('registros_peso')
  
-def perform_create(self, serializer):
+    def perform_create(self, serializer):
         animal = serializer.save(usuario=self.request.user.perfil)
         _recalcular_cabezas_lote(animal.lote)
 
-def perform_update(self, serializer):
-    animal_antes = self.get_object()
+    def perform_update(self, serializer):
+        animal_antes = self.get_object()
 
-    valores_antes = {}
-    for campo in CAMPOS_AUDITABLES:
-        valor = getattr(animal_antes, campo, None)
-        if hasattr(valor, 'id'):
-            valores_antes[campo] = str(valor.id)
-        else:
-            valores_antes[campo] = str(valor) if valor is not None else ''
+        valores_antes = {}
+        for campo in CAMPOS_AUDITABLES:
+            valor = getattr(animal_antes, campo, None)
+            if hasattr(valor, 'id'):
+                valores_antes[campo] = str(valor.id)
+            else:
+                valores_antes[campo] = str(valor) if valor is not None else ''
 
-    animal = serializer.save()
+        animal = serializer.save()
 
-    _recalcular_cabezas_lote(animal_antes.lote)
-    _recalcular_cabezas_lote(animal.lote)
+        _recalcular_cabezas_lote(animal_antes.lote)
+        _recalcular_cabezas_lote(animal.lote)
 
-    try:
-        perfil = self.request.user.perfil
-    except Exception:
-        perfil = None
+        try:
+            perfil = self.request.user.perfil
+        except Exception:
+            perfil = None
 
-    ip = _get_ip(self.request)
+        ip = _get_ip(self.request)
 
-    for campo in CAMPOS_AUDITABLES:
-        valor_antes = valores_antes.get(campo, '')
-        nuevo_obj = getattr(animal, campo, None)
-        valor_despues = str(nuevo_obj.id) if hasattr(nuevo_obj, 'id') else (str(nuevo_obj) if nuevo_obj is not None else '')
-        
-        if valor_antes != valor_despues:
-            AuditoriaAnimal.objects.create(
-                animal=animal,
-                usuario=perfil,
-                campo=campo,
-                valor_anterior=valor_antes,
-                valor_nuevo=valor_despues,
-                ip_address=ip,
-            )
+        for campo in CAMPOS_AUDITABLES:
+            valor_antes = valores_antes.get(campo, '')
+            nuevo_obj = getattr(animal, campo, None)
+            valor_despues = str(nuevo_obj.id) if hasattr(nuevo_obj, 'id') else (str(nuevo_obj) if nuevo_obj is not None else '')
+
+            if valor_antes != valor_despues:
+                AuditoriaAnimal.objects.create(
+                    animal=animal,
+                    usuario=perfil,
+                    campo=campo,
+                    valor_anterior=valor_antes,
+                    valor_nuevo=valor_despues,
+                    ip_address=ip,
+                )
 
     @action(detail=True, methods=['get'], url_path='auditoria')
     def auditoria(self, request, pk=None):

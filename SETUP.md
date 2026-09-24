@@ -2,26 +2,35 @@
 
 ## Después de hacer `git pull`
 
-### 1️⃣ Backend (Django + PostgreSQL)
+### 1️⃣ Backend con Docker (recomendado)
+
+```bash
+# Crear la configuración local una sola vez
+cp .env.example .env
+
+# Construir y levantar API, migraciones y scheduler
+docker compose up -d --build
+
+# Verificar
+curl http://localhost:8000/api/health/
+```
+
+La base de datos se configura en el `.env` de la raíz y utiliza Supabase. Consulta `DOCKER_DEPLOY.md` para el procedimiento completo de despliegue y respaldo.
+
+### 1.1 Backend local sin Docker
 
 ```bash
 cd backend
-
-# Instalar dependencias
+python -m venv .venv
+source .venv/Scripts/activate
 pip install -r requirements.txt
-
-# Aplicar migraciones
 python manage.py migrate
-
-# Correr servidor
 python manage.py runserver 0.0.0.0:8000
 ```
 
 **Notas:**
-- Las credenciales de Supabase están en `.env` (no commitar)
-- El '.env' debe de ir en la carpeta AGROGESTOR/backend
-- Si es primera vez, ejecutar: `python manage.py createsuperuser`
-- El servidor debe estar en `http://0.0.0.0:8000`
+- No versionar `.env`, SQLite, `media/` ni respaldos.
+- Si es la primera vez, ejecutar `python manage.py createsuperuser`.
 
 ---
 
@@ -40,7 +49,7 @@ flutter run
 **Notas:**
 - La IP del backend está en `lib/core/api/api_client.dart` (línea 6)
 - Cambiar `192.168.101.14` a tu IP local si es necesario
-- El servidor Flask debe estar corriendo
+- El servidor Django debe estar corriendo
 
 ---
 
@@ -76,8 +85,9 @@ flutter run
 AgroGestor/
 ├── backend/          # Django + DRF + Supabase
 │   ├── api/          # Modelos, views, serializers
-│   ├── .env          # Credenciales (NO commitar)
 │   └── manage.py
+├── .env.example     # Plantilla de configuración (NO contiene secretos)
+├── backups/         # Dumps locales ignorados por Git
 ├── mobile/           # Flutter
 │   ├── lib/
 │   ├── pubspec.yaml

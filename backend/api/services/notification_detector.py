@@ -102,5 +102,5 @@ class NotificationDetector:
 
 
 def ejecutar_revision_cron():
-    """Entry point para django-crontab."""
-    NotificationDetector.revisar_todos_los_usuarios()
+    """Entry point para django-crontab y el scheduler de Docker."""
+    return NotificationDetector.revisar_todos_los_usuarios()
